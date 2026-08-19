@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>PROYECTA — MVP Conceptual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,500&family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0a1f3d;
+    --navy-2:#122b52;
+    --navy-3:#1c3a68;
+    --gold:#c9a04a;
+    --gold-2:#e0bc74;
+    --cream:#f6f3ec;
+    --paper:#ffffff;
+    --ink:#161b26;
+    --muted:#6c7180;
+    --line:#e7e2d6;
+    --brick:#b3542e;
+    --pine:#3f6d4e;
+    --steel:#3d6b7d;
+    --radius:18px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:#e9e4d8;
+    background-image:
+      radial-gradient(circle at 15% 10%, rgba(10,31,61,0.05), transparent 45%),
+      radial-gradient(circle at 85% 90%, rgba(201,160,74,0.08), transparent 45%);
+    font-family:'Archivo', sans-serif;
+    color:var(--ink);
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:32px 12px;
+  }
+
+  /* ---- desktop preview label ---- */
+  .rig{display:flex;flex-direction:column;align-items:center;gap:14px;}
+  .rig-label{
+    font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--navy);opacity:.55;font-weight:700;
+  }
+
+  /* ---- phone frame (desktop only) ---- */
+  .device{
+    width:390px;height:820px;
+    background:#0b0b0d;
+    border-radius:46px;
+    padding:14px;
+    box-shadow:0 40px 80px -20px rgba(10,20,40,0.45), 0 2px 0 rgba(255,255,255,0.4) inset;
+  }
+  .screen-wrap{
+    position:relative;
+    width:100%;height:100%;
+    background:var(--cream);
+    border-radius:32px;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+  }
+  .notch{
+    position:absolute;top:10px;left:50%;transform:translateX(-50%);
+    width:110px;height:22px;background:#0b0b0d;border-radius:14px;z-index:50;
+  }
+
+  .app-top{
+    padding:34px 20px 12px;
+    background:var(--navy);
+    background-image:linear-gradient(155deg,var(--navy) 0%, var(--navy-2) 60%, var(--navy-3) 100%);
+    color:#fff;
+    flex-shrink:0;
+  }
+  .app-top .brandrow{
+    display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;
+  }
+  .wordmark{
+    font-family:'Archivo Black', sans-serif;
+    font-size:19px;letter-spacing:.02em;color:#fff;
+  }
+  .wordmark span{color:var(--gold);}
+  .bell{
+    width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,0.1);
+    display:flex;align-items:center;justify-content:center;font-size:15px;position:relative;
+  }
+  .bell::after{
+    content:"";position:absolute;top:7px;right:7px;width:7px;height:7px;border-radius:50%;
+    background:var(--gold);border:1.5px solid var(--navy-2);
+  }
+  .screen-title{font-size:22px;font-weight:800;letter-spacing:-.01em;}
+  .screen-sub{font-size:12.5px;color:rgba(255,255,255,.6);margin-top:3px;font-weight:500;}
+
+  .app-body{
+    flex:1;overflow-y:auto;
+    padding:16px 16px 90px;
+    -webkit-overflow-scrolling:touch;
+  }
+  .app-body::-webkit-scrollbar{display:none;}
+
+  .screen{display:none;animation:fadein .28s ease;}
+  .screen.active{display:block;}
+  @keyframes fadein{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+  /* ---- bottom nav ---- */
+  .navbar{
+    position:absolute;bottom:0;left:0;right:0;
+    height:78px;
+    background:rgba(255,255,255,0.92);
+    backdrop-filter:blur(10px);
+    border-top:1px solid var(--line);
+    display:flex;align-items:center;justify-content:space-around;
+    padding-bottom:10px;
+  }
+  .navbtn{
+    background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;
+    font-family:'Archivo';color:var(--muted);font-size:10.5px;font-weight:600;cursor:pointer;
+    width:56px;
+  }
+  .navbtn .ic{font-size:19px;line-height:1;}
+  .navbtn.active{color:var(--navy);}
+  .navbtn.active .ic{transform:translateY(-1px);}
+  .navbtn.publish{margin-top:-30px;}
+  .navbtn.publish .ic{
+    width:52px;height:52px;border-radius:50%;
+    background:linear-gradient(155deg,var(--gold-2),var(--gold));
+    color:var(--navy);display:flex;align-items:center;justify-content:center;
+    font-size:26px;font-weight:800;
+    box-shadow:0 10px 20px -6px rgba(201,160,74,0.6);
+  }
+
+  /* ---- shared bits ---- */
+  .card{
+    background:var(--paper);border-radius:var(--radius);
+    padding:14px;margin-bottom:12px;
+    border:1px solid var(--line);
+  }
+  .tag{
+    display:inline-flex;align-items:center;gap:5px;
+    font-size:10.5px;font-weight:700;letter-spacing:.02em;
+    padding:4px 9px;border-radius:100px;color:#fff;margin-bottom:9px;
+  }
+  .tag.obra{background:var(--navy);}
+  .tag.duda{background:var(--gold);color:var(--navy);}
+  .tag.solucion{background:var(--pine);}
+  .tag.especialista{background:var(--brick);}
+  .tag.vacante{background:var(--steel);}
+
+  .post-head{display:flex;align-items:center;gap:9px;margin-bottom:10px;}
+  .avatar{
+    width:36px;height:36px;border-radius:50%;
+    background:linear-gradient(155deg,var(--navy-3),var(--navy));
+    color:var(--gold-2);display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:13px;flex-shrink:0;
+  }
+  .post-name{font-size:13.5px;font-weight:700;}
+  .post-meta{font-size:11px;color:var(--muted);}
+  .post-text{font-size:13.5px;line-height:1.5;color:#2b2f3a;margin-bottom:10px;}
+  .post-photo{
+    height:120px;border-radius:12px;margin-bottom:10px;
+    background:repeating-linear-gradient(135deg,#dcd6c6,#dcd6c6 10px,#e6e1d3 10px,#e6e1d3 20px);
+    display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px;font-weight:600;
+  }
+  .post-foot{display:flex;gap:16px;font-size:12px;color:var(--muted);font-weight:600;}
+
+  .sectionlabel{
+    font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:800;
+    color:var(--navy);opacity:.6;margin:4px 0 10px;
+  }
+
+  .search-bar{
+    display:flex;align-items:center;gap:8px;
+    background:var(--paper);border:1px solid var(--line);border-radius:100px;
+    padding:11px 15px;margin-bottom:12px;font-size:13px;color:var(--muted);font-weight:500;
+  }
+  .chiprow{display:flex;gap:8px;overflow-x:auto;margin-bottom:14px;padding-bottom:2px;}
+  .chip{
+    flex-shrink:0;font-size:12px;font-weight:700;color:var(--navy);
+    background:var(--paper);border:1px solid var(--line);border-radius:100px;padding:7px 13px;
+  }
+  .chip.on{background:var(--navy);color:#fff;border-color:var(--navy);}
+
+  .dir-row{
+    display:flex;align-items:center;gap:11px;
+    background:var(--paper);border:1px solid var(--line);border-radius:14px;
+    padding:11px;margin-bottom:9px;
+  }
+  .dir-ico{
+    width:38px;height:38px;border-radius:11px;background:var(--cream);
+    display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;
+  }
+  .dir-name{font-size:13.5px;font-weight:700;}
+  .dir-meta{font-size:11px;color:var(--muted);margin-top:1px;}
+  .dir-star{margin-left:auto;font-size:12px;font-weight:700;color:var(--navy);white-space:nowrap;}
+
+  /* publicar */
+  .cat-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;}
+  .catpick{
+    font-size:12px;font-weight:700;border-radius:100px;padding:8px 13px;
+    border:1.5px solid var(--line);background:var(--paper);color:var(--ink);cursor:pointer;
+  }
+  .catpick.on{border-color:var(--navy);background:var(--navy);color:#fff;}
+  .composer{
+    background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:14px;
+  }
+  .composer textarea{
+    width:100%;border:none;resize:none;height:90px;font-family:'Archivo';font-size:13.5px;
+    color:var(--ink);outline:none;background:transparent;
+  }
+  .composer-tools{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding-top:10px;margin-top:6px;}
+  .tool{font-size:16px;color:var(--muted);margin-right:12px;}
+  .btn-gold{
+    display:block;width:100%;text-align:center;padding:13px;border-radius:100px;border:none;
+    background:linear-gradient(155deg,var(--gold-2),var(--gold));color:var(--navy);
+    font-family:'Archivo';font-weight:800;font-size:13.5px;letter-spacing:.01em;cursor:pointer;
+  }
+
+  /* comunidad */
+  .forum-row{
+    display:flex;align-items:center;gap:12px;
+    background:var(--paper);border:1px solid var(--line);border-radius:14px;
+    padding:13px;margin-bottom:9px;
+  }
+  .forum-ico{
+    width:42px;height:42px;border-radius:12px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;font-size:19px;color:#fff;
+  }
+  .forum-name{font-size:13.5px;font-weight:700;}
+  .forum-meta{font-size:11px;color:var(--muted);margin-top:2px;}
+  .forum-dot{width:8px;height:8px;border-radius:50%;background:var(--gold);margin-left:auto;flex-shrink:0;}
+
+  /* perfil */
+  .profile-head{text-align:center;padding:6px 0 16px;}
+  .p-avatar{
+    width:74px;height:74px;border-radius:50%;margin:0 auto 10px;
+    background:linear-gradient(155deg,var(--navy-3),var(--navy));
+    color:var(--gold-2);display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:24px;border:3px solid var(--gold);
+  }
+  .p-name{font-size:17px;font-weight:800;}
+  .p-role{font-size:12.5px;color:var(--muted);margin-top:2px;font-weight:600;}
+  .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
+  .stat-box{
+    background:var(--paper);border:1px solid var(--line);border-radius:14px;
+    padding:12px 6px;text-align:center;
+  }
+  .stat-num{font-size:16px;font-weight:800;color:var(--navy);}
+  .stat-lab{font-size:9.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.03em;margin-top:2px;}
+  .badge-row{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px;}
+  .badge{
+    font-size:11px;font-weight:700;background:var(--cream);color:var(--navy);
+    border-radius:100px;padding:6px 11px;border:1px solid var(--line);
+  }
+
+  /* herramientas */
+  .tool-card{
+    display:flex;align-items:center;gap:13px;
+    background:var(--paper);border:1px solid var(--line);border-radius:16px;
+    padding:14px;margin-bottom:10px;
+  }
+  .tool-card.disabled{opacity:.55;}
+  .tool-ico{
+    width:46px;height:46px;border-radius:13px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;font-size:21px;
+    background:var(--navy);color:var(--gold-2);
+  }
+  .tool-name{font-size:13.5px;font-weight:700;}
+  .tool-meta{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.4;}
+  .tool-pill{
+    margin-left:auto;flex-shrink:0;font-size:9.5px;font-weight:800;letter-spacing:.03em;
+    text-transform:uppercase;border-radius:100px;padding:5px 9px;
+  }
+  .tool-pill.live{background:var(--pine);color:#fff;}
+  .tool-pill.soon{background:var(--cream);color:var(--muted);border:1px solid var(--line);}
+  .tools-banner{
+    background:linear-gradient(155deg,var(--navy),var(--navy-3));
+    color:#fff;border-radius:16px;padding:15px;margin-bottom:14px;
+  }
+  .tools-banner b{color:var(--gold-2);}
+  .tools-banner p{margin:5px 0 0;font-size:12px;color:rgba(255,255,255,.75);line-height:1.5;}
+
+  @media (max-width:600px){
+    body{padding:0;background:var(--cream);}
+    .rig-label{display:none;}
+    .device{
+      width:100vw;height:100vh;border-radius:0;padding:0;box-shadow:none;background:none;
+    }
+    .screen-wrap{border-radius:0;height:100vh;}
+    .notch{display:none;}
+    .app-top{padding-top:20px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="rig">
+  <div class="rig-label">Prototipo clickeable · pruébalo en tu celular</div>
+  <div class="device">
+    <div class="screen-wrap">
+      <div class="notch"></div>
+
+      <div class="app-top">
+        <div class="brandrow">
+          <div class="wordmark">PROYEC<span>TA</span></div>
+          <div style="display:flex;gap:8px;">
+            <div class="bell" onclick="go('buscar', null)" style="cursor:pointer;">🔎</div>
+            <div class="bell">🔔</div>
+          </div>
+        </div>
+        <div id="screenTitle" class="screen-title">Inicio</div>
+        <div id="screenSub" class="screen-sub">Lo que se está construyendo hoy en LATAM</div>
+      </div>
+
+      <div class="app-body">
+
+        <!-- INICIO / FEED -->
+        <section class="screen active" id="s-inicio">
+          <div class="card">
+            <span class="tag obra">🏗 Mi obra</span>
+            <div class="post-head">
+              <div class="avatar">CR</div>
+              <div>
+                <div class="post-name">Carlos Ramírez</div>
+                <div class="post-meta">Ing. Civil · Mazatlán · hace 2 h</div>
+              </div>
+            </div>
+            <div class="post-text">Colado de losa de 450 m². F'c=250 kg/cm², revenimiento 10 cm. Curado con manta y riego cada 4 horas los primeros 3 días.</div>
+            <div class="post-photo">foto de obra</div>
+            <div class="post-foot"><span>❤️ 43</span><span>💬 12</span><span>↗ Guardar</span></div>
+          </div>
+
+          <div class="card">
+            <span class="tag duda">❓ Tengo una duda</span>
+            <div class="post-head">
+              <div class="avatar">AL</div>
+              <div>
+                <div class="post-name">Arq. Ana López</div>
+                <div class="post-meta">Culiacán · hace 5 h</div>
+              </div>
+            </div>
+            <div class="post-text">¿Qué impermeabilizante están utilizando para azoteas con exposición extrema al sol? Necesito algo que aguante nuestro verano.</div>
+            <div class="post-foot"><span>❤️ 21</span><span>💬 19</span><span>↗ Guardar</span></div>
+          </div>
+
+          <div class="card">
+            <span class="tag especialista">👷 Busco especialista</span>
+            <div class="post-head">
+              <div class="avatar">RM</div>
+              <div>
+                <div class="post-name">Ricardo Medina Páez</div>
+                <div class="post-meta">Ing. Civil · Mazatlán · hace 8 h</div>
+              </div>
+            </div>
+            <div class="post-text">Busco laboratorista de concreto certificado para pruebas de resistencia en obra, zona norte de Sinaloa. Proyecto arranca la próxima semana.</div>
+            <div class="post-foot"><span>❤️ 8</span><span>💬 6</span><span>↗ Guardar</span></div>
+          </div>
+
+          <div class="card">
+            <span class="tag vacante">💼 Vacante</span>
+            <div class="post-head">
+              <div class="avatar">GC</div>
+              <div>
+                <div class="post-name">Grupo Constructor SAETI</div>
+                <div class="post-meta">Mazatlán · hace 1 día</div>
+              </div>
+            </div>
+            <div class="post-text">Buscamos residente de obra con experiencia en estructura metálica. Proyecto de 8 meses, disponibilidad inmediata.</div>
+            <div class="post-foot"><span>❤️ 15</span><span>💬 4</span><span>↗ Guardar</span></div>
+          </div>
+        </section>
+
+        <!-- BUSCAR -->
+        <section class="screen" id="s-buscar">
+          <div class="search-bar">🔎 Buscar especialista, tema o ciudad…</div>
+          <div class="chiprow">
+            <div class="chip on">Todos</div>
+            <div class="chip">Estructuras</div>
+            <div class="chip">Hidráulica</div>
+            <div class="chip">Topografía</div>
+            <div class="chip">Presupuestos</div>
+          </div>
+          <div class="sectionlabel">Directorio cerca de ti</div>
+
+          <div class="dir-row">
+            <div class="dir-ico">📐</div>
+            <div>
+              <div class="dir-name">Estructurista — J. Beltrán</div>
+              <div class="dir-meta">Mazatlán · 12 obras verificadas</div>
+            </div>
+            <div class="dir-star">⭐ 4.8</div>
+          </div>
+          <div class="dir-row">
+            <div class="dir-ico">🗺️</div>
+            <div>
+              <div class="dir-name">Topógrafo — E. Sarabia</div>
+              <div class="dir-meta">Culiacán · 30 obras verificadas</div>
+            </div>
+            <div class="dir-star">⭐ 4.9</div>
+          </div>
+          <div class="dir-row">
+            <div class="dir-ico">🧪</div>
+            <div>
+              <div class="dir-name">Laboratorio de concreto Norte</div>
+              <div class="dir-meta">Los Mochis · pruebas certificadas</div>
+            </div>
+            <div class="dir-star">⭐ 4.7</div>
+          </div>
+          <div class="dir-row">
+            <div class="dir-ico">🧱</div>
+            <div>
+              <div class="dir-name">Proveedor — Materiales del Pacífico</div>
+              <div class="dir-meta">Mazatlán · block, tabique, cemento</div>
+            </div>
+            <div class="dir-star">⭐ 4.6</div>
+          </div>
+        </section>
+
+        <!-- HERRAMIENTAS -->
+        <section class="screen" id="s-herramientas">
+          <div class="tools-banner">
+            <b>Gratis, sin registro.</b>
+            <p>Herramientas técnicas validadas con ingenieros en campo. Úsalas hoy, sin membresía.</p>
+          </div>
+
+          <div class="sectionlabel">Disponibles</div>
+          <div class="tool-card">
+            <div class="tool-ico">🧱</div>
+            <div>
+              <div class="tool-name">Calculadora de Ladrillos y Blocks</div>
+              <div class="tool-meta">Piezas y desperdicio por m² · validada con 33 profesionales</div>
+            </div>
+            <div class="tool-pill live">Live</div>
+          </div>
+
+          <div class="sectionlabel">Próximamente</div>
+          <div class="tool-card disabled">
+            <div class="tool-ico">🪣</div>
+            <div>
+              <div class="tool-name">Calculadora de Concreto</div>
+              <div class="tool-meta">Sacos de cemento por m³ según f'c · CEMEX / NMX</div>
+            </div>
+            <div class="tool-pill soon">Pronto</div>
+          </div>
+          <div class="tool-card disabled">
+            <div class="tool-ico">🚰</div>
+            <div>
+              <div class="tool-name">Simulador Hidráulico</div>
+              <div class="tool-meta">Redes de agua e instalaciones</div>
+            </div>
+            <div class="tool-pill soon">Pronto</div>
+          </div>
+          <div class="tool-card disabled">
+            <div class="tool-ico">📋</div>
+            <div>
+              <div class="tool-name">ObraControl Pro</div>
+              <div class="tool-meta">Nómina, requisición, avance y caja chica</div>
+            </div>
+            <div class="tool-pill soon">Pronto</div>
+          </div>
+        </section>
+
+        <!-- PUBLICAR -->
+        <section class="screen" id="s-publicar">
+          <div class="sectionlabel">¿Qué quieres publicar?</div>
+          <div class="cat-grid">
+            <div class="catpick on">🏗 Mi obra</div>
+            <div class="catpick">❓ Duda</div>
+            <div class="catpick">💡 Solución</div>
+            <div class="catpick">👷 Especialista</div>
+            <div class="catpick">💼 Vacante</div>
+            <div class="catpick">🤝 Proveedor</div>
+            <div class="catpick">🧱 Materiales</div>
+            <div class="catpick">🚜 Equipo</div>
+          </div>
+
+          <div class="composer">
+            <textarea placeholder="Cuéntale al gremio qué estás construyendo, qué duda tienes o a quién buscas…" readonly></textarea>
+            <div class="composer-tools">
+              <div><span class="tool">📷</span><span class="tool">📍</span></div>
+              <span style="font-size:11px;color:var(--muted);font-weight:600;">0/500</span>
+            </div>
+          </div>
+
+          <button class="btn-gold" type="button">Publicar</button>
+        </section>
+
+        <!-- COMUNIDAD -->
+        <section class="screen" id="s-comunidad">
+          <div class="sectionlabel">Foros por especialidad</div>
+
+          <div class="forum-row">
+            <div class="forum-ico" style="background:var(--navy);">🏛️</div>
+            <div><div class="forum-name">Arquitectura</div><div class="forum-meta">2,140 miembros · 34 hoy</div></div>
+            <div class="forum-dot"></div>
+          </div>
+          <div class="forum-row">
+            <div class="forum-ico" style="background:var(--brick);">🏗️</div>
+            <div><div class="forum-name">Obra Civil</div><div class="forum-meta">3,860 miembros · 58 hoy</div></div>
+            <div class="forum-dot"></div>
+          </div>
+          <div class="forum-row">
+            <div class="forum-ico" style="background:var(--steel);">🌆</div>
+            <div><div class="forum-name">Urbanización</div><div class="forum-meta">910 miembros · 11 hoy</div></div>
+          </div>
+          <div class="forum-row">
+            <div class="forum-ico" style="background:var(--pine);">🔧</div>
+            <div><div class="forum-name">Instalaciones</div><div class="forum-meta">1,275 miembros · 19 hoy</div></div>
+          </div>
+          <div class="forum-row">
+            <div class="forum-ico" style="background:var(--gold);color:var(--navy);">🧱</div>
+            <div><div class="forum-name">Estructuras</div><div class="forum-meta">2,530 miembros · 41 hoy</div></div>
+            <div class="forum-dot"></div>
+          </div>
+          <div class="forum-row">
+            <div class="forum-ico" style="background:var(--navy-3);">📊</div>
+            <div><div class="forum-name">Presupuestos</div><div class="forum-meta">1,680 miembros · 22 hoy</div></div>
+          </div>
+        </section>
+
+        <!-- PERFIL -->
+        <section class="screen" id="s-perfil">
+          <div class="profile-head">
+            <div class="p-avatar">JC</div>
+            <div class="p-name">Javier Chávez</div>
+            <div class="p-role">Ingeniero Civil · Mazatlán, Sinaloa</div>
+          </div>
+
+          <div class="stat-grid">
+            <div class="stat-box"><div class="stat-num">28</div><div class="stat-lab">Proyectos</div></div>
+            <div class="stat-box"><div class="stat-num">17</div><div class="stat-lab">Colaboraciones</div></div>
+            <div class="stat-box"><div class="stat-num">⭐4.9</div><div class="stat-lab">Reputación</div></div>
+            <div class="stat-box"><div class="stat-num">6</div><div class="stat-lab">Certificaciones</div></div>
+            <div class="stat-box"><div class="stat-num">143</div><div class="stat-lab">Aportaciones</div></div>
+            <div class="stat-box"><div class="stat-num">220+</div><div class="stat-lab">Contactos</div></div>
+          </div>
+
+          <div class="badge-row">
+            <div class="badge">Maestría UNAM</div>
+            <div class="badge">Doctorado CESSSIN</div>
+            <div class="badge">Profesor UAS · 20 años</div>
+            <div class="badge">Director Parque Aeroespacial MZT</div>
+          </div>
+
+          <button class="btn-gold" type="button">Editar perfil</button>
+        </section>
+
+      </div>
+
+      <div class="navbar">
+        <button class="navbtn active" data-screen="inicio" onclick="go('inicio', this)"><span class="ic">🏠</span>Inicio</button>
+        <button class="navbtn" data-screen="herramientas" onclick="go('herramientas', this)"><span class="ic">🧰</span>Herramientas</button>
+        <button class="navbtn publish" data-screen="publicar" onclick="go('publicar', this)"><span class="ic">＋</span></button>
+        <button class="navbtn" data-screen="comunidad" onclick="go('comunidad', this)"><span class="ic">👥</span>Comunidad</button>
+        <button class="navbtn" data-screen="perfil" onclick="go('perfil', this)"><span class="ic">👤</span>Perfil</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  const titles = {
+    inicio:      ["Inicio","Lo que se está construyendo hoy en LATAM"],
+    buscar:      ["Buscar","Especialistas, proveedores y temas cerca de ti"],
+    herramientas:["Herramientas","Gratis, para resolver tu obra hoy"],
+    publicar:    ["Publicar","Compártele algo real al gremio"],
+    comunidad:   ["Comunidad","Conversaciones por especialidad"],
+    perfil:      ["Mi perfil","Tu identidad de obra real"]
+  };
+
+  function go(name, btn){
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('s-' + name).classList.add('active');
+    document.querySelectorAll('.navbtn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    document.getElementById('screenTitle').textContent = titles[name][0];
+    document.getElementById('screenSub').textContent = titles[name][1];
+    document.querySelector('.app-body').scrollTop = 0;
+  }
+
+  // catpick selection (visual only)
+  document.querySelectorAll('.catpick').forEach(c=>{
+    c.addEventListener('click', ()=>{
+      document.querySelectorAll('.catpick').forEach(x=>x.classList.remove('on'));
+      c.classList.add('on');
+    });
+  });
+  document.querySelectorAll('.chip').forEach(c=>{
+    c.addEventListener('click', ()=>{
+      document.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));
+      c.classList.add('on');
+    });
+  });
+</script>
+
+</body>
+</html>
