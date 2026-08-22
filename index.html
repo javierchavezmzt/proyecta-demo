@@ -164,6 +164,9 @@
     background:repeating-linear-gradient(135deg,#dcd6c6,#dcd6c6 10px,#e6e1d3 10px,#e6e1d3 20px);
     display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px;font-weight:600;
   }
+  .post-photo-real{
+    width:100%;height:150px;object-fit:cover;border-radius:12px;margin-bottom:10px;display:block;
+  }
   .post-foot{display:flex;gap:16px;font-size:12px;color:var(--muted);font-weight:600;}
 
   .sectionlabel{
@@ -327,8 +330,8 @@
                 <div class="post-meta">Ing. Civil · Mazatlán · hace 2 h</div>
               </div>
             </div>
-            <div class="post-text">Colado de losa de 450 m². F'c=250 kg/cm², revenimiento 10 cm. Curado con manta y riego cada 4 horas los primeros 3 días.</div>
-            <div class="post-photo">foto de obra</div>
+            <div class="post-text">Colado de cimentación profunda — pilas coladas in situ frente al malecón. Equipo de perforación en sitio, dos ollas de concreto premezclado CEMEX trabajando en paralelo.</div>
+            <img class="post-photo-real" src="colado-cimentacion.jpg" alt="Colado de cimentación profunda en obra frente al malecón">
             <div class="post-foot"><span>❤️ 43</span><span>💬 12</span><span>↗ Guardar</span></div>
           </div>
 
@@ -348,9 +351,9 @@
           <div class="card">
             <span class="tag especialista">👷 Busco especialista</span>
             <div class="post-head">
-              <div class="avatar">RM</div>
+              <div class="avatar">LA</div>
               <div>
-                <div class="post-name">Ricardo Medina Páez</div>
+                <div class="post-name">Luis Fernando Aguilar</div>
                 <div class="post-meta">Ing. Civil · Mazatlán · hace 8 h</div>
               </div>
             </div>
@@ -361,9 +364,9 @@
           <div class="card">
             <span class="tag vacante">💼 Vacante</span>
             <div class="post-head">
-              <div class="avatar">GC</div>
+              <div class="avatar">CP</div>
               <div>
-                <div class="post-name">Grupo Constructor SAETI</div>
+                <div class="post-name">Constructora Del Puerto</div>
                 <div class="post-meta">Mazatlán · hace 1 día</div>
               </div>
             </div>
@@ -374,47 +377,156 @@
 
         <!-- BUSCAR -->
         <section class="screen" id="s-buscar">
-          <div class="search-bar">🔎 Buscar especialista, tema o ciudad…</div>
+          <div class="search-bar">🔎 Buscar especialista, proveedor o ciudad…</div>
           <div class="chiprow">
             <div class="chip on">Todos</div>
             <div class="chip">Estructuras</div>
-            <div class="chip">Hidráulica</div>
             <div class="chip">Topografía</div>
-            <div class="chip">Presupuestos</div>
+            <div class="chip">Valuación</div>
+            <div class="chip">Proveedores</div>
           </div>
-          <div class="sectionlabel">Directorio cerca de ti</div>
+
+          <div class="sectionlabel">Especialistas · 11</div>
 
           <div class="dir-row">
-            <div class="dir-ico">📐</div>
+            <div class="dir-ico">🚰</div>
             <div>
-              <div class="dir-name">Estructurista — J. Beltrán</div>
-              <div class="dir-meta">Mazatlán · 12 obras verificadas</div>
+              <div class="dir-name">Sergio Tirado Escobosa</div>
+              <div class="dir-meta">Mazatlán · Proyectos de agua potable y alcantarillado</div>
             </div>
-            <div class="dir-star">⭐ 4.8</div>
+            <div class="dir-star">15 años exp.</div>
+          </div>
+          <div class="dir-row">
+            <div class="dir-ico">⚓</div>
+            <div>
+              <div class="dir-name">Gibran Manjarrez Pérez</div>
+              <div class="dir-meta">Mazatlán · Ingeniería costera y marítima</div>
+            </div>
+            <div class="dir-star">10 años exp.</div>
           </div>
           <div class="dir-row">
             <div class="dir-ico">🗺️</div>
             <div>
-              <div class="dir-name">Topógrafo — E. Sarabia</div>
-              <div class="dir-meta">Culiacán · 30 obras verificadas</div>
+              <div class="dir-name">Jesús Manuel Lizarraga Pereda</div>
+              <div class="dir-meta">Mazatlán · Levantamientos y control topográfico</div>
             </div>
-            <div class="dir-star">⭐ 4.9</div>
+            <div class="dir-star">25 años exp.</div>
           </div>
           <div class="dir-row">
-            <div class="dir-ico">🧪</div>
+            <div class="dir-ico">📐</div>
             <div>
-              <div class="dir-name">Laboratorio de concreto Norte</div>
-              <div class="dir-meta">Los Mochis · pruebas certificadas</div>
+              <div class="dir-name">Sergio Alberto Ibarra Arreola</div>
+              <div class="dir-meta">Mazatlán · Despacho de arquitectura y diseño</div>
             </div>
-            <div class="dir-star">⭐ 4.7</div>
+            <div class="dir-star">30 años exp.</div>
+          </div>
+          <div class="dir-row">
+            <div class="dir-ico">🏙️</div>
+            <div>
+              <div class="dir-name">José de Jesús Reyes Machain</div>
+              <div class="dir-meta">Mazatlán · Proyecto, obra y valuación inmobiliaria</div>
+            </div>
+            <div class="dir-star">17 años exp.</div>
+          </div>
+          <div class="dir-row">
+            <div class="dir-ico">📊</div>
+            <div>
+              <div class="dir-name">Daniel Diaz Gamez</div>
+              <div class="dir-meta">Mazatlán · Valuación inmobiliaria</div>
+            </div>
+            <div class="dir-star">29 años exp.</div>
+          </div>
+          <div class="dir-row">
+            <div class="dir-ico">💼</div>
+            <div>
+              <div class="dir-name">José Israel Rojas Rodríguez</div>
+              <div class="dir-meta">Mazatlán · Valuación inmobiliaria, maquinaria y activos</div>
+            </div>
+            <div class="dir-star">20 años exp.</div>
           </div>
           <div class="dir-row">
             <div class="dir-ico">🧱</div>
             <div>
-              <div class="dir-name">Proveedor — Materiales del Pacífico</div>
-              <div class="dir-meta">Mazatlán · block, tabique, cemento</div>
+              <div class="dir-name">Carlos Venegas Arreola</div>
+              <div class="dir-meta">Mazatlán · Estructuras de concreto y acero · DRO</div>
             </div>
-            <div class="dir-star">⭐ 4.6</div>
+            <div class="dir-star">30 años exp.</div>
+          </div>
+          <div class="dir-row">
+            <div class="dir-ico">👷</div>
+            <div>
+              <div class="dir-name">Ricardo Medina Paez</div>
+              <div class="dir-meta">Mazatlán · Obra residencial, comercial e infraestructura</div>
+            </div>
+            <div class="dir-star">10 años exp.</div>
+          </div>
+          <div class="dir-row">
+            <div class="dir-ico">👷</div>
+            <div>
+              <div class="dir-name">Javier Alonso Chávez Pérez</div>
+              <div class="dir-meta">Mazatlán · Construcción y servicios de DRO</div>
+            </div>
+            <div class="dir-star">20 años exp.</div>
+          </div>
+          <div class="dir-row">
+            <div class="dir-ico">📋</div>
+            <div>
+              <div class="dir-name">Ricardo Bernal Pandeli</div>
+              <div class="dir-meta">Mazatlán · Gerencia de proyectos</div>
+            </div>
+            <div class="dir-star">10 años exp.</div>
+          </div>
+
+          <div class="sectionlabel">Proveedores · 7</div>
+
+          <div class="dir-row">
+            <div class="dir-ico">☀️</div>
+            <div>
+              <div class="dir-name">Solar Flux</div>
+              <div class="dir-meta">Mazatlán · Suministro e instalación de paneles solares</div>
+            </div>
+          </div>
+          <div class="dir-row">
+            <div class="dir-ico">🧱</div>
+            <div>
+              <div class="dir-name">SORIA Desarrollos</div>
+              <div class="dir-meta">Mazatlán · Prefabricados, premezclados, ferretería y maquinaria</div>
+            </div>
+          </div>
+          <div class="dir-row">
+            <div class="dir-ico">🛠️</div>
+            <div>
+              <div class="dir-name">TDO en Fijación y Maquinaria</div>
+              <div class="dir-meta">Mazatlán y Culiacán · Maquinaria ligera, anclajes, Bosch/Hilti</div>
+            </div>
+          </div>
+          <div class="dir-row">
+            <div class="dir-ico">🪵</div>
+            <div>
+              <div class="dir-name">Maz Espacio Carpintería</div>
+              <div class="dir-meta">Mazatlán · Muebles, closets, cocinas y puertas</div>
+            </div>
+          </div>
+          <div class="dir-row">
+            <div class="dir-ico">⚓</div>
+            <div>
+              <div class="dir-name">Grupo SAETI</div>
+              <div class="dir-meta">Mazatlán · Señalamiento marítimo y ayudas a la navegación</div>
+            </div>
+          </div>
+          <div class="dir-row">
+            <div class="dir-ico">⚡</div>
+            <div>
+              <div class="dir-name">Industrial Eléctrica del Pacífico</div>
+              <div class="dir-meta">Mazatlán · Mantenimiento y pruebas eléctricas a subestaciones y transformadores</div>
+            </div>
+          </div>
+          <div class="dir-row">
+            <div class="dir-ico">⚡</div>
+            <div>
+              <div class="dir-name">Técnica Industrial del Pacífico</div>
+              <div class="dir-meta">Mazatlán · Servicio técnico electricista</div>
+            </div>
           </div>
         </section>
 
@@ -426,14 +538,14 @@
           </div>
 
           <div class="sectionlabel">Disponibles</div>
-          <div class="tool-card">
+          <a class="tool-card" href="https://javierchavezmzt.com/calculadora-ladrillos/" target="_blank" rel="noopener" style="text-decoration:none;cursor:pointer;">
             <div class="tool-ico">🧱</div>
             <div>
               <div class="tool-name">Calculadora de Ladrillos y Blocks</div>
               <div class="tool-meta">Piezas y desperdicio por m² · validada con 33 profesionales</div>
             </div>
             <div class="tool-pill live">Live</div>
-          </div>
+          </a>
 
           <div class="sectionlabel">Próximamente</div>
           <div class="tool-card disabled">
