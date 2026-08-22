@@ -186,10 +186,12 @@
   }
   .chip.on{background:var(--navy);color:#fff;border-color:var(--navy);}
 
-  .dir-row{
-    display:flex;align-items:center;gap:11px;
+  .dir-card{
     background:var(--paper);border:1px solid var(--line);border-radius:14px;
-    padding:11px;margin-bottom:9px;
+    padding:11px;margin-bottom:9px;overflow:hidden;
+  }
+  .dir-row{
+    display:flex;align-items:center;gap:11px;cursor:pointer;
   }
   .dir-ico{
     width:38px;height:38px;border-radius:11px;background:var(--cream);
@@ -197,7 +199,18 @@
   }
   .dir-name{font-size:13.5px;font-weight:700;}
   .dir-meta{font-size:11px;color:var(--muted);margin-top:1px;}
-  .dir-star{margin-left:auto;font-size:12px;font-weight:700;color:var(--navy);white-space:nowrap;}
+  .dir-star{margin-left:auto;font-size:12px;font-weight:700;color:var(--navy);white-space:nowrap;flex-shrink:0;}
+  .dir-chevron{margin-left:8px;color:var(--muted);font-size:12px;flex-shrink:0;transition:transform .2s ease;}
+  .dir-card.open .dir-chevron{transform:rotate(180deg);}
+  .dir-detail{max-height:0;overflow:hidden;transition:max-height .25s ease;box-sizing:border-box;}
+  .dir-detail-inner{padding-top:12px;margin-top:10px;border-top:1px solid var(--line);}
+  .dir-detail-row{font-size:12px;color:#374151;margin-bottom:6px;line-height:1.45;}
+  .dir-detail-row b{color:var(--navy);}
+  .dir-contact-btn{
+    display:inline-flex;align-items:center;gap:6px;margin-top:6px;
+    background:var(--pine);color:#fff;font-size:12px;font-weight:700;
+    padding:8px 14px;border-radius:100px;text-decoration:none;
+  }
 
   /* publicar */
   .cat-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;}
@@ -379,154 +392,337 @@
         <section class="screen" id="s-buscar">
           <div class="search-bar">🔎 Buscar especialista, proveedor o ciudad…</div>
           <div class="chiprow">
-            <div class="chip on">Todos</div>
-            <div class="chip">Estructuras</div>
-            <div class="chip">Topografía</div>
-            <div class="chip">Valuación</div>
-            <div class="chip">Proveedores</div>
+            <div class="chip on" onclick="filterDir('todos', this)">Todos</div>
+            <div class="chip" onclick="filterDir('estructuras', this)">Estructuras</div>
+            <div class="chip" onclick="filterDir('topografia', this)">Topografía</div>
+            <div class="chip" onclick="filterDir('valuacion', this)">Valuación</div>
+            <div class="chip" onclick="filterDir('proveedores', this)">Proveedores</div>
           </div>
 
+          <div id="group-especialistas">
           <div class="sectionlabel">Especialistas · 11</div>
 
-          <div class="dir-row">
-            <div class="dir-ico">🚰</div>
-            <div>
-              <div class="dir-name">Sergio Tirado Escobosa</div>
-              <div class="dir-meta">Mazatlán · Proyectos de agua potable y alcantarillado</div>
+          <div class="dir-card" data-tags="hidraulica">
+            <div class="dir-row" onclick="toggleDir(this)">
+              <div class="dir-ico">🚰</div>
+              <div>
+                <div class="dir-name">Sergio Tirado Escobosa</div>
+                <div class="dir-meta">Mazatlán · Proyectos de agua potable y alcantarillado</div>
+              </div>
+              <div class="dir-star">15 años exp.</div>
+              <div class="dir-chevron">⌄</div>
             </div>
-            <div class="dir-star">15 años exp.</div>
-          </div>
-          <div class="dir-row">
-            <div class="dir-ico">⚓</div>
-            <div>
-              <div class="dir-name">Gibran Manjarrez Pérez</div>
-              <div class="dir-meta">Mazatlán · Ingeniería costera y marítima</div>
-            </div>
-            <div class="dir-star">10 años exp.</div>
-          </div>
-          <div class="dir-row">
-            <div class="dir-ico">🗺️</div>
-            <div>
-              <div class="dir-name">Jesús Manuel Lizarraga Pereda</div>
-              <div class="dir-meta">Mazatlán · Levantamientos y control topográfico</div>
-            </div>
-            <div class="dir-star">25 años exp.</div>
-          </div>
-          <div class="dir-row">
-            <div class="dir-ico">📐</div>
-            <div>
-              <div class="dir-name">Sergio Alberto Ibarra Arreola</div>
-              <div class="dir-meta">Mazatlán · Despacho de arquitectura y diseño</div>
-            </div>
-            <div class="dir-star">30 años exp.</div>
-          </div>
-          <div class="dir-row">
-            <div class="dir-ico">🏙️</div>
-            <div>
-              <div class="dir-name">José de Jesús Reyes Machain</div>
-              <div class="dir-meta">Mazatlán · Proyecto, obra y valuación inmobiliaria</div>
-            </div>
-            <div class="dir-star">17 años exp.</div>
-          </div>
-          <div class="dir-row">
-            <div class="dir-ico">📊</div>
-            <div>
-              <div class="dir-name">Daniel Diaz Gamez</div>
-              <div class="dir-meta">Mazatlán · Valuación inmobiliaria</div>
-            </div>
-            <div class="dir-star">29 años exp.</div>
-          </div>
-          <div class="dir-row">
-            <div class="dir-ico">💼</div>
-            <div>
-              <div class="dir-name">José Israel Rojas Rodríguez</div>
-              <div class="dir-meta">Mazatlán · Valuación inmobiliaria, maquinaria y activos</div>
-            </div>
-            <div class="dir-star">20 años exp.</div>
-          </div>
-          <div class="dir-row">
-            <div class="dir-ico">🧱</div>
-            <div>
-              <div class="dir-name">Carlos Venegas Arreola</div>
-              <div class="dir-meta">Mazatlán · Estructuras de concreto y acero · DRO</div>
-            </div>
-            <div class="dir-star">30 años exp.</div>
-          </div>
-          <div class="dir-row">
-            <div class="dir-ico">👷</div>
-            <div>
-              <div class="dir-name">Ricardo Medina Paez</div>
-              <div class="dir-meta">Mazatlán · Obra residencial, comercial e infraestructura</div>
-            </div>
-            <div class="dir-star">10 años exp.</div>
-          </div>
-          <div class="dir-row">
-            <div class="dir-ico">👷</div>
-            <div>
-              <div class="dir-name">Javier Alonso Chávez Pérez</div>
-              <div class="dir-meta">Mazatlán · Construcción y servicios de DRO</div>
-            </div>
-            <div class="dir-star">20 años exp.</div>
-          </div>
-          <div class="dir-row">
-            <div class="dir-ico">📋</div>
-            <div>
-              <div class="dir-name">Ricardo Bernal Pandeli</div>
-              <div class="dir-meta">Mazatlán · Gerencia de proyectos</div>
-            </div>
-            <div class="dir-star">10 años exp.</div>
+            <div class="dir-detail"><div class="dir-detail-inner">
+              <div class="dir-detail-row"><b>Profesión:</b> Ingeniero Civil</div>
+              <div class="dir-detail-row"><b>Especialidad:</b> Hidráulica e hidrología</div>
+              <div class="dir-detail-row"><b>Notas:</b> Elaboración de proyectos ejecutivos de agua potable, alcantarillado sanitario y pluvial (estudios hidrológicos)</div>
+              <a class="dir-contact-btn" href="https://wa.me/526691001266" target="_blank">💬 Contactar por WhatsApp</a>
+            </div></div>
           </div>
 
+          <div class="dir-card" data-tags="maritima">
+            <div class="dir-row" onclick="toggleDir(this)">
+              <div class="dir-ico">⚓</div>
+              <div>
+                <div class="dir-name">Gibran Manjarrez Pérez</div>
+                <div class="dir-meta">Mazatlán · Ingeniería costera y marítima</div>
+              </div>
+              <div class="dir-star">10 años exp.</div>
+              <div class="dir-chevron">⌄</div>
+            </div>
+            <div class="dir-detail"><div class="dir-detail-inner">
+              <div class="dir-detail-row"><b>Profesión:</b> Ingeniero Civil</div>
+              <div class="dir-detail-row"><b>Especialidad:</b> Marítima</div>
+              <div class="dir-detail-row"><b>Notas:</b> Ingeniería costera</div>
+              <a class="dir-contact-btn" href="https://wa.me/525554621340" target="_blank">💬 Contactar por WhatsApp</a>
+            </div></div>
+          </div>
+
+          <div class="dir-card" data-tags="topografia">
+            <div class="dir-row" onclick="toggleDir(this)">
+              <div class="dir-ico">🗺️</div>
+              <div>
+                <div class="dir-name">Jesús Manuel Lizarraga Pereda</div>
+                <div class="dir-meta">Mazatlán · Levantamientos y control topográfico</div>
+              </div>
+              <div class="dir-star">25 años exp.</div>
+              <div class="dir-chevron">⌄</div>
+            </div>
+            <div class="dir-detail"><div class="dir-detail-inner">
+              <div class="dir-detail-row"><b>Profesión:</b> Ingeniero Civil</div>
+              <div class="dir-detail-row"><b>Especialidad:</b> Topografía</div>
+              <div class="dir-detail-row"><b>Notas:</b> Control topográfico de obras, levantamientos topográficos, proyectos integrales de rasantes, cálculo de movimiento de tierras, deslinde de terrenos, peritajes topográficos</div>
+              <a class="dir-contact-btn" href="https://wa.me/526691423766" target="_blank">💬 Contactar por WhatsApp</a>
+            </div></div>
+          </div>
+
+          <div class="dir-card" data-tags="arquitectura">
+            <div class="dir-row" onclick="toggleDir(this)">
+              <div class="dir-ico">📐</div>
+              <div>
+                <div class="dir-name">Sergio Alberto Ibarra Arreola</div>
+                <div class="dir-meta">Mazatlán · Despacho de arquitectura y diseño</div>
+              </div>
+              <div class="dir-star">30 años exp.</div>
+              <div class="dir-chevron">⌄</div>
+            </div>
+            <div class="dir-detail"><div class="dir-detail-inner">
+              <div class="dir-detail-row"><b>Profesión:</b> Arquitecto</div>
+              <div class="dir-detail-row"><b>Especialidad:</b> Arquitectura</div>
+              <div class="dir-detail-row"><b>Notas:</b> Despacho de arquitectura y diseño</div>
+              <a class="dir-contact-btn" href="https://wa.me/526691590659" target="_blank">💬 Contactar por WhatsApp</a>
+            </div></div>
+          </div>
+
+          <div class="dir-card" data-tags="arquitectura valuacion">
+            <div class="dir-row" onclick="toggleDir(this)">
+              <div class="dir-ico">🏙️</div>
+              <div>
+                <div class="dir-name">José de Jesús Reyes Machain</div>
+                <div class="dir-meta">Mazatlán · Proyecto, obra y valuación inmobiliaria</div>
+              </div>
+              <div class="dir-star">17 años exp.</div>
+              <div class="dir-chevron">⌄</div>
+            </div>
+            <div class="dir-detail"><div class="dir-detail-inner">
+              <div class="dir-detail-row"><b>Profesión:</b> Arquitecto</div>
+              <div class="dir-detail-row"><b>Especialidad:</b> Diseño arquitectónico, construcción, valuación inmobiliaria y desarrollo urbano</div>
+              <div class="dir-detail-row"><b>Notas:</b> Proyecto, ejecución y supervisión de obra privada; elaboración de presupuestos; valuación de inmuebles y régimen de propiedad en condominio</div>
+              <a class="dir-contact-btn" href="https://wa.me/526699932639" target="_blank">💬 Contactar por WhatsApp</a>
+            </div></div>
+          </div>
+
+          <div class="dir-card" data-tags="valuacion">
+            <div class="dir-row" onclick="toggleDir(this)">
+              <div class="dir-ico">📊</div>
+              <div>
+                <div class="dir-name">Daniel Diaz Gamez</div>
+                <div class="dir-meta">Mazatlán · Valuación inmobiliaria</div>
+              </div>
+              <div class="dir-star">29 años exp.</div>
+              <div class="dir-chevron">⌄</div>
+            </div>
+            <div class="dir-detail"><div class="dir-detail-inner">
+              <div class="dir-detail-row"><b>Profesión:</b> Ingeniero Civil</div>
+              <div class="dir-detail-row"><b>Especialidad:</b> Gestoría y Administración de Proyectos</div>
+              <div class="dir-detail-row"><b>Notas:</b> Valuación inmobiliaria</div>
+              <a class="dir-contact-btn" href="https://wa.me/526699291410" target="_blank">💬 Contactar por WhatsApp</a>
+            </div></div>
+          </div>
+
+          <div class="dir-card" data-tags="valuacion">
+            <div class="dir-row" onclick="toggleDir(this)">
+              <div class="dir-ico">💼</div>
+              <div>
+                <div class="dir-name">José Israel Rojas Rodríguez</div>
+                <div class="dir-meta">Mazatlán · Valuación inmobiliaria, maquinaria y activos</div>
+              </div>
+              <div class="dir-star">20 años exp.</div>
+              <div class="dir-chevron">⌄</div>
+            </div>
+            <div class="dir-detail"><div class="dir-detail-inner">
+              <div class="dir-detail-row"><b>Profesión:</b> Ingeniero Civil</div>
+              <div class="dir-detail-row"><b>Especialidad:</b> Valuación de activos inmobiliarios, aeronáuticos y especializados</div>
+              <div class="dir-detail-row"><b>Notas:</b> Valuación inmobiliaria, maquinaria y equipo, activos aeronáuticos y análisis técnico-económico de activos complejos</div>
+              <a class="dir-contact-btn" href="https://wa.me/526699291384" target="_blank">💬 Contactar por WhatsApp</a>
+            </div></div>
+          </div>
+
+          <div class="dir-card" data-tags="estructuras">
+            <div class="dir-row" onclick="toggleDir(this)">
+              <div class="dir-ico">🧱</div>
+              <div>
+                <div class="dir-name">Carlos Venegas Arreola</div>
+                <div class="dir-meta">Mazatlán · Estructuras de concreto y acero · DRO</div>
+              </div>
+              <div class="dir-star">30 años exp.</div>
+              <div class="dir-chevron">⌄</div>
+            </div>
+            <div class="dir-detail"><div class="dir-detail-inner">
+              <div class="dir-detail-row"><b>Profesión:</b> Ingeniero Civil</div>
+              <div class="dir-detail-row"><b>Especialidad:</b> Estructuras</div>
+              <div class="dir-detail-row"><b>Notas:</b> Estructuras de concreto, estructuras de acero, servicio de DRO y corresponsable estructural</div>
+              <a class="dir-contact-btn" href="https://wa.me/526691066178" target="_blank">💬 Contactar por WhatsApp</a>
+            </div></div>
+          </div>
+
+          <div class="dir-card" data-tags="obracivil">
+            <div class="dir-row" onclick="toggleDir(this)">
+              <div class="dir-ico">👷</div>
+              <div>
+                <div class="dir-name">Ricardo Medina Paez</div>
+                <div class="dir-meta">Mazatlán · Obra residencial, comercial e infraestructura</div>
+              </div>
+              <div class="dir-star">10 años exp.</div>
+              <div class="dir-chevron">⌄</div>
+            </div>
+            <div class="dir-detail"><div class="dir-detail-inner">
+              <div class="dir-detail-row"><b>Profesión:</b> Ingeniero Civil</div>
+              <div class="dir-detail-row"><b>Especialidad:</b> Obra Civil e Instalaciones</div>
+              <div class="dir-detail-row"><b>Notas:</b> Obra residencial, comercial e infraestructura</div>
+              <a class="dir-contact-btn" href="https://wa.me/526691635365" target="_blank">💬 Contactar por WhatsApp</a>
+            </div></div>
+          </div>
+
+          <div class="dir-card" data-tags="obracivil">
+            <div class="dir-row" onclick="toggleDir(this)">
+              <div class="dir-ico">👷</div>
+              <div>
+                <div class="dir-name">Javier Alonso Chávez Pérez</div>
+                <div class="dir-meta">Mazatlán · Construcción y servicios de DRO</div>
+              </div>
+              <div class="dir-star">20 años exp.</div>
+              <div class="dir-chevron">⌄</div>
+            </div>
+            <div class="dir-detail"><div class="dir-detail-inner">
+              <div class="dir-detail-row"><b>Profesión:</b> Ingeniero Civil</div>
+              <div class="dir-detail-row"><b>Especialidad:</b> Obra Civil, Gestión y Supervisión</div>
+              <div class="dir-detail-row"><b>Notas:</b> Construcción y servicios de DRO</div>
+              <a class="dir-contact-btn" href="https://wa.me/526699231055" target="_blank">💬 Contactar por WhatsApp</a>
+            </div></div>
+          </div>
+
+          <div class="dir-card" data-tags="gestion">
+            <div class="dir-row" onclick="toggleDir(this)">
+              <div class="dir-ico">📋</div>
+              <div>
+                <div class="dir-name">Ricardo Bernal Pandeli</div>
+                <div class="dir-meta">Mazatlán · Gerencia de proyectos</div>
+              </div>
+              <div class="dir-star">10 años exp.</div>
+              <div class="dir-chevron">⌄</div>
+            </div>
+            <div class="dir-detail"><div class="dir-detail-inner">
+              <div class="dir-detail-row"><b>Profesión:</b> Ingeniero Civil</div>
+              <div class="dir-detail-row"><b>Especialidad:</b> Gestión y Supervisión</div>
+              <div class="dir-detail-row"><b>Notas:</b> Gerencia de proyectos</div>
+              <a class="dir-contact-btn" href="https://wa.me/526949569771" target="_blank">💬 Contactar por WhatsApp</a>
+            </div></div>
+          </div>
+
+          </div>
+
+          <div id="group-proveedores">
           <div class="sectionlabel">Proveedores · 7</div>
 
-          <div class="dir-row">
-            <div class="dir-ico">☀️</div>
-            <div>
-              <div class="dir-name">Solar Flux</div>
-              <div class="dir-meta">Mazatlán · Suministro e instalación de paneles solares</div>
+          <div class="dir-card" data-group="proveedor">
+            <div class="dir-row" onclick="toggleDir(this)">
+              <div class="dir-ico">☀️</div>
+              <div>
+                <div class="dir-name">Solar Flux</div>
+                <div class="dir-meta">Mazatlán · Suministro e instalación de paneles solares</div>
+              </div>
+              <div class="dir-chevron">⌄</div>
             </div>
+            <div class="dir-detail"><div class="dir-detail-inner">
+              <div class="dir-detail-row"><b>Categoría:</b> Energía solar / Paneles solares</div>
+              <div class="dir-detail-row"><b>Contacto:</b> Ing. José Carlos Vázquez</div>
+              <div class="dir-detail-row"><b>Notas:</b> Suministro e instalación de tecnología fotovoltaica</div>
+              <a class="dir-contact-btn" href="https://wa.me/526691473676" target="_blank">💬 Contactar por WhatsApp</a>
+            </div></div>
           </div>
-          <div class="dir-row">
-            <div class="dir-ico">🧱</div>
-            <div>
-              <div class="dir-name">SORIA Desarrollos</div>
-              <div class="dir-meta">Mazatlán · Prefabricados, premezclados, ferretería y maquinaria</div>
+
+          <div class="dir-card" data-group="proveedor">
+            <div class="dir-row" onclick="toggleDir(this)">
+              <div class="dir-ico">🧱</div>
+              <div>
+                <div class="dir-name">SORIA Desarrollos</div>
+                <div class="dir-meta">Mazatlán · Prefabricados, premezclados, ferretería y maquinaria</div>
+              </div>
+              <div class="dir-chevron">⌄</div>
             </div>
+            <div class="dir-detail"><div class="dir-detail-inner">
+              <div class="dir-detail-row"><b>Categoría:</b> Materiales prefabricados, premezclados, ferretería, arrendamiento de maquinaria pesada, construcción</div>
+              <div class="dir-detail-row"><b>Contacto:</b> Ing. Eloy Camacho Lizárraga</div>
+              <div class="dir-detail-row"><b>Notas:</b> Prefabricados (block, caseto, adoquín), agregados y cribados, concretos premezclados, ferretería en general y acabados, desarrollos y construcción de obra civil e infraestructura urbana</div>
+              <a class="dir-contact-btn" href="https://wa.me/526691489615" target="_blank">💬 Contactar por WhatsApp</a>
+            </div></div>
           </div>
-          <div class="dir-row">
-            <div class="dir-ico">🛠️</div>
-            <div>
-              <div class="dir-name">TDO en Fijación y Maquinaria</div>
-              <div class="dir-meta">Mazatlán y Culiacán · Maquinaria ligera, anclajes, Bosch/Hilti</div>
+
+          <div class="dir-card" data-group="proveedor">
+            <div class="dir-row" onclick="toggleDir(this)">
+              <div class="dir-ico">🛠️</div>
+              <div>
+                <div class="dir-name">TDO en Fijación y Maquinaria</div>
+                <div class="dir-meta">Mazatlán y Culiacán · Maquinaria ligera, anclajes, Bosch/Hilti</div>
+              </div>
+              <div class="dir-chevron">⌄</div>
             </div>
+            <div class="dir-detail"><div class="dir-detail-inner">
+              <div class="dir-detail-row"><b>Categoría:</b> Maquinaria ligera para construcción</div>
+              <div class="dir-detail-row"><b>Contacto:</b> Marco Antonio Plascencia Ulloa</div>
+              <div class="dir-detail-row"><b>Notas:</b> Revolvedoras, compactadoras, rodillos vibratorios, rompedores, rotomartillo, generadores, vibradores, torres de iluminación, soldadoras a gasolina, anclajes y taquetes (químicos, metálicos, plásticos), soportería, discos de diamante, abrasivos de corte, brocas para concreto y acero. Distribuidores Bosch, Hilti, Anclo e Index. Taller de servicio para maquinaria ligera y de la marca Bosch.</div>
+              <a class="dir-contact-btn" href="https://wa.me/526691160119" target="_blank">💬 Contactar por WhatsApp</a>
+            </div></div>
           </div>
-          <div class="dir-row">
-            <div class="dir-ico">🪵</div>
-            <div>
-              <div class="dir-name">Maz Espacio Carpintería</div>
-              <div class="dir-meta">Mazatlán · Muebles, closets, cocinas y puertas</div>
+
+          <div class="dir-card" data-group="proveedor">
+            <div class="dir-row" onclick="toggleDir(this)">
+              <div class="dir-ico">🪵</div>
+              <div>
+                <div class="dir-name">Maz Espacio Carpintería</div>
+                <div class="dir-meta">Mazatlán · Muebles, closets, cocinas y puertas</div>
+              </div>
+              <div class="dir-chevron">⌄</div>
             </div>
+            <div class="dir-detail"><div class="dir-detail-inner">
+              <div class="dir-detail-row"><b>Categoría:</b> Carpintería / Ebanistería</div>
+              <div class="dir-detail-row"><b>Contacto:</b> Felipe Salazar / Ricardo Medina</div>
+              <div class="dir-detail-row"><b>Notas:</b> Creación de muebles de alta calidad, closets, cocinas y puertas</div>
+              <a class="dir-contact-btn" href="https://wa.me/526691635365" target="_blank">💬 Contactar por WhatsApp</a>
+            </div></div>
           </div>
-          <div class="dir-row">
-            <div class="dir-ico">⚓</div>
-            <div>
-              <div class="dir-name">Grupo SAETI</div>
-              <div class="dir-meta">Mazatlán · Señalamiento marítimo y ayudas a la navegación</div>
+
+          <div class="dir-card" data-group="proveedor">
+            <div class="dir-row" onclick="toggleDir(this)">
+              <div class="dir-ico">⚓</div>
+              <div>
+                <div class="dir-name">Grupo SAETI</div>
+                <div class="dir-meta">Mazatlán · Señalamiento marítimo y ayudas a la navegación</div>
+              </div>
+              <div class="dir-chevron">⌄</div>
             </div>
+            <div class="dir-detail"><div class="dir-detail-inner">
+              <div class="dir-detail-row"><b>Categoría:</b> Señalamiento marítimo</div>
+              <div class="dir-detail-row"><b>Contacto:</b> Javier Chávez</div>
+              <div class="dir-detail-row"><b>Notas:</b> Proveedor autorizado de la marca Mesemar. Comercialización, venta, instalación y mantenimiento del señalamiento marítimo y ayudas a la navegación. Atiende el noroeste de México.</div>
+              <a class="dir-contact-btn" href="https://wa.me/526699231055" target="_blank">💬 Contactar por WhatsApp</a>
+            </div></div>
           </div>
-          <div class="dir-row">
-            <div class="dir-ico">⚡</div>
-            <div>
-              <div class="dir-name">Industrial Eléctrica del Pacífico</div>
-              <div class="dir-meta">Mazatlán · Mantenimiento y pruebas eléctricas a subestaciones y transformadores</div>
+
+          <div class="dir-card" data-group="proveedor">
+            <div class="dir-row" onclick="toggleDir(this)">
+              <div class="dir-ico">⚡</div>
+              <div>
+                <div class="dir-name">Industrial Eléctrica del Pacífico</div>
+                <div class="dir-meta">Mazatlán · Mantenimiento y pruebas eléctricas a subestaciones y transformadores</div>
+              </div>
+              <div class="dir-chevron">⌄</div>
             </div>
+            <div class="dir-detail"><div class="dir-detail-inner">
+              <div class="dir-detail-row"><b>Categoría:</b> Servicios eléctricos</div>
+              <div class="dir-detail-row"><b>Contacto:</b> Eduardo Medina Hernández</div>
+              <div class="dir-detail-row"><b>Notas:</b> Mantenimiento preventivo y correctivo de subestaciones eléctricas, diagnóstico y reparación de transformadores, pruebas eléctricas a equipos de media tensión, filtración y análisis de aceite dieléctrico, servicios para instalaciones en media y baja tensión</div>
+              <a class="dir-contact-btn" href="https://wa.me/526691477967" target="_blank">💬 Contactar por WhatsApp</a>
+            </div></div>
           </div>
-          <div class="dir-row">
-            <div class="dir-ico">⚡</div>
-            <div>
-              <div class="dir-name">Técnica Industrial del Pacífico</div>
-              <div class="dir-meta">Mazatlán · Servicio técnico electricista</div>
+
+          <div class="dir-card" data-group="proveedor">
+            <div class="dir-row" onclick="toggleDir(this)">
+              <div class="dir-ico">⚡</div>
+              <div>
+                <div class="dir-name">Técnica Industrial del Pacífico</div>
+                <div class="dir-meta">Mazatlán · Servicio técnico electricista</div>
+              </div>
+              <div class="dir-chevron">⌄</div>
             </div>
+            <div class="dir-detail"><div class="dir-detail-inner">
+              <div class="dir-detail-row"><b>Categoría:</b> Servicios eléctricos</div>
+              <div class="dir-detail-row"><b>Contacto:</b> Diego Alberto Duran Osuna</div>
+              <div class="dir-detail-row"><b>Notas:</b> Técnico electricista</div>
+              <a class="dir-contact-btn" href="https://wa.me/526691132018" target="_blank">💬 Contactar por WhatsApp</a>
+            </div></div>
+          </div>
           </div>
         </section>
 
@@ -693,6 +889,14 @@
     document.querySelector('.app-body').scrollTop = 0;
   }
 
+  // directorio: expandir/colapsar tarjeta al tocarla
+  function toggleDir(headerEl){
+    const card = headerEl.closest('.dir-card');
+    const detail = card.querySelector('.dir-detail');
+    const isOpen = card.classList.toggle('open');
+    detail.style.maxHeight = isOpen ? (detail.scrollHeight + 20) + 'px' : '0px';
+  }
+
   // catpick selection (visual only)
   document.querySelectorAll('.catpick').forEach(c=>{
     c.addEventListener('click', ()=>{
@@ -700,12 +904,32 @@
       c.classList.add('on');
     });
   });
-  document.querySelectorAll('.chip').forEach(c=>{
-    c.addEventListener('click', ()=>{
-      document.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));
-      c.classList.add('on');
-    });
-  });
+
+  // directorio: filtrado real por especialidad
+  function filterDir(filterKey, btn){
+    document.querySelectorAll('#s-buscar .chip').forEach(c=>c.classList.remove('on'));
+    btn.classList.add('on');
+
+    const groupEsp = document.getElementById('group-especialistas');
+    const groupProv = document.getElementById('group-proveedores');
+    const espCards = groupEsp.querySelectorAll('.dir-card');
+
+    if(filterKey === 'todos'){
+      groupEsp.style.display = '';
+      groupProv.style.display = '';
+      espCards.forEach(c => c.style.display = '');
+    } else if(filterKey === 'proveedores'){
+      groupEsp.style.display = 'none';
+      groupProv.style.display = '';
+    } else {
+      groupProv.style.display = 'none';
+      groupEsp.style.display = '';
+      espCards.forEach(c => {
+        const tags = (c.dataset.tags || '').split(' ');
+        c.style.display = tags.includes(filterKey) ? '' : 'none';
+      });
+    }
+  }
 </script>
 
 </body>
