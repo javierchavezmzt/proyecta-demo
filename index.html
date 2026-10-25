@@ -939,6 +939,130 @@
     }
   }
 
+  // ===== DIRECTORIO EN VIVO (Supabase) =====
+  // Si falla la conexión, se quedan las tarjetas estáticas de arriba como respaldo.
+  const SUPABASE_URL = 'https://wycfcekpisedypybregi.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_dDSIrfPIyP-sD7RJj-5s1w_X8LqZSaQ'; // llave pública (la protege RLS)
+  const DIR_CACHE_KEY = 'proyecta_dir_v1';
+
+  function esc(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  }
+  function norm(s){
+    return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  }
+  function waLink(phone){
+    const d = String(phone || '').replace(/\D/g, '');
+    if(!d) return '';
+    return 'https://wa.me/' + (d.length === 10 ? '52' + d : d);
+  }
+  function waButton(phone){
+    const link = waLink(phone);
+    return link ? '<a class="dir-contact-btn" href="' + esc(link) + '" target="_blank" rel="noopener">💬 Contactar por WhatsApp</a>' : '';
+  }
+  function shortText(s, max){
+    const t = String(s || '').replace(/^[^A-Za-zÁÉÍÓÚÑáéíóúñ0-9]+/, '').trim();
+    if(!t) return '';
+    const first = t.split(/[;.]|, /)[0].trim();
+    const base = first.length >= 12 ? first : t;
+    return base.length > max ? base.slice(0, max - 1).trim() + '…' : base;
+  }
+  function espTags(r){
+    const t = norm([r.profesion, r.especialidad, r.especialidad_especifica].join(' '));
+    const tags = [];
+    if(/hidr/.test(t)) tags.push('hidraulica');
+    if(/maritim|costera/.test(t)) tags.push('maritima');
+    if(/topograf/.test(t)) tags.push('topografia');
+    if(/(^|[^a-z])estructur/.test(t)) tags.push('estructuras');
+    if(/arquitect/.test(t)) tags.push('arquitectura');
+    if(/valua/.test(t)) tags.push('valuacion');
+    if(/obra civil/.test(t)) tags.push('obracivil');
+    if(/gesti|supervis/.test(t)) tags.push('gestion');
+    return tags;
+  }
+  const ESP_ICONS = {hidraulica:'🚰', maritima:'⚓', topografia:'🗺️', estructuras:'🧱', arquitectura:'📐', valuacion:'📊', obracivil:'👷', gestion:'📋'};
+  function provIcon(cat){
+    const t = norm(cat);
+    if(/solar/.test(t)) return '☀️';
+    if(/electric/.test(t)) return '⚡';
+    if(/maritim|senalamiento/.test(t)) return '⚓';
+    if(/carpinter|ebanist/.test(t)) return '🪵';
+    if(/maquinaria/.test(t) && !/material|prefabric/.test(t)) return '🛠️';
+    if(/material|prefabric|ferret/.test(t)) return '🧱';
+    return '🏢';
+  }
+  function espCard(r){
+    const tags = espTags(r);
+    const icon = ESP_ICONS[tags.find(k => ESP_ICONS[k])] || '👷';
+    const meta = [r.ciudad, r.resumen || shortText(r.especialidad_especifica || r.especialidad, 58)].filter(Boolean).join(' · ');
+    const star = r.anos_experiencia ? '<div class="dir-star">' + esc(r.anos_experiencia) + ' años exp.</div>' : '';
+    return '<div class="dir-card" data-tags="' + esc(tags.join(' ')) + '">' +
+      '<div class="dir-row" onclick="toggleDir(this)">' +
+        '<div class="dir-ico">' + icon + '</div>' +
+        '<div><div class="dir-name">' + esc(r.nombre_completo) + '</div><div class="dir-meta">' + esc(meta) + '</div></div>' +
+        star + '<div class="dir-chevron">⌄</div>' +
+      '</div>' +
+      '<div class="dir-detail"><div class="dir-detail-inner">' +
+        (r.profesion ? '<div class="dir-detail-row"><b>Profesión:</b> ' + esc(r.profesion) + '</div>' : '') +
+        (r.especialidad ? '<div class="dir-detail-row"><b>Especialidad:</b> ' + esc(r.especialidad) + '</div>' : '') +
+        (r.especialidad_especifica ? '<div class="dir-detail-row"><b>Notas:</b> ' + esc(r.especialidad_especifica) + '</div>' : '') +
+        waButton(r.whatsapp) +
+      '</div></div></div>';
+  }
+  function provCard(r){
+    const meta = [r.ciudad_zona, r.resumen || shortText(r.categoria || r.notas, 58)].filter(Boolean).join(' · ');
+    return '<div class="dir-card" data-group="proveedor">' +
+      '<div class="dir-row" onclick="toggleDir(this)">' +
+        '<div class="dir-ico">' + provIcon(r.categoria) + '</div>' +
+        '<div><div class="dir-name">' + esc(r.nombre_empresa) + '</div><div class="dir-meta">' + esc(meta) + '</div></div>' +
+        '<div class="dir-chevron">⌄</div>' +
+      '</div>' +
+      '<div class="dir-detail"><div class="dir-detail-inner">' +
+        (r.categoria ? '<div class="dir-detail-row"><b>Categoría:</b> ' + esc(r.categoria) + '</div>' : '') +
+        (r.contacto ? '<div class="dir-detail-row"><b>Contacto:</b> ' + esc(r.contacto) + '</div>' : '') +
+        (r.notas ? '<div class="dir-detail-row"><b>Notas:</b> ' + esc(r.notas) + '</div>' : '') +
+        waButton(r.whatsapp) +
+      '</div></div></div>';
+  }
+  function renderDirectorio(esp, prov){
+    if(!Array.isArray(esp) || !Array.isArray(prov) || (!esp.length && !prov.length)) return false;
+    const gE = document.getElementById('group-especialistas');
+    const gP = document.getElementById('group-proveedores');
+    gE.innerHTML = '<div class="sectionlabel">Especialistas · ' + esp.length + '</div>' + esp.map(espCard).join('');
+    gP.innerHTML = '<div class="sectionlabel">Proveedores · ' + prov.length + '</div>' + prov.map(provCard).join('');
+    return true;
+  }
+  async function sbGet(tabla, orden){
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 8000);
+    try{
+      const res = await fetch(SUPABASE_URL + '/rest/v1/' + tabla + '?select=*&order=' + orden, {
+        headers: { apikey: SUPABASE_KEY },
+        signal: ctrl.signal
+      });
+      if(!res.ok) throw new Error(tabla + ' ' + res.status);
+      return await res.json();
+    } finally { clearTimeout(timer); }
+  }
+  async function cargarDirectorio(){
+    try{
+      const [esp, prov] = await Promise.all([
+        sbGet('directorio_especialistas', 'id.asc'),
+        sbGet('directorio_proveedores', 'id.asc')
+      ]);
+      if(renderDirectorio(esp, prov)){
+        try{ localStorage.setItem(DIR_CACHE_KEY, JSON.stringify({esp, prov})); }catch(e){}
+      }
+    }catch(err){
+      // sin conexión o Supabase caído: usa la última copia buena, y si no hay, las tarjetas estáticas
+      try{
+        const c = JSON.parse(localStorage.getItem(DIR_CACHE_KEY) || 'null');
+        if(c) renderDirectorio(c.esp, c.prov);
+      }catch(e){}
+    }
+  }
+  cargarDirectorio();
+
   // registro del service worker para que la app sea instalable
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'proyecta-v1';
+const CACHE_NAME = 'proyecta-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -28,6 +28,11 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+  // Los datos en vivo (Supabase) y cualquier otro dominio NO se cachean aquí:
+  // van directo a la red para que el directorio siempre sea el actual.
+  if (url.origin !== self.location.origin || event.request.method !== 'GET') return;
+
   event.respondWith(
     caches.match(event.request).then((cached) => {
       const network = fetch(event.request)
