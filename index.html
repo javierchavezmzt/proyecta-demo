@@ -237,6 +237,11 @@
   .btn-gold:disabled{opacity:.6;cursor:default;}
   .btn-ghost{display:block;width:100%;text-align:center;padding:12px;border-radius:100px;background:transparent;
     border:1.5px solid var(--line);color:var(--navy);font-family:'Archivo';font-weight:700;font-size:13px;cursor:pointer;margin-top:10px;}
+  .sum-row{font-size:13px;color:#374151;margin-bottom:8px;line-height:1.45;}
+  .sum-row b{color:var(--navy);}
+  .sum-empty{font-size:12.5px;color:var(--muted);line-height:1.4;}
+  textarea.auth-input{display:block;}
+  select.auth-input{appearance:auto;}
   .demo-label{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:800;color:var(--navy);opacity:.55;margin:8px 0 10px;}
 
   /* publicar */
@@ -884,7 +889,48 @@
               <div class="auth-title">Tu cuenta está activa ✓</div>
               <div class="auth-sub" id="me-status" style="margin-bottom:0">Verificando tu perfil…</div>
             </div>
-            <button type="button" class="btn-ghost" onclick="authLogout()">Cerrar sesión</button>
+
+            <!-- resumen del perfil -->
+            <div class="auth-card" id="me-summary" style="display:none">
+              <div class="auth-title" id="sum-title">Tu perfil</div>
+              <div class="sum-row" id="row-rol"><b>Rol:</b> <span id="sum-rol"></span></div>
+              <div class="sum-row" id="row-esp"><b>Especialidad:</b> <span id="sum-esp"></span></div>
+              <div class="sum-row" id="row-ciudad"><b>Ciudad:</b> <span id="sum-ciudad"></span></div>
+              <div class="sum-row" id="row-anos"><b>Experiencia:</b> <span id="sum-anos"></span></div>
+              <div class="sum-row" id="row-bio"><b>Sobre mí:</b> <span id="sum-bio"></span></div>
+              <div class="sum-empty" id="sum-empty">Aún no has completado tu perfil. Cuéntale al gremio quién eres.</div>
+            </div>
+            <button type="button" class="btn-gold" id="me-edit-btn" onclick="profileEditOpen()" style="display:none">Editar perfil</button>
+
+            <!-- formulario de edición -->
+            <div class="auth-card" id="me-edit" style="display:none">
+              <div class="auth-title">Editar perfil</div>
+              <div class="auth-sub">Esto es lo que verá el gremio. Tu correo y tu contraseña no se muestran.</div>
+              <input class="auth-input" id="pf-nombre" type="text" placeholder="Nombre completo" autocomplete="name" maxlength="80">
+              <select class="auth-input" id="pf-rol">
+                <option value="">¿Cuál es tu rol?</option>
+                <option>Ing. Civil</option>
+                <option>Arquitecto</option>
+                <option>Técnico o residente de obra</option>
+                <option>Estudiante</option>
+                <option>Proveedor</option>
+                <option>Otro</option>
+              </select>
+              <input class="auth-input" id="pf-esp" type="text" list="pf-esp-list" placeholder="Especialidad (ej. Estructuras)" maxlength="60">
+              <datalist id="pf-esp-list">
+                <option value="Estructuras"><option value="Topografía"><option value="Hidráulica">
+                <option value="Arquitectura"><option value="Obra civil"><option value="Valuación">
+                <option value="Gestión y supervisión"><option value="Instalaciones"><option value="Presupuestos">
+              </datalist>
+              <input class="auth-input" id="pf-ciudad" type="text" placeholder="Ciudad (ej. Mazatlán)" maxlength="60">
+              <input class="auth-input" id="pf-anos" type="number" inputmode="numeric" min="0" max="70" placeholder="Años de experiencia">
+              <textarea class="auth-input" id="pf-bio" rows="3" maxlength="280" placeholder="Sobre mí (máx. 280 caracteres)" style="resize:none"></textarea>
+              <div class="auth-msg" id="pf-msg"></div>
+              <button type="button" class="btn-gold" id="pf-save" onclick="profileSave()">Guardar</button>
+              <button type="button" class="btn-ghost" onclick="profileEditClose()">Cancelar</button>
+            </div>
+
+            <button type="button" class="btn-ghost" id="me-logout" onclick="authLogout()">Cerrar sesión</button>
           </div>
 
           <!-- ejemplo de perfil (solo se muestra sin sesión) -->
@@ -1252,14 +1298,16 @@
     const st = document.getElementById('me-status');
     st.textContent = 'Verificando tu perfil…';
     try{
-      const res = await fetch(SUPABASE_URL + '/rest/v1/profiles?select=nombre_completo&id=eq.' + encodeURIComponent(u.id), {
+      const res = await fetch(SUPABASE_URL + '/rest/v1/profiles?select=*&id=eq.' + encodeURIComponent(u.id), {
         headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + authSession.access_token }
       });
       if(!res.ok) throw new Error('profiles ' + res.status);
       const rows = await res.json();
       if(rows.length){
+        meProfile = rows[0];
         setUser(rows[0].nombre_completo || metaName);
         st.textContent = 'Tu perfil quedó guardado en la base de datos de Proyecta.';
+        profileRenderSummary();
       } else {
         st.textContent = 'Tu cuenta existe, pero tu perfil aún no se creó en la base de datos.';
       }
@@ -1267,6 +1315,101 @@
       st.textContent = 'Sesión iniciada. No se pudo verificar tu perfil ahora mismo.';
     }
   }
+  // ===== EDITAR PERFIL =====
+  let meProfile = null;
+
+  function profileRenderSummary(){
+    const p = meProfile || {};
+    const rows = [
+      ['row-rol', 'sum-rol', p.rol],
+      ['row-esp', 'sum-esp', p.especialidad],
+      ['row-ciudad', 'sum-ciudad', p.ciudad],
+      ['row-anos', 'sum-anos', (p.anos_experiencia || p.anos_experiencia === 0) ? p.anos_experiencia + ' años' : ''],
+      ['row-bio', 'sum-bio', p.bio]
+    ];
+    let filled = 0;
+    rows.forEach(([row, span, val]) => {
+      document.getElementById(span).textContent = val || '';
+      document.getElementById(row).style.display = val ? '' : 'none';
+      if(val) filled++;
+    });
+    document.getElementById('sum-empty').style.display = filled ? 'none' : '';
+    document.getElementById('me-summary').style.display = '';
+    const btn = document.getElementById('me-edit-btn');
+    btn.textContent = filled ? 'Editar perfil' : 'Completar mi perfil';
+    btn.style.display = '';
+  }
+  function profileEditOpen(){
+    const p = meProfile || {};
+    document.getElementById('pf-nombre').value = p.nombre_completo || '';
+    document.getElementById('pf-rol').value = p.rol || '';
+    document.getElementById('pf-esp').value = p.especialidad || '';
+    document.getElementById('pf-ciudad').value = p.ciudad || '';
+    document.getElementById('pf-anos').value = (p.anos_experiencia === 0 || p.anos_experiencia) ? p.anos_experiencia : '';
+    document.getElementById('pf-bio').value = p.bio || '';
+    document.getElementById('pf-msg').textContent = '';
+    document.getElementById('me-summary').style.display = 'none';
+    document.getElementById('me-edit-btn').style.display = 'none';
+    document.getElementById('me-logout').style.display = 'none';
+    document.getElementById('me-edit').style.display = '';
+  }
+  function profileEditClose(){
+    document.getElementById('me-edit').style.display = 'none';
+    document.getElementById('me-logout').style.display = '';
+    profileRenderSummary();
+  }
+  function pfMsg(text, kind){
+    const el = document.getElementById('pf-msg');
+    el.textContent = text || '';
+    el.className = 'auth-msg' + (kind ? ' ' + kind : '');
+  }
+  async function profileSave(){
+    if(!authSession) return;
+    const nombre = document.getElementById('pf-nombre').value.trim();
+    const anosRaw = document.getElementById('pf-anos').value.trim();
+    const anos = anosRaw === '' ? null : Number(anosRaw);
+    if(nombre.length < 3){ pfMsg('Escribe tu nombre completo.', 'err'); return; }
+    if(anos !== null && (!Number.isInteger(anos) || anos < 0 || anos > 70)){ pfMsg('Los años de experiencia deben ser un número entero entre 0 y 70.', 'err'); return; }
+    const body = {
+      nombre_completo: nombre,
+      rol: document.getElementById('pf-rol').value || null,
+      especialidad: document.getElementById('pf-esp').value.trim() || null,
+      ciudad: document.getElementById('pf-ciudad').value.trim() || null,
+      anos_experiencia: anos,
+      bio: document.getElementById('pf-bio').value.trim().slice(0, 280) || null
+    };
+    const btn = document.getElementById('pf-save');
+    btn.disabled = true; btn.textContent = 'Guardando…';
+    pfMsg('');
+    try{
+      const now = Math.floor(Date.now()/1000);
+      if(!authSession.expires_at || authSession.expires_at < now + 30){ await authRefresh(); }
+      if(!authSession) throw new Error('Tu sesión venció. Vuelve a entrar.');
+      const res = await fetch(SUPABASE_URL + '/rest/v1/profiles?id=eq.' + encodeURIComponent(authSession.user.id), {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: SUPABASE_KEY,
+          Authorization: 'Bearer ' + authSession.access_token,
+          Prefer: 'return=representation'
+        },
+        body: JSON.stringify(body)
+      });
+      if(!res.ok) throw new Error('No se pudo guardar (' + res.status + ').');
+      const rows = await res.json();
+      if(!rows.length) throw new Error('No se pudo guardar tu perfil. Intenta salir y volver a entrar.');
+      meProfile = rows[0];
+      document.getElementById('me-name').textContent = meProfile.nombre_completo;
+      const parts = meProfile.nombre_completo.split(/\s+/);
+      document.getElementById('me-avatar').textContent = (((parts[0]||'')[0]||'') + ((parts[1]||'')[0]||'')).toUpperCase() || '·';
+      profileEditClose();
+    }catch(e){
+      pfMsg(e instanceof TypeError ? 'Sin conexión. Intenta de nuevo.' : e.message, 'err');
+    }finally{
+      btn.disabled = false; btn.textContent = 'Guardar';
+    }
+  }
+
   async function authInit(){
     authSession = authLoad();
     if(authSession){
