@@ -220,6 +220,25 @@
     padding:8px 14px;border-radius:100px;text-decoration:none;
   }
 
+  /* cuenta: registro y login */
+  .auth-card{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:16px;}
+  .auth-title{font-size:15px;font-weight:800;color:var(--navy);margin-bottom:4px;}
+  .auth-sub{font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.4;}
+  .auth-tabs{display:flex;gap:6px;margin-bottom:12px;}
+  .auth-tab{flex:1;text-align:center;padding:9px;border-radius:100px;border:1.5px solid var(--line);
+    font-size:12.5px;font-weight:700;color:var(--ink);background:var(--paper);cursor:pointer;font-family:'Archivo';}
+  .auth-tab.on{background:var(--navy);border-color:var(--navy);color:#fff;}
+  .auth-input{width:100%;box-sizing:border-box;padding:12px 14px;margin-bottom:10px;border-radius:12px;
+    border:1.5px solid var(--line);background:#fff;font-family:'Archivo';font-size:14px;color:var(--ink);outline:none;}
+  .auth-input:focus{border-color:var(--navy);}
+  .auth-msg{font-size:12px;line-height:1.4;margin:2px 0 10px;min-height:0;}
+  .auth-msg.err{color:#b3261e;}
+  .auth-msg.ok{color:#2f6b3d;}
+  .btn-gold:disabled{opacity:.6;cursor:default;}
+  .btn-ghost{display:block;width:100%;text-align:center;padding:12px;border-radius:100px;background:transparent;
+    border:1.5px solid var(--line);color:var(--navy);font-family:'Archivo';font-weight:700;font-size:13px;cursor:pointer;margin-top:10px;}
+  .demo-label{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:800;color:var(--navy);opacity:.55;margin:8px 0 10px;}
+
   /* publicar */
   .cat-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;}
   .catpick{
@@ -838,6 +857,39 @@
 
         <!-- PERFIL -->
         <section class="screen" id="s-perfil">
+
+          <!-- cuenta: sin sesión -->
+          <div id="auth-out" class="auth-card">
+            <div class="auth-title">Únete a Proyecta</div>
+            <div class="auth-sub">Crea tu cuenta gratis para tener tu perfil y, muy pronto, publicar y participar en la comunidad.</div>
+            <div class="auth-tabs">
+              <button type="button" class="auth-tab on" id="tab-entrar" onclick="authSetMode('entrar')">Entrar</button>
+              <button type="button" class="auth-tab" id="tab-registro" onclick="authSetMode('registro')">Crear cuenta</button>
+            </div>
+            <input class="auth-input" id="auth-nombre" type="text" placeholder="Nombre completo" autocomplete="name" style="display:none">
+            <input class="auth-input" id="auth-correo" type="email" placeholder="Correo electrónico" autocomplete="email" inputmode="email">
+            <input class="auth-input" id="auth-pass" type="password" placeholder="Contraseña (mínimo 6 caracteres)" autocomplete="current-password">
+            <div class="auth-msg" id="auth-msg"></div>
+            <button type="button" class="btn-gold" id="auth-btn" onclick="authSubmit()">Entrar</button>
+          </div>
+
+          <!-- cuenta: con sesión -->
+          <div id="auth-in" style="display:none">
+            <div class="profile-head">
+              <div class="p-avatar" id="me-avatar">--</div>
+              <div class="p-name" id="me-name">—</div>
+              <div class="p-role" id="me-mail">—</div>
+            </div>
+            <div class="auth-card" style="margin-top:14px">
+              <div class="auth-title">Tu cuenta está activa ✓</div>
+              <div class="auth-sub" id="me-status" style="margin-bottom:0">Verificando tu perfil…</div>
+            </div>
+            <button type="button" class="btn-ghost" onclick="authLogout()">Cerrar sesión</button>
+          </div>
+
+          <!-- ejemplo de perfil (solo se muestra sin sesión) -->
+          <div id="perfil-demo">
+          <div class="demo-label">Así se verá tu perfil · ejemplo</div>
           <div class="profile-head">
             <div class="p-avatar">JC</div>
             <div class="p-name">Javier Chávez</div>
@@ -861,6 +913,7 @@
           </div>
 
           <button class="btn-gold" type="button">Editar perfil</button>
+          </div>
         </section>
 
       </div>
@@ -1062,6 +1115,169 @@
     }
   }
   cargarDirectorio();
+
+  // ===== CUENTA: registro, login y sesión (Supabase Auth) =====
+  const AUTH_KEY = 'proyecta_session_v1';
+  let authSession = null;
+  let authMode = 'entrar';
+
+  function authStore(s){
+    try{ if(s) localStorage.setItem(AUTH_KEY, JSON.stringify(s)); else localStorage.removeItem(AUTH_KEY); }catch(e){}
+  }
+  function authLoad(){
+    try{ return JSON.parse(localStorage.getItem(AUTH_KEY) || 'null'); }catch(e){ return null; }
+  }
+  function authNormalize(d){
+    return {
+      access_token: d.access_token,
+      refresh_token: d.refresh_token,
+      expires_at: d.expires_at || (Math.floor(Date.now()/1000) + (d.expires_in || 3600)),
+      user: d.user
+    };
+  }
+  async function authCall(path, body, token){
+    const headers = { 'Content-Type': 'application/json', apikey: SUPABASE_KEY };
+    if(token) headers.Authorization = 'Bearer ' + token;
+    const res = await fetch(SUPABASE_URL + path, { method: 'POST', headers: headers, body: JSON.stringify(body || {}) });
+    let data = {};
+    try{ data = await res.json(); }catch(e){}
+    if(!res.ok){
+      const err = new Error(data.msg || data.error_description || data.message || ('Error ' + res.status));
+      err.code = data.error_code || data.code || '';
+      err.status = res.status;
+      throw err;
+    }
+    return data;
+  }
+  function authErrorMsg(e){
+    const c = String(e.code || '');
+    const m = String(e.message || '').toLowerCase();
+    if(c === 'invalid_credentials' || m.includes('invalid login')) return 'Correo o contraseña incorrectos.';
+    if(c === 'email_not_confirmed') return 'Falta confirmar tu correo. Revisa tu bandeja (y la carpeta de spam).';
+    if(c === 'user_already_exists' || c === 'email_exists' || m.includes('already registered')) return 'Ese correo ya tiene cuenta. Prueba en "Entrar".';
+    if(c === 'weak_password') return 'La contraseña es muy débil. Usa al menos 6 caracteres.';
+    if(c === 'validation_failed' || m.includes('valid email')) return 'Revisa que el correo esté bien escrito.';
+    if(c.includes('rate_limit') || e.status === 429) return 'Demasiados intentos seguidos. Espera unos minutos e intenta de nuevo.';
+    if(c === 'signup_disabled') return 'Los registros están cerrados por ahora.';
+    if(e instanceof TypeError) return 'Sin conexión. Revisa tu internet e intenta de nuevo.';
+    return 'No se pudo completar: ' + e.message;
+  }
+  function authMsg(text, kind){
+    const el = document.getElementById('auth-msg');
+    el.textContent = text || '';
+    el.className = 'auth-msg' + (kind ? ' ' + kind : '');
+  }
+  function authSetMode(mode){
+    authMode = mode;
+    const reg = mode === 'registro';
+    document.getElementById('tab-entrar').classList.toggle('on', !reg);
+    document.getElementById('tab-registro').classList.toggle('on', reg);
+    document.getElementById('auth-nombre').style.display = reg ? '' : 'none';
+    document.getElementById('auth-pass').autocomplete = reg ? 'new-password' : 'current-password';
+    document.getElementById('auth-btn').textContent = reg ? 'Crear mi cuenta' : 'Entrar';
+    authMsg('');
+  }
+  async function authSubmit(){
+    const nombre = document.getElementById('auth-nombre').value.trim();
+    const correo = document.getElementById('auth-correo').value.trim();
+    const pass = document.getElementById('auth-pass').value;
+    const btn = document.getElementById('auth-btn');
+    if(authMode === 'registro' && nombre.length < 3){ authMsg('Escribe tu nombre completo.', 'err'); return; }
+    if(!correo){ authMsg('Escribe tu correo.', 'err'); return; }
+    if(pass.length < 6){ authMsg('La contraseña debe tener al menos 6 caracteres.', 'err'); return; }
+    btn.disabled = true;
+    const label = btn.textContent;
+    btn.textContent = 'Un momento…';
+    authMsg('');
+    try{
+      let data;
+      if(authMode === 'registro'){
+        data = await authCall('/auth/v1/signup', { email: correo, password: pass, data: { nombre_completo: nombre } });
+        if(!data.access_token){
+          authMsg('Cuenta creada. Te mandamos un correo para confirmarla; ábrelo y luego entra aquí.', 'ok');
+          authSetMode('entrar');
+          return;
+        }
+      } else {
+        data = await authCall('/auth/v1/token?grant_type=password', { email: correo, password: pass });
+      }
+      authSession = authNormalize(data);
+      authStore(authSession);
+      document.getElementById('auth-pass').value = '';
+      await authRender();
+    }catch(e){
+      authMsg(authErrorMsg(e), 'err');
+    }finally{
+      btn.disabled = false;
+      btn.textContent = (authMode === 'registro') ? 'Crear mi cuenta' : 'Entrar';
+    }
+  }
+  async function authLogout(){
+    const tok = authSession && authSession.access_token;
+    authSession = null;
+    authStore(null);
+    try{ if(tok) await authCall('/auth/v1/logout', {}, tok); }catch(e){}
+    await authRender();
+  }
+  async function authRefresh(){
+    if(!authSession || !authSession.refresh_token) return false;
+    try{
+      const data = await authCall('/auth/v1/token?grant_type=refresh_token', { refresh_token: authSession.refresh_token });
+      authSession = authNormalize(data);
+      authStore(authSession);
+      return true;
+    }catch(e){
+      if(e.status === 400 || e.status === 401 || e.status === 403){ authSession = null; authStore(null); }
+      return false;
+    }
+  }
+  async function authRender(){
+    const logged = !!(authSession && authSession.user);
+    document.getElementById('auth-out').style.display = logged ? 'none' : '';
+    document.getElementById('auth-in').style.display = logged ? '' : 'none';
+    document.getElementById('perfil-demo').style.display = logged ? 'none' : '';
+    if(!logged) return;
+
+    const u = authSession.user;
+    const metaName = (u.user_metadata && u.user_metadata.nombre_completo) || (u.email || '').split('@')[0];
+    const setUser = (name) => {
+      const parts = String(name).trim().split(/\s+/);
+      const ini = ((parts[0] || '')[0] || '') + ((parts[1] || '')[0] || '');
+      document.getElementById('me-avatar').textContent = (ini || '·').toUpperCase();
+      document.getElementById('me-name').textContent = name;
+      document.getElementById('me-mail').textContent = u.email || '';
+    };
+    setUser(metaName);
+
+    const st = document.getElementById('me-status');
+    st.textContent = 'Verificando tu perfil…';
+    try{
+      const res = await fetch(SUPABASE_URL + '/rest/v1/profiles?select=nombre_completo&id=eq.' + encodeURIComponent(u.id), {
+        headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + authSession.access_token }
+      });
+      if(!res.ok) throw new Error('profiles ' + res.status);
+      const rows = await res.json();
+      if(rows.length){
+        setUser(rows[0].nombre_completo || metaName);
+        st.textContent = 'Tu perfil quedó guardado en la base de datos de Proyecta.';
+      } else {
+        st.textContent = 'Tu cuenta existe, pero tu perfil aún no se creó en la base de datos.';
+      }
+    }catch(e){
+      st.textContent = 'Sesión iniciada. No se pudo verificar tu perfil ahora mismo.';
+    }
+  }
+  async function authInit(){
+    authSession = authLoad();
+    if(authSession){
+      const now = Math.floor(Date.now()/1000);
+      if(!authSession.expires_at || authSession.expires_at < now + 60){
+        await authRefresh();
+      }
+    }
+    await authRender();
+  }
+  authInit();
 
   // registro del service worker para que la app sea instalable
   if ('serviceWorker' in navigator) {
