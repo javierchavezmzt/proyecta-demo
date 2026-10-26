@@ -333,6 +333,12 @@
 
   /* ---- feed real, publicar, instalar, QR ---- */
   button,textarea,select,input{font-family:'Archivo',sans-serif;}
+  .pass-wrap{position:relative;margin-bottom:10px;}
+  .pass-wrap .auth-input{margin-bottom:0;padding-right:92px;}
+  .pass-toggle{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:none;background:transparent;
+    color:var(--navy);font-family:'Archivo',sans-serif;font-weight:800;font-size:12.5px;padding:9px 12px;border-radius:100px;cursor:pointer;}
+  .pass-toggle:hover{background:rgba(10,31,61,.07);}
+  .auth-input{font-size:16px;}
   .tag.proveedor{background:var(--navy-3);}
   .tag.materiales{background:var(--brick);}
   .tag.equipo{background:var(--steel);}
@@ -873,7 +879,10 @@
             </div>
             <input class="auth-input" id="auth-nombre" type="text" placeholder="Nombre completo" autocomplete="name" style="display:none">
             <input class="auth-input" id="auth-correo" type="email" placeholder="Correo electrónico" autocomplete="email" inputmode="email">
-            <input class="auth-input" id="auth-pass" type="password" placeholder="Contraseña (mínimo 6 caracteres)" autocomplete="current-password">
+            <div class="pass-wrap">
+              <input class="auth-input" id="auth-pass" type="password" placeholder="Contraseña (mínimo 6 caracteres)" autocomplete="current-password">
+              <button type="button" class="pass-toggle" id="pass-toggle" onclick="passToggle()" aria-label="Mostrar contraseña" aria-pressed="false">Mostrar</button>
+            </div>
             <div class="auth-msg" id="auth-msg"></div>
             <button type="button" class="btn-gold" id="auth-btn" onclick="authSubmit()">Entrar</button>
           </div>
@@ -1229,6 +1238,7 @@
     document.getElementById('tab-registro').classList.toggle('on', reg);
     document.getElementById('auth-nombre').style.display = reg ? '' : 'none';
     document.getElementById('auth-pass').autocomplete = reg ? 'new-password' : 'current-password';
+    if(window.passHide) window.passHide();
     document.getElementById('auth-btn').textContent = reg ? 'Crear mi cuenta' : 'Entrar';
     authMsg('');
   }
@@ -1290,6 +1300,7 @@
   async function authRender(){
     const logged = !!(authSession && authSession.user);
     if(window.pubRender) window.pubRender(logged);
+    if(window.passHide) window.passHide();
     if(window.feedRender) window.feedRender();
     document.getElementById('auth-out').style.display = logged ? 'none' : '';
     document.getElementById('auth-in').style.display = logged ? '' : 'none';
@@ -1425,6 +1436,28 @@
     }
   }
 
+
+  // ===== VER / OCULTAR CONTRASEÑA =====
+  function passToggle(){
+    const inp = document.getElementById('auth-pass');
+    const btn = document.getElementById('pass-toggle');
+    const show = inp.type === 'password';
+    inp.type = show ? 'text' : 'password';
+    btn.textContent = show ? 'Ocultar' : 'Mostrar';
+    btn.setAttribute('aria-label', show ? 'Ocultar contraseña' : 'Mostrar contraseña');
+    btn.setAttribute('aria-pressed', show ? 'true' : 'false');
+    inp.focus();
+    try{ const n = inp.value.length; inp.setSelectionRange(n, n); }catch(e){}
+  }
+  function passHide(){
+    const inp = document.getElementById('auth-pass');
+    const btn = document.getElementById('pass-toggle');
+    if(!inp || !btn) return;
+    inp.type = 'password';
+    btn.textContent = 'Mostrar';
+    btn.setAttribute('aria-label', 'Mostrar contraseña');
+    btn.setAttribute('aria-pressed', 'false');
+  }
 
   // ===== FEED: publicaciones reales (Supabase) =====
   const FEED_CACHE_KEY = 'proyecta_feed_v1';
@@ -1595,6 +1628,7 @@
     form.style.display = logged ? '' : 'none';
   }
   window.pubRender = pubRender;
+  window.passHide = passHide;
 
   async function pubSend(){
     const ta = document.getElementById('pub-text');
