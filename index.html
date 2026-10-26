@@ -233,7 +233,7 @@
   .auth-input:focus{border-color:var(--navy);}
   .auth-msg{font-size:12px;line-height:1.4;margin:2px 0 10px;min-height:0;}
   .auth-msg.err{color:#b3261e;}
-  .auth-msg.ok{color:#2f6b3d;}
+  .auth-msg.ok{color:#2f6b3d;background:#eaf4ec;border:1px solid #cfe5d3;border-radius:12px;padding:10px 12px;font-weight:600;}
   .btn-gold:disabled{opacity:.6;cursor:default;}
   .btn-ghost{display:block;width:100%;text-align:center;padding:12px;border-radius:100px;background:transparent;
     border:1.5px solid var(--line);color:var(--navy);font-family:'Archivo';font-weight:700;font-size:13px;cursor:pointer;margin-top:10px;}
@@ -1240,8 +1240,9 @@
       if(authMode === 'registro'){
         data = await authCall('/auth/v1/signup', { email: correo, password: pass, data: { nombre_completo: nombre } });
         if(!data.access_token){
-          authMsg('Cuenta creada. Te mandamos un correo para confirmarla; ábrelo y luego entra aquí.', 'ok');
           authSetMode('entrar');
+          document.getElementById('auth-pass').value = '';
+          authMsg('✅ Cuenta creada. Te mandamos un correo a ' + correo + ' para verificarla. Ábrelo y toca el link de confirmación (si no lo ves, revisa Spam o Promociones). Después regresa y entra con tu correo y contraseña.', 'ok');
           return;
         }
       } else {
