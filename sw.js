@@ -1,9 +1,8 @@
-const CACHE_NAME = 'proyecta-v2';
+const CACHE_NAME = 'proyecta-v3';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
-  './colado-cimentacion.jpg',
   './icon-192.png',
   './icon-512.png',
   './icon-maskable-512.png'
@@ -28,18 +27,37 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url);
+  const req = event.request;
+  const url = new URL(req.url);
   // Los datos en vivo (Supabase) y cualquier otro dominio NO se cachean aquí:
-  // van directo a la red para que el directorio siempre sea el actual.
-  if (url.origin !== self.location.origin || event.request.method !== 'GET') return;
+  // van directo a la red para que feed y directorio siempre sean los actuales.
+  if (url.origin !== self.location.origin || req.method !== 'GET') return;
 
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const network = fetch(event.request)
+  // La página (index.html): primero la red, así cada actualización llega
+  // a la primera. Si no hay internet, se abre la última copia guardada.
+  if (req.mode === 'navigate') {
+    event.respondWith(
+      fetch(req)
         .then((response) => {
-          if (response && response.status === 200 && event.request.method === 'GET') {
+          if (response && response.status === 200) {
             const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+            caches.open(CACHE_NAME).then((cache) => cache.put(req, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(req).then((c) => c || caches.match('./index.html')))
+    );
+    return;
+  }
+
+  // Lo demás (íconos, manifest, imágenes): primero lo guardado, y se refresca en segundo plano.
+  event.respondWith(
+    caches.match(req).then((cached) => {
+      const network = fetch(req)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(req, clone));
           }
           return response;
         })
