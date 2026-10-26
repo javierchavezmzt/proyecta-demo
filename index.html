@@ -1489,7 +1489,7 @@
   // ===== FEED: publicaciones reales (Supabase) =====
   const FEED_CACHE_KEY = 'proyecta_feed_v2';
   const APP_URL = 'https://app.proyectalatam.com/';
-  const SEL_BASIC = 'id,categoria,contenido,creado_en,autor_id,autor:profiles(nombre_completo,rol,ciudad)';
+  const SEL_BASIC = 'id,categoria,contenido,creado_en,autor_id';
   const SEL_RICH = SEL_BASIC + ',n_likes:likes(count),n_com:comentarios(count)';
   const CATS = {
     'Mi obra':['🏗','obra'], 'Duda':['❓','duda'], 'Solución':['💡','solucion'], 'Especialista':['👷','especialista'],
@@ -1498,6 +1498,7 @@
   let feedRows = null;
   let feedBusy = false;
   let feedStamp = 0;
+  let feedErr = '';
   const openThreads = new Set();
   const threadCache = {};
 
@@ -1627,6 +1628,20 @@
     if(!authSession.expires_at || authSession.expires_at < now + 30){ await authRefresh(); }
     return authSession ? authSession.access_token : null;
   }
+  // Los autores se piden aparte (sin "embed"): así el feed no depende de cómo
+  // Supabase interprete las relaciones entre tablas.
+  async function attachAuthors(rows, headers){
+    const ids = Array.from(new Set(rows.map(r => r.autor_id).filter(Boolean)));
+    if(!ids.length) return;
+    try{
+      const res = await fetchTimeout(SUPABASE_URL + '/rest/v1/profiles?select=id,nombre_completo,rol,ciudad&id=in.(' + ids.map(encodeURIComponent).join(',') + ')', { headers: headers });
+      if(!res.ok) return;
+      const list = await res.json();
+      const map = {};
+      list.forEach(a => { map[a.id] = a; });
+      rows.forEach(r => { r.autor = map[r.autor_id] || r.autor || null; });
+    }catch(e){}
+  }
   function authHeaders(tok, extra){
     return Object.assign({ 'Content-Type': 'application/json', apikey: SUPABASE_KEY, Authorization: 'Bearer ' + tok }, extra || {});
   }
@@ -1652,6 +1667,7 @@
         p.nlikes = countOf(p.n_likes); p.ncom = countOf(p.n_com); p.liked = false;
         delete p.n_likes; delete p.n_com;
       });
+      await attachAuthors(rows, headers);
       if(tok && myId() && rows.length){
         try{
           const ids = rows.map(p => Number(p.id)).join(',');
@@ -1668,6 +1684,7 @@
       feedRender();
       if(manual) openThreads.forEach(id => threadLoad(id));
     }catch(err){
+      feedErr = String((err && err.message) || err || '').slice(0, 80);
       if(!feedRows){
         try{ const c = JSON.parse(localStorage.getItem(FEED_CACHE_KEY) || 'null'); if(Array.isArray(c)) feedRows = c; }catch(e){}
       }
@@ -1675,6 +1692,7 @@
         feedRender();
       } else {
         box.innerHTML = '<div class="feed-empty"><b>No se pudo cargar el feed</b>Revisa tu conexión e inténtalo de nuevo.' +
+          '<div class="th-note" style="margin-top:8px;">Detalle técnico: ' + esc(feedErr || 'sin respuesta') + '</div>' +
           '<button class="btn-ghost" type="button" onclick="feedLoad(true)">Reintentar</button></div>';
       }
     }finally{
@@ -1770,10 +1788,11 @@
       const headers = { apikey: SUPABASE_KEY };
       const tok = validToken();
       if(tok) headers.Authorization = 'Bearer ' + tok;
-      const res = await fetchTimeout(SUPABASE_URL + '/rest/v1/comentarios?select=id,contenido,creado_en,autor_id,autor:profiles(nombre_completo,rol)&post_id=eq.' + Number(id) + '&order=creado_en.asc&limit=100', { headers: headers });
+      const res = await fetchTimeout(SUPABASE_URL + '/rest/v1/comentarios?select=id,contenido,creado_en,autor_id&post_id=eq.' + Number(id) + '&order=creado_en.asc&limit=100', { headers: headers });
       if(!res.ok) throw new Error('comentarios ' + res.status);
       const rows = await res.json();
       if(!Array.isArray(rows)) throw new Error('formato');
+      await attachAuthors(rows, headers);
       threadCache[id] = rows;
       const p = findPost(id);
       if(p){ p.ncom = rows.length; paintCounts(p); feedSaveCache(); }
