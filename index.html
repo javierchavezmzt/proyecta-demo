@@ -1306,7 +1306,10 @@
       if(rows.length){
         meProfile = rows[0];
         setUser(rows[0].nombre_completo || metaName);
-        st.textContent = 'Tu perfil quedó guardado en la base de datos de Proyecta.';
+        st.textContent = window.__justConfirmed
+          ? '¡Correo confirmado! Tu cuenta ya está lista.'
+          : 'Tu perfil quedó guardado en la base de datos de Proyecta.';
+        window.__justConfirmed = false;
         profileRenderSummary();
       } else {
         st.textContent = 'Tu cuenta existe, pero tu perfil aún no se creó en la base de datos.';
@@ -1410,8 +1413,41 @@
     }
   }
 
+  // Regreso desde el link del correo de confirmación (Supabase manda los tokens en el # de la URL)
+  async function authHandleEmailLink(){
+    const h = location.hash || '';
+    if(!/access_token=|error_description=/.test(h)) return null;
+    const q = new URLSearchParams(h.replace(/^#/, ''));
+    try{ history.replaceState(null, '', location.pathname + location.search); }catch(e){}
+    const tok = q.get('access_token');
+    if(tok){
+      try{
+        const res = await fetch(SUPABASE_URL + '/auth/v1/user', { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + tok } });
+        if(res.ok){
+          const user = await res.json();
+          authSession = authNormalize({
+            access_token: tok,
+            refresh_token: q.get('refresh_token'),
+            expires_at: Number(q.get('expires_at')) || undefined,
+            expires_in: Number(q.get('expires_in')) || 3600,
+            user: user
+          });
+          authStore(authSession);
+          return 'ok';
+        }
+      }catch(e){}
+    }
+    return 'error';
+  }
+
   async function authInit(){
-    authSession = authLoad();
+    const linkResult = await authHandleEmailLink();
+    if(linkResult){
+      const btn = document.querySelector('.navbtn[data-screen="perfil"]');
+      go('perfil', btn);
+    }
+    if(linkResult === 'ok'){ window.__justConfirmed = true; }
+    if(!authSession) authSession = authLoad();
     if(authSession){
       const now = Math.floor(Date.now()/1000);
       if(!authSession.expires_at || authSession.expires_at < now + 60){
@@ -1419,6 +1455,9 @@
       }
     }
     await authRender();
+    if(linkResult === 'error' && !authSession){
+      authMsg('El link del correo venció o ya se usó. Entra con tu correo y contraseña; si no puedes, crea la cuenta de nuevo.', 'err');
+    }
   }
   authInit();
 
