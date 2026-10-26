@@ -371,6 +371,31 @@
   .qr-help{font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:6px;}
   @media (min-width:1000px){ .qr-side{display:block;} }
 
+
+  /* ---- interacción: me gusta, comentarios, compartir ---- */
+  .post-foot{align-items:center;flex-wrap:wrap;}
+  .post-foot .post-act{display:inline-flex;align-items:center;gap:5px;padding:4px 0;}
+  .post-act.liked{color:var(--brick);}
+  .post-act.on{color:var(--navy);}
+  .foot-end{margin-left:auto;display:flex;gap:12px;}
+  .thread{border-top:1px solid var(--line);margin-top:12px;padding-top:10px;}
+  .th-note{font-size:12px;color:var(--muted);padding:4px 0 8px;line-height:1.5;}
+  .th-c{background:#f6f3ec;border-radius:12px;padding:9px 11px;margin-bottom:8px;}
+  .th-meta{font-size:11px;color:var(--muted);margin-bottom:3px;}
+  .th-meta b{color:var(--ink);font-size:12.5px;}
+  .th-text{font-size:13px;line-height:1.45;color:#2b2f3a;word-break:break-word;}
+  .th-act{margin-top:5px;}
+  .th-form{display:flex;gap:8px;margin-top:4px;}
+  .th-input{flex:1;min-width:0;padding:10px 14px;border-radius:100px;border:1.5px solid var(--line);font-size:16px;outline:none;background:#fff;}
+  .th-input:focus{border-color:var(--navy);}
+  .th-send{padding:0 16px;border:none;border-radius:100px;cursor:pointer;font-weight:800;font-size:13px;
+    background:linear-gradient(155deg,var(--gold-2),var(--gold));color:var(--navy);}
+  .th-send:disabled{opacity:.6;cursor:default;}
+  .toast{position:absolute;left:50%;bottom:96px;transform:translateX(-50%) translateY(10px);background:var(--navy);color:#fff;
+    font-size:12.5px;font-weight:600;padding:10px 16px;border-radius:100px;opacity:0;pointer-events:none;
+    transition:opacity .2s, transform .2s;z-index:50;max-width:88%;text-align:center;line-height:1.35;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
   @media (max-width:600px){
     body{padding:0;background:var(--cream);}
     .rig-label{display:none;}
@@ -973,6 +998,8 @@
 
       </div>
 
+      <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
       <div class="navbar">
         <button class="navbtn active" data-screen="inicio" onclick="go('inicio', this)"><span class="ic">🏠</span>Inicio</button>
         <button class="navbtn" data-screen="herramientas" onclick="go('herramientas', this)"><span class="ic">🧰</span>Herramientas</button>
@@ -1460,7 +1487,10 @@
   }
 
   // ===== FEED: publicaciones reales (Supabase) =====
-  const FEED_CACHE_KEY = 'proyecta_feed_v1';
+  const FEED_CACHE_KEY = 'proyecta_feed_v2';
+  const APP_URL = 'https://app.proyectalatam.com/';
+  const SEL_BASIC = 'id,categoria,contenido,creado_en,autor_id,autor:profiles(nombre_completo,rol,ciudad)';
+  const SEL_RICH = SEL_BASIC + ',n_likes:likes(count),n_com:comentarios(count)';
   const CATS = {
     'Mi obra':['🏗','obra'], 'Duda':['❓','duda'], 'Solución':['💡','solucion'], 'Especialista':['👷','especialista'],
     'Vacante':['💼','vacante'], 'Proveedor':['🤝','proveedor'], 'Materiales':['🧱','materiales'], 'Equipo':['🚜','equipo']
@@ -1468,6 +1498,8 @@
   let feedRows = null;
   let feedBusy = false;
   let feedStamp = 0;
+  const openThreads = new Set();
+  const threadCache = {};
 
   function timeAgo(iso){
     const t = new Date(iso).getTime();
@@ -1487,7 +1519,58 @@
     return (((parts[0] || '')[0] || '') + ((parts[1] || '')[0] || '')).toUpperCase() || '·';
   }
   function myId(){ return authSession && authSession.user ? authSession.user.id : null; }
+  function countOf(arr){ return (Array.isArray(arr) && arr[0] && Number(arr[0].count)) || 0; }
+  function findPost(id){ return (feedRows || []).find(p => Number(p.id) === Number(id)); }
+  function fetchTimeout(url, opts, ms){
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), ms || 8000);
+    return fetch(url, Object.assign({}, opts || {}, { signal: ctrl.signal })).finally(() => clearTimeout(t));
+  }
+  function errText(e, fallback){
+    if(e && e.name === 'AbortError') return 'Tardó demasiado. Intenta de nuevo.';
+    if(e instanceof TypeError) return 'Sin conexión. Intenta de nuevo.';
+    return (e && e.message) || fallback || 'Algo falló. Intenta de nuevo.';
+  }
 
+  let toastTimer = null;
+  function showToast(msg){
+    const el = document.getElementById('toast');
+    if(!el) return;
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+  }
+  function needLogin(msg){
+    showToast(msg);
+    go('perfil', document.querySelector('.navbtn[data-screen="perfil"]'));
+  }
+
+  function heartSvg(on){
+    return '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="' + (on ? 'currentColor' : 'none') +
+      '" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 21s-7.5-4.6-9.5-9.2C1.2 8.6 3 5 6.5 5c2 0 3.4 1 5.5 3 2.1-2 3.5-3 5.5-3C21 5 22.8 8.6 21.5 11.8 19.5 16.4 12 21 12 21z"/></svg>';
+  }
+  function likeInner(p){ return heartSvg(!!p.liked) + ' ' + (p.nlikes || 0); }
+  function paintCounts(p){
+    const id = Number(p.id);
+    const lk = document.getElementById('lk-' + id);
+    if(lk){
+      lk.innerHTML = likeInner(p);
+      lk.classList.toggle('liked', !!p.liked);
+      lk.setAttribute('aria-pressed', p.liked ? 'true' : 'false');
+    }
+    const cm = document.getElementById('cm-' + id);
+    if(cm) cm.textContent = '💬 ' + (p.ncom || 0);
+  }
+
+  function threadForm(id){
+    if(!myId()){
+      return '<button class="btn-ghost" type="button" onclick="needLogin(\'Entra a tu cuenta para comentar\')">Entra para comentar</button>';
+    }
+    return '<div class="th-form"><input class="th-input" id="thi-' + id + '" type="text" maxlength="300" placeholder="Escribe un comentario…" ' +
+      'onkeydown="if(event.key===\'Enter\')threadSend(' + id + ')"><button class="th-send" id="ths-' + id + '" type="button" onclick="threadSend(' + id + ')">Enviar</button></div>' +
+      '<div class="auth-msg" id="thm-' + id + '"></div>';
+  }
   function feedCard(p){
     const a = p.autor || {};
     const name = a.nombre_completo || 'Miembro de Proyecta';
@@ -1500,28 +1583,39 @@
     } else if(myId()){
       act = '<button class="post-act" type="button" onclick="feedReport(' + id + ', this)">⚑ Reportar</button>';
     }
-    return '<div class="card">' +
+    const open = openThreads.has(id);
+    return '<div class="card" id="post-' + id + '">' +
       '<span class="tag ' + cat[1] + '">' + cat[0] + ' ' + esc(p.categoria || 'Publicación') + '</span>' +
       '<div class="post-head"><div class="avatar">' + esc(initialsOf(name)) + '</div><div>' +
         '<div class="post-name">' + esc(name) + '</div><div class="post-meta">' + esc(meta) + '</div></div></div>' +
       '<div class="post-text">' + esc(p.contenido).replace(/\n/g, '<br>') + '</div>' +
-      (act ? '<div class="post-foot">' + act + '</div>' : '') +
+      '<div class="post-foot">' +
+        '<button class="post-act' + (p.liked ? ' liked' : '') + '" id="lk-' + id + '" type="button" aria-pressed="' + (p.liked ? 'true' : 'false') + '" aria-label="Me gusta" onclick="likeToggle(' + id + ')">' + likeInner(p) + '</button>' +
+        '<button class="post-act' + (open ? ' on' : '') + '" id="cm-' + id + '" type="button" aria-label="Comentarios" onclick="threadToggle(' + id + ')">💬 ' + (p.ncom || 0) + '</button>' +
+        '<button class="post-act" type="button" onclick="feedShare(' + id + ')">↗ Compartir</button>' +
+        (act ? '<span class="foot-end">' + act + '</span>' : '') +
+      '</div>' +
+      '<div class="thread" id="th-' + id + '"' + (open ? '' : ' style="display:none"') + '><div id="thl-' + id + '"></div>' + threadForm(id) + '</div>' +
       '</div>';
   }
   function feedRender(){
     const box = document.getElementById('feed-list');
     if(!box || !feedRows) return;
+    const keep = {};
+    box.querySelectorAll('.th-input').forEach(i => { if(i.value) keep[i.id] = i.value; });
     if(!feedRows.length){
       box.innerHTML = '<div class="feed-empty"><b>Aún no hay publicaciones</b>Sé el primero en compartirle algo al gremio: una obra, una duda, una vacante.' +
         '<div style="margin-top:14px;"><button class="btn-gold" type="button" onclick="go(\'publicar\', document.querySelector(\'.navbtn.publish\'))">Publicar ahora</button></div></div>';
       return;
     }
     box.innerHTML = feedRows.map(feedCard).join('');
+    Object.keys(keep).forEach(k => { const el = document.getElementById(k); if(el) el.value = keep[k]; });
+    openThreads.forEach(id => threadPaint(id));
   }
   window.feedRender = feedRender;
 
   function feedSaveCache(){
-    try{ localStorage.setItem(FEED_CACHE_KEY, JSON.stringify(feedRows)); }catch(e){}
+    try{ localStorage.setItem(FEED_CACHE_KEY, JSON.stringify((feedRows || []).map(p => Object.assign({}, p, { liked: false, _busy: undefined })))); }catch(e){}
   }
   function validToken(){
     const now = Math.floor(Date.now() / 1000);
@@ -1533,27 +1627,46 @@
     if(!authSession.expires_at || authSession.expires_at < now + 30){ await authRefresh(); }
     return authSession ? authSession.access_token : null;
   }
+  function authHeaders(tok, extra){
+    return Object.assign({ 'Content-Type': 'application/json', apikey: SUPABASE_KEY, Authorization: 'Bearer ' + tok }, extra || {});
+  }
 
   async function feedLoad(manual){
     if(feedBusy) return;
     feedBusy = true;
     const box = document.getElementById('feed-list');
     if(manual && !feedRows) box.innerHTML = '<div class="feed-empty">Cargando publicaciones…</div>';
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 8000);
     try{
       const headers = { apikey: SUPABASE_KEY };
       const tok = validToken();
       if(tok) headers.Authorization = 'Bearer ' + tok;
-      const res = await fetch(SUPABASE_URL + '/rest/v1/posts?select=id,categoria,contenido,creado_en,autor_id,autor:profiles(nombre_completo,rol,ciudad)&order=creado_en.desc&limit=30',
-        { headers: headers, signal: ctrl.signal });
+      const base = SUPABASE_URL + '/rest/v1/posts?select=';
+      const tail = '&order=creado_en.desc&limit=30';
+      // Si faltan las tablas de me gusta/comentarios, cae al feed básico en vez de romperse.
+      let res = await fetchTimeout(base + SEL_RICH + tail, { headers: headers });
+      if(!res.ok) res = await fetchTimeout(base + SEL_BASIC + tail, { headers: headers });
       if(!res.ok) throw new Error('posts ' + res.status);
       const rows = await res.json();
       if(!Array.isArray(rows)) throw new Error('posts formato');
+      rows.forEach(p => {
+        p.nlikes = countOf(p.n_likes); p.ncom = countOf(p.n_com); p.liked = false;
+        delete p.n_likes; delete p.n_com;
+      });
+      if(tok && myId() && rows.length){
+        try{
+          const ids = rows.map(p => Number(p.id)).join(',');
+          const r2 = await fetchTimeout(SUPABASE_URL + '/rest/v1/likes?select=post_id&user_id=eq.' + encodeURIComponent(myId()) + '&post_id=in.(' + ids + ')', { headers: headers });
+          if(r2.ok){
+            const mine = new Set((await r2.json()).map(x => Number(x.post_id)));
+            rows.forEach(p => { p.liked = mine.has(Number(p.id)); });
+          }
+        }catch(e){}
+      }
       feedRows = rows;
       feedStamp = Date.now();
       feedSaveCache();
       feedRender();
+      if(manual) openThreads.forEach(id => threadLoad(id));
     }catch(err){
       if(!feedRows){
         try{ const c = JSON.parse(localStorage.getItem(FEED_CACHE_KEY) || 'null'); if(Array.isArray(c)) feedRows = c; }catch(e){}
@@ -1565,25 +1678,210 @@
           '<button class="btn-ghost" type="button" onclick="feedLoad(true)">Reintentar</button></div>';
       }
     }finally{
-      clearTimeout(timer);
       feedBusy = false;
     }
   }
   window.feedRefreshIfStale = function(){ if(Date.now() - feedStamp > 60000) feedLoad(); };
 
+  // ----- me gusta -----
+  async function likeToggle(id){
+    if(!myId()){ needLogin('Entra a tu cuenta para dar me gusta'); return; }
+    const p = findPost(id);
+    if(!p || p._busy) return;
+    p._busy = true;
+    const was = !!p.liked, prev = p.nlikes || 0;
+    p.liked = !was;
+    p.nlikes = Math.max(0, prev + (was ? -1 : 1));
+    paintCounts(p);
+    try{
+      const tok = await freshToken();
+      if(!tok) throw new Error('sesion');
+      let res;
+      if(!was){
+        res = await fetchTimeout(SUPABASE_URL + '/rest/v1/likes', {
+          method: 'POST', headers: authHeaders(tok, { Prefer: 'return=minimal' }),
+          body: JSON.stringify({ post_id: Number(id), user_id: myId() })
+        });
+        if(res.status === 409){ p.liked = true; p.nlikes = prev; paintCounts(p); return; } // ya lo tenía
+      } else {
+        res = await fetchTimeout(SUPABASE_URL + '/rest/v1/likes?post_id=eq.' + Number(id) + '&user_id=eq.' + encodeURIComponent(myId()), {
+          method: 'DELETE', headers: authHeaders(tok)
+        });
+      }
+      if(!res.ok) throw new Error('like ' + res.status);
+      feedSaveCache();
+    }catch(e){
+      p.liked = was; p.nlikes = prev; paintCounts(p);
+      showToast('No se pudo guardar tu me gusta. Intenta de nuevo.');
+    }finally{
+      p._busy = false;
+    }
+  }
+
+  // ----- compartir -----
+  async function feedShare(id){
+    const p = findPost(id);
+    if(!p) return;
+    const a = p.autor || {};
+    const nombre = a.nombre_completo || 'un miembro de Proyecta';
+    let ext = String(p.contenido || '').replace(/\s+/g, ' ').trim();
+    if(ext.length > 140) ext = ext.slice(0, 137).trimEnd() + '…';
+    const text = '“' + ext + '” — ' + nombre + ' en Proyecta, la comunidad de los que construyen.';
+    if(navigator.share){
+      try{ await navigator.share({ title: 'Proyecta', text: text, url: APP_URL }); }catch(e){ /* canceló */ }
+      return;
+    }
+    const full = text + '\n' + APP_URL;
+    try{
+      await navigator.clipboard.writeText(full);
+      showToast('Copiado. Pégalo donde quieras compartirlo.');
+    }catch(e){
+      window.prompt('Copia este texto para compartir:', full);
+    }
+  }
+
+  // ----- comentarios -----
+  function commentHtml(c, pid){
+    const a = c.autor || {};
+    const name = a.nombre_completo || 'Miembro de Proyecta';
+    const meta = [a.rol, timeAgo(c.creado_en)].filter(Boolean).join(' · ');
+    const cid = Number(c.id);
+    let act = '';
+    if(myId() && myId() === c.autor_id){
+      act = '<button class="post-act danger" type="button" onclick="commentDelete(' + cid + ',' + Number(pid) + ')">🗑 Borrar</button>';
+    } else if(myId()){
+      act = '<button class="post-act" type="button" onclick="commentReport(' + cid + ', this)">⚑ Reportar</button>';
+    }
+    return '<div class="th-c"><div class="th-meta"><b>' + esc(name) + '</b> · ' + esc(meta) + '</div>' +
+      '<div class="th-text">' + esc(c.contenido).replace(/\n/g, '<br>') + '</div>' +
+      (act ? '<div class="th-act">' + act + '</div>' : '') + '</div>';
+  }
+  function threadPaint(id){
+    const el = document.getElementById('thl-' + id);
+    if(!el) return;
+    const t = threadCache[id];
+    if(t === undefined) el.innerHTML = '<div class="th-note">Cargando comentarios…</div>';
+    else if(t === 'error') el.innerHTML = '<div class="th-note">No se pudieron cargar los comentarios. <button class="post-act" type="button" onclick="threadLoad(' + Number(id) + ')">Reintentar</button></div>';
+    else if(!t.length) el.innerHTML = '<div class="th-note">Aún no hay comentarios. Sé el primero en responder.</div>';
+    else el.innerHTML = t.map(c => commentHtml(c, id)).join('');
+  }
+  async function threadLoad(id){
+    try{
+      const headers = { apikey: SUPABASE_KEY };
+      const tok = validToken();
+      if(tok) headers.Authorization = 'Bearer ' + tok;
+      const res = await fetchTimeout(SUPABASE_URL + '/rest/v1/comentarios?select=id,contenido,creado_en,autor_id,autor:profiles(nombre_completo,rol)&post_id=eq.' + Number(id) + '&order=creado_en.asc&limit=100', { headers: headers });
+      if(!res.ok) throw new Error('comentarios ' + res.status);
+      const rows = await res.json();
+      if(!Array.isArray(rows)) throw new Error('formato');
+      threadCache[id] = rows;
+      const p = findPost(id);
+      if(p){ p.ncom = rows.length; paintCounts(p); feedSaveCache(); }
+    }catch(e){
+      threadCache[id] = 'error';
+    }
+    threadPaint(id);
+  }
+  function threadToggle(id){
+    const el = document.getElementById('th-' + id);
+    const btn = document.getElementById('cm-' + id);
+    if(!el) return;
+    if(openThreads.has(id)){
+      openThreads.delete(id); el.style.display = 'none'; if(btn) btn.classList.remove('on');
+      return;
+    }
+    openThreads.add(id); el.style.display = ''; if(btn) btn.classList.add('on');
+    threadPaint(id);
+    threadLoad(id);
+  }
+  function thMsg(id, text, kind){
+    const el = document.getElementById('thm-' + id);
+    if(!el) return;
+    el.textContent = text || '';
+    el.className = 'auth-msg' + (kind ? ' ' + kind : '');
+  }
+  async function threadSend(id){
+    const inp = document.getElementById('thi-' + id);
+    const btn = document.getElementById('ths-' + id);
+    if(!inp || !myId()) return;
+    const txt = inp.value.trim();
+    if(!txt){ thMsg(id, 'Escribe tu comentario.', 'err'); return; }
+    if(btn) btn.disabled = true;
+    thMsg(id, '');
+    try{
+      const tok = await freshToken();
+      if(!tok) throw new Error('Tu sesión venció. Vuelve a entrar desde Perfil.');
+      const res = await fetchTimeout(SUPABASE_URL + '/rest/v1/comentarios', {
+        method: 'POST', headers: authHeaders(tok, { Prefer: 'return=minimal' }),
+        body: JSON.stringify({ post_id: Number(id), autor_id: myId(), contenido: txt })
+      });
+      if(!res.ok){
+        let detail = '';
+        try{ detail = await res.text(); }catch(e){}
+        if(/limite_comentarios/.test(detail)) throw new Error('Llegaste al límite: máximo 20 comentarios por hora.');
+        if(res.status === 401 || res.status === 403) throw new Error('Tu sesión venció. Vuelve a entrar desde Perfil.');
+        throw new Error('No se pudo comentar (' + res.status + '). Intenta de nuevo.');
+      }
+      const cur = document.getElementById('thi-' + id);
+      if(cur) cur.value = '';
+      await threadLoad(id);
+    }catch(e){
+      thMsg(id, errText(e), 'err');
+    }finally{
+      const b2 = document.getElementById('ths-' + id);
+      if(b2) b2.disabled = false;
+    }
+  }
+  async function commentDelete(cid, pid){
+    if(!myId()) return;
+    if(!confirm('¿Borrar este comentario?')) return;
+    try{
+      const tok = await freshToken();
+      if(!tok) throw new Error('sesion');
+      const res = await fetchTimeout(SUPABASE_URL + '/rest/v1/comentarios?id=eq.' + Number(cid), {
+        method: 'DELETE', headers: authHeaders(tok, { Prefer: 'return=representation' })
+      });
+      if(!res.ok) throw new Error('delete ' + res.status);
+      const rows = await res.json();
+      if(!rows.length) throw new Error('sin permiso');
+      await threadLoad(pid);
+    }catch(e){
+      alert('No se pudo borrar el comentario. Intenta de nuevo.');
+    }
+  }
+  async function commentReport(cid, btn){
+    if(!myId()) return;
+    if(!confirm('¿Reportar este comentario para que lo revisemos?')) return;
+    btn.disabled = true;
+    try{
+      const tok = await freshToken();
+      if(!tok) throw new Error('sesion');
+      const res = await fetchTimeout(SUPABASE_URL + '/rest/v1/reportes', {
+        method: 'POST', headers: authHeaders(tok, { Prefer: 'return=minimal' }),
+        body: JSON.stringify({ comentario_id: Number(cid), reportante_id: myId() })
+      });
+      if(res.ok || res.status === 409){ btn.textContent = '✓ Reportado'; return; }
+      throw new Error('report ' + res.status);
+    }catch(e){
+      btn.disabled = false;
+      alert('No se pudo enviar el reporte. Intenta de nuevo.');
+    }
+  }
+
+  // ----- borrar / reportar publicación -----
   async function feedDelete(id){
     if(!myId()) return;
     if(!confirm('¿Borrar esta publicación?')) return;
     try{
       const tok = await freshToken();
       if(!tok) throw new Error('sesion');
-      const res = await fetch(SUPABASE_URL + '/rest/v1/posts?id=eq.' + Number(id), {
-        method: 'DELETE',
-        headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + tok, Prefer: 'return=representation' }
+      const res = await fetchTimeout(SUPABASE_URL + '/rest/v1/posts?id=eq.' + Number(id), {
+        method: 'DELETE', headers: authHeaders(tok, { Prefer: 'return=representation' })
       });
       if(!res.ok) throw new Error('delete ' + res.status);
       const rows = await res.json();
       if(!rows.length) throw new Error('sin permiso');
+      openThreads.delete(Number(id));
       feedRows = (feedRows || []).filter(p => Number(p.id) !== Number(id));
       feedSaveCache();
       feedRender();
@@ -1598,9 +1896,8 @@
     try{
       const tok = await freshToken();
       if(!tok) throw new Error('sesion');
-      const res = await fetch(SUPABASE_URL + '/rest/v1/reportes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', apikey: SUPABASE_KEY, Authorization: 'Bearer ' + tok, Prefer: 'return=minimal' },
+      const res = await fetchTimeout(SUPABASE_URL + '/rest/v1/reportes', {
+        method: 'POST', headers: authHeaders(tok, { Prefer: 'return=minimal' }),
         body: JSON.stringify({ post_id: Number(id), reportante_id: myId() })
       });
       if(res.ok || res.status === 409){ btn.textContent = '✓ Reportada'; return; }
