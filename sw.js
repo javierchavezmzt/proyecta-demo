@@ -37,7 +37,9 @@ self.addEventListener('fetch', (event) => {
   // a la primera. Si no hay internet, se abre la última copia guardada.
   if (req.mode === 'navigate') {
     event.respondWith(
-      fetch(req)
+      // cache: 'no-cache' obliga a revisar con GitHub si hay versión nueva
+      // (si no, el navegador puede reutilizar su copia hasta ~10 minutos).
+      fetch(req, { cache: 'no-cache' })
         .then((response) => {
           if (response && response.status === 200) {
             const clone = response.clone();
