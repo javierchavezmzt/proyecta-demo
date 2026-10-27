@@ -224,6 +224,23 @@
     background:var(--paper);border:1px solid var(--line);border-radius:100px;
     padding:11px 15px;margin-bottom:12px;font-size:13px;color:var(--muted);font-weight:500;
   }
+  .search-bar input{
+    flex:1;min-width:0;border:none;outline:none;background:transparent;font-family:'Archivo';
+    font-size:16px;color:var(--ink);font-weight:500;padding:0;
+  }
+  .search-bar input::placeholder{color:var(--muted);}
+  .dir-empty{display:none;text-align:center;padding:22px 16px;color:var(--muted);font-size:13px;line-height:1.5;}
+  .dir-empty b{display:block;color:var(--navy);font-size:15px;margin-bottom:4px;}
+  .pad-banner{
+    display:flex;align-items:center;gap:12px;width:100%;text-align:left;cursor:pointer;
+    background:var(--paper);border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:14px;
+    padding:11px 13px;margin-bottom:12px;font-family:'Archivo';-webkit-tap-highlight-color:transparent;
+  }
+  .pad-banner:active{background:#fbf9f3;}
+  .pad-ico{font-size:22px;flex-shrink:0;}
+  .pad-name{font-size:13.5px;font-weight:800;color:var(--navy);}
+  .pad-meta{font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.35;}
+  .pad-go{margin-left:auto;color:var(--muted);font-size:20px;line-height:1;flex-shrink:0;}
   .chiprow{display:flex;gap:8px;overflow-x:auto;margin-bottom:14px;padding-bottom:2px;}
   .chip{
     flex-shrink:0;font-size:12px;font-weight:700;color:var(--navy);
@@ -484,7 +501,7 @@
         <div class="brandrow">
           <div class="wordmark">PROYEC<span>TA</span></div>
           <div style="display:flex;gap:8px;">
-            <div class="bell" role="button" tabindex="0" aria-label="Buscar" onclick="go('buscar', null)">🔎</div>
+            <div class="bell" role="button" tabindex="0" aria-label="Padrón de especialistas y proveedores" onclick="go('buscar', null)">🔎</div>
             <div class="bell" id="bellBtn" role="button" tabindex="0" aria-label="Avisos" onclick="notifOpen()" onkeydown="if(event.key==='Enter')notifOpen()">🔔<span class="bell-badge" id="bellBadge"></span></div>
           </div>
         </div>
@@ -497,6 +514,11 @@
         <!-- INICIO / FEED -->
         <section class="screen active" id="s-inicio">
           <div id="install-card" class="install-card"></div>
+          <button id="pad-banner" class="pad-banner" type="button" onclick="go('buscar', null)">
+            <span class="pad-ico">👷</span>
+            <span><span class="pad-name">Padrón Proyecta</span><br><span class="pad-meta" id="pad-meta">Especialistas y proveedores seleccionados por Proyecta · contáctalos por WhatsApp</span></span>
+            <span class="pad-go">›</span>
+          </button>
           <div id="sala-bar" class="sala-bar"></div>
           <div class="feed-bar">
             <div class="sectionlabel" id="feed-label">Publicaciones del gremio</div>
@@ -507,7 +529,7 @@
 
         <!-- BUSCAR -->
         <section class="screen" id="s-buscar">
-          <div class="search-bar">🔎 Buscar especialista, proveedor o ciudad…</div>
+          <div class="search-bar">🔎 <input id="dir-q" type="search" placeholder="Buscar especialista, proveedor o ciudad…" autocomplete="off" oninput="dirSearch(this.value)" aria-label="Buscar en el padrón"></div>
           <div class="chiprow">
             <div class="chip on" onclick="filterDir('todos', this)">Todos</div>
             <div class="chip" onclick="filterDir('estructuras', this)">Estructuras</div>
@@ -841,6 +863,7 @@
             </div></div>
           </div>
           </div>
+          <div id="dir-empty" class="dir-empty"><b>Sin resultados</b>Prueba con otra palabra: una ciudad, una especialidad o el nombre.</div>
         </section>
 
         <!-- HERRAMIENTAS -->
@@ -1072,7 +1095,7 @@
 <script>
   const titles = {
     inicio:      ["Inicio","Lo que se está construyendo hoy en LATAM"],
-    buscar:      ["Buscar","Especialistas, proveedores y temas cerca de ti"],
+    buscar:      ["Padrón Proyecta","Especialistas y proveedores seleccionados por Proyecta"],
     herramientas:["Herramientas","Gratis, para resolver tu obra hoy"],
     publicar:    ["Publicar","Compártele algo real al gremio"],
     comunidad:   ["Comunidad","Conversaciones por especialidad"],
@@ -1112,6 +1135,9 @@
   function filterDir(filterKey, btn){
     document.querySelectorAll('#s-buscar .chip').forEach(c=>c.classList.remove('on'));
     btn.classList.add('on');
+    const qi = document.getElementById('dir-q'); if(qi) qi.value = '';
+    document.querySelectorAll('#s-buscar .dir-card').forEach(c => { c.style.display = ''; });
+    const em = document.getElementById('dir-empty'); if(em) em.style.display = 'none';
 
     const groupEsp = document.getElementById('group-especialistas');
     const groupProv = document.getElementById('group-proveedores');
@@ -1132,6 +1158,43 @@
         c.style.display = tags.includes(filterKey) ? '' : 'none';
       });
     }
+  }
+
+  // buscador del padrón: nombre, ciudad, especialidad y notas (sin importar acentos)
+  function dirSearch(value){
+    const q = norm(value).trim();
+    const gE = document.getElementById('group-especialistas');
+    const gP = document.getElementById('group-proveedores');
+    const em = document.getElementById('dir-empty');
+    if(!q){
+      document.querySelectorAll('#s-buscar .dir-card').forEach(c => { c.style.display = ''; });
+      gE.style.display = ''; gP.style.display = '';
+      if(em) em.style.display = 'none';
+      const todos = document.querySelector('#s-buscar .chip');
+      document.querySelectorAll('#s-buscar .chip').forEach(c => c.classList.remove('on'));
+      if(todos) todos.classList.add('on');
+      return;
+    }
+    document.querySelectorAll('#s-buscar .chip').forEach(c => c.classList.remove('on'));
+    let total = 0;
+    [gE, gP].forEach(g => {
+      let hits = 0;
+      g.querySelectorAll('.dir-card').forEach(c => {
+        const txt = norm(Array.from(c.querySelectorAll('.dir-name,.dir-meta,.dir-detail-row')).map(n => n.textContent).join(' '));
+        const ok = txt.indexOf(q) !== -1;
+        c.style.display = ok ? '' : 'none';
+        if(ok) hits++;
+      });
+      g.style.display = hits ? '' : 'none';
+      total += hits;
+    });
+    if(em) em.style.display = total ? 'none' : 'block';
+  }
+  function padCount(){
+    const e = document.querySelectorAll('#group-especialistas .dir-card').length;
+    const p = document.querySelectorAll('#group-proveedores .dir-card').length;
+    const el = document.getElementById('pad-meta');
+    if(el && (e || p)) el.textContent = e + ' especialista' + (e === 1 ? '' : 's') + ' y ' + p + ' proveedor' + (p === 1 ? '' : 'es') + ' seleccionados por Proyecta · contáctalos por WhatsApp';
   }
 
   // ===== DIRECTORIO EN VIVO (Supabase) =====
@@ -1225,6 +1288,9 @@
     const gP = document.getElementById('group-proveedores');
     gE.innerHTML = '<div class="sectionlabel">Especialistas · ' + esp.length + '</div>' + esp.map(espCard).join('');
     gP.innerHTML = '<div class="sectionlabel">Proveedores · ' + prov.length + '</div>' + prov.map(provCard).join('');
+    padCount();
+    const qi = document.getElementById('dir-q');
+    if(qi && qi.value) dirSearch(qi.value);
     return true;
   }
   async function sbGet(tabla, orden){
@@ -1256,6 +1322,7 @@
       }catch(e){}
     }
   }
+  padCount();
   cargarDirectorio();
 
   // ===== CUENTA: registro, login y sesión (Supabase Auth) =====
