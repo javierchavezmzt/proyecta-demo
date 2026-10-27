@@ -464,7 +464,13 @@
   .th-meta{font-size:11px;color:var(--muted);margin-bottom:3px;}
   .th-meta b{color:var(--ink);font-size:12.5px;}
   .th-text{font-size:13px;line-height:1.45;color:#2b2f3a;word-break:break-word;}
-  .th-act{margin-top:5px;}
+  .th-act{margin-top:5px;display:flex;flex-wrap:wrap;align-items:center;gap:0 16px;}
+  .th-act .post-act{padding:6px 0;}
+  .post-act.lad.on{color:var(--brick);font-weight:800;}
+  .post-act.sv.on{color:var(--navy);font-weight:800;}
+  .post-act.lad-own{cursor:default;color:var(--brick);}
+  .th-hint{font-size:11.5px;line-height:1.5;color:#6b5a2a;background:#fff9ec;border:1px dashed var(--gold);border-radius:10px;padding:8px 10px;margin-bottom:8px;}
+  .lib-act{display:flex;gap:16px;margin-top:6px;}
   .th-form{display:flex;gap:8px;margin-top:4px;}
   .th-input{flex:1;min-width:0;padding:10px 14px;border-radius:100px;border:1.5px solid var(--line);font-size:16px;outline:none;background:#fff;}
   .th-input:focus{border-color:var(--navy);}
@@ -998,6 +1004,12 @@
               <div class="sum-row" id="row-bio"><b>Sobre mí:</b> <span id="sum-bio"></span></div>
               <div class="sum-empty" id="sum-empty">Aún no has completado tu perfil. Cuéntale al gremio quién eres.</div>
             </div>
+            <!-- ladrillos recibidos + libreta (solo se muestra si ya corrió el SQL de Ladrillos) -->
+            <div class="auth-card" id="me-lad" style="display:none">
+              <div class="auth-title" id="lad-title">🧱 0 ladrillos</div>
+              <div class="auth-sub" id="lad-sub" style="margin-bottom:12px"></div>
+              <button type="button" class="btn-ghost" onclick="libOpen()">📝 Mi libreta</button>
+            </div>
             <button type="button" class="btn-gold" id="me-edit-btn" onclick="profileEditOpen()" style="display:none">Editar perfil</button>
 
             <!-- formulario de edición -->
@@ -1070,6 +1082,14 @@
         <div class="notif-body" id="notif-list"></div>
       </div>
 
+      <div id="lib-panel" class="notif-panel" role="dialog" aria-label="Mi libreta">
+        <div class="notif-top">
+          <div class="notif-title">📝 Mi libreta</div>
+          <button class="notif-close" type="button" aria-label="Cerrar mi libreta" onclick="libClose()">✕</button>
+        </div>
+        <div class="notif-body" id="lib-list"></div>
+      </div>
+
       <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
       <div class="navbar">
@@ -1113,6 +1133,7 @@
     document.querySelector('.app-body').scrollTop = 0;
     if(name === 'inicio' && window.feedRefreshIfStale) window.feedRefreshIfStale();
     if(name === 'comunidad' && window.comLoad) window.comLoad();
+    if(name === 'perfil' && window.ladRefresh) window.ladRefresh();
   }
 
   // directorio: expandir/colapsar tarjeta al tocarla
@@ -1446,6 +1467,7 @@
     const logged = !!(authSession && authSession.user);
     if(window.pubRender) window.pubRender(logged);
     if(window.notifSync) window.notifSync();
+    if(window.ladSync) window.ladSync();
     if(window.passHide) window.passHide();
     if(window.feedRender) window.feedRender();
     document.getElementById('auth-out').style.display = logged ? 'none' : '';
@@ -1521,6 +1543,7 @@
     document.getElementById('pf-bio').value = p.bio || '';
     document.getElementById('pf-msg').textContent = '';
     document.getElementById('me-summary').style.display = 'none';
+    document.getElementById('me-lad').style.display = 'none';
     document.getElementById('me-edit-btn').style.display = 'none';
     document.getElementById('me-logout').style.display = 'none';
     document.getElementById('me-edit').style.display = '';
@@ -1529,6 +1552,7 @@
     document.getElementById('me-edit').style.display = 'none';
     document.getElementById('me-logout').style.display = '';
     profileRenderSummary();
+    if(window.ladPaintCard) window.ladPaintCard();
   }
   function pfMsg(text, kind){
     const el = document.getElementById('pf-msg');
@@ -1904,11 +1928,29 @@
     const name = a.nombre_completo || 'Miembro de Proyecta';
     const meta = [a.rol, timeAgo(c.creado_en)].filter(Boolean).join(' · ');
     const cid = Number(c.id);
+    const own = !!(myId() && myId() === c.autor_id);
+    const nl = Number(c.nlad) || 0;
     let act = '';
-    if(myId() && myId() === c.autor_id){
-      act = '<button class="post-act danger" type="button" onclick="commentDelete(' + cid + ',' + Number(pid) + ')">🗑 Borrar</button>';
+    // 🧱 Ladrillo: "este comentario aportó" (no dice quién tiene la razón)
+    if(ladAvail !== false){
+      if(own){
+        if(nl) act += '<span class="post-act lad-own">🧱 ' + nl + (nl === 1 ? ' ladrillo' : ' ladrillos') + '</span>';
+      } else {
+        const on = ladMine.has(cid);
+        act += '<button class="post-act lad' + (on ? ' on' : '') + '" type="button" aria-pressed="' + (on ? 'true' : 'false') +
+          '" onclick="ladToggle(' + cid + ',' + Number(pid) + ')">🧱 Ladrillo' + (nl ? ' · ' + nl : '') + '</button>';
+      }
+    }
+    // 📝 Me lo apunto: lo guardas en tu libreta (privado)
+    if(libAvail !== false && !own){
+      const sv = libSaved.has(cid);
+      act += '<button class="post-act sv' + (sv ? ' on' : '') + '" type="button" aria-pressed="' + (sv ? 'true' : 'false') +
+        '" onclick="libToggle(' + cid + ',' + Number(pid) + ')">' + (sv ? '✓ Apuntado' : '📝 Me lo apunto') + '</button>';
+    }
+    if(own){
+      act += '<button class="post-act danger" type="button" onclick="commentDelete(' + cid + ',' + Number(pid) + ')">🗑 Borrar</button>';
     } else if(myId()){
-      act = '<button class="post-act" type="button" onclick="commentReport(' + cid + ', this)">⚑ Reportar</button>';
+      act += '<button class="post-act" type="button" onclick="commentReport(' + cid + ', this)">⚑ Reportar</button>';
     }
     return '<div class="th-c"><div class="th-meta"><b>' + esc(name) + '</b> · ' + esc(meta) + '</div>' +
       '<div class="th-text">' + esc(c.contenido).replace(/\n/g, '<br>') + '</div>' +
@@ -1921,7 +1963,11 @@
     if(t === undefined) el.innerHTML = '<div class="th-note">Cargando comentarios…</div>';
     else if(t === 'error') el.innerHTML = '<div class="th-note">No se pudieron cargar los comentarios. <button class="post-act" type="button" onclick="threadLoad(' + Number(id) + ')">Reintentar</button></div>';
     else if(!t.length) el.innerHTML = '<div class="th-note">Aún no hay comentarios. Sé el primero en responder.</div>';
-    else el.innerHTML = t.map(c => commentHtml(c, id)).join('');
+    else {
+      const hint = (!ladHintSeen() && (ladAvail !== false || libAvail !== false))
+        ? '<div class="th-hint"><b>🧱 Ladrillo</b>: este comentario aportó. <b>📝 Me lo apunto</b>: lo guardas en tu libreta (en Perfil). Ninguno dice quién tiene la razón.</div>' : '';
+      el.innerHTML = hint + t.map(c => commentHtml(c, id)).join('');
+    }
   }
   async function threadLoad(id){
     try{
@@ -1933,6 +1979,7 @@
       const rows = await res.json();
       if(!Array.isArray(rows)) throw new Error('formato');
       await attachAuthors(rows, headers);
+      await ladLoad(rows, headers);
       threadCache[id] = rows;
       const p = findPost(id);
       if(p){ p.ncom = rows.length; paintCounts(p); feedSaveCache(); }
@@ -2314,11 +2361,275 @@
     return 'error';
   }
 
+
+  // ===== LADRILLOS 🧱 y MI LIBRETA 📝 =====
+  // 🧱 Ladrillo = "este comentario aportó" (público; NO dice quién tiene la razón).
+  // 📝 Me lo apunto = lo guardas en tu libreta (privado).
+  // Si todavía no corriste Proyecta_SQL_Ladrillos.sql, los botones simplemente no aparecen.
+  const ladMine = new Set();    // comentarios a los que YO les puse ladrillo
+  const libSaved = new Set();   // comentarios que YO apunté en mi libreta
+  let ladAvail = null;          // null = aún no se sabe · false = falta correr el SQL
+  let libAvail = null;
+  let ladOwner = null;
+  let ladCardOk = false;
+  let ladCount = 0;
+  let libToken = 0;
+  const LAD_HINT_KEY = 'proyecta_lad_hint_v1';
+  function ladHintSeen(){ try{ return localStorage.getItem(LAD_HINT_KEY) === '1'; }catch(e){ return false; } }
+  function ladHintMark(){ try{ localStorage.setItem(LAD_HINT_KEY, '1'); }catch(e){} }
+
+  function ladFindComment(cid, pid){
+    const t = threadCache[pid];
+    return Array.isArray(t) ? t.find(c => Number(c.id) === Number(cid)) : null;
+  }
+  async function ladLoad(rows, headers){
+    rows.forEach(r => { r.nlad = 0; });
+    const ids = rows.map(r => Number(r.id)).filter(Boolean);
+    if(!ids.length) return;
+    const inList = ids.join(',');
+    const me = myId();
+    try{
+      const res = await fetchTimeout(SUPABASE_URL + '/rest/v1/comentario_ladrillos?select=comentario_id,user_id&comentario_id=in.(' + inList + ')&limit=1000', { headers: headers });
+      if(res.status === 404){ ladAvail = false; }
+      else if(res.ok){
+        ladAvail = true;
+        const list = await res.json();
+        const cnt = {};
+        ids.forEach(i => ladMine.delete(i));
+        list.forEach(x => {
+          cnt[x.comentario_id] = (cnt[x.comentario_id] || 0) + 1;
+          if(me && x.user_id === me) ladMine.add(Number(x.comentario_id));
+        });
+        rows.forEach(r => { r.nlad = cnt[r.id] || 0; });
+      }
+    }catch(e){}
+    if(!me) return;
+    try{
+      const res = await fetchTimeout(SUPABASE_URL + '/rest/v1/comentario_guardados?select=comentario_id&comentario_id=in.(' + inList + ')', { headers: headers });
+      if(res.status === 404){ libAvail = false; }
+      else if(res.ok){
+        libAvail = true;
+        const list = await res.json();
+        ids.forEach(i => libSaved.delete(i));
+        list.forEach(x => libSaved.add(Number(x.comentario_id)));
+      }
+    }catch(e){}
+  }
+  async function ladToggle(cid, pid){
+    cid = Number(cid); pid = Number(pid);
+    if(!myId()){ needLogin('Entra a tu cuenta para reconocer un aporte'); return; }
+    const c = ladFindComment(cid, pid);
+    if(!c || c._bl) return;
+    const was = ladMine.has(cid), prev = Number(c.nlad) || 0;
+    c._bl = true;
+    if(was){ ladMine.delete(cid); c.nlad = Math.max(0, prev - 1); } else { ladMine.add(cid); c.nlad = prev + 1; }
+    threadPaint(pid);
+    try{
+      const tok = await freshToken();
+      if(!tok) throw new Error('sesion');
+      let res;
+      if(!was){
+        res = await fetchTimeout(SUPABASE_URL + '/rest/v1/comentario_ladrillos', {
+          method: 'POST', headers: authHeaders(tok, { Prefer: 'return=minimal' }),
+          body: JSON.stringify({ comentario_id: cid, user_id: myId() })
+        });
+        if(res.status === 409){ ladMine.add(cid); c.nlad = prev; return; }   // ya lo tenía
+      } else {
+        res = await fetchTimeout(SUPABASE_URL + '/rest/v1/comentario_ladrillos?comentario_id=eq.' + cid + '&user_id=eq.' + encodeURIComponent(myId()), {
+          method: 'DELETE', headers: authHeaders(tok)
+        });
+      }
+      if(!res.ok){
+        let detail = '';
+        try{ detail = await res.text(); }catch(e){}
+        const err = new Error('ladrillo ' + res.status);
+        err.detail = detail; err.status = res.status;
+        throw err;
+      }
+      ladHintMark();
+    }catch(e){
+      if(was) ladMine.add(cid); else ladMine.delete(cid);
+      c.nlad = prev;
+      let msg = 'No se pudo guardar tu ladrillo. Intenta de nuevo.';
+      if(e && e.detail && /ladrillo_propio/.test(e.detail)) msg = 'Los ladrillos son para reconocer a otros, no a ti mismo.';
+      else if(e && e.detail && /limite_ladrillos/.test(e.detail)) msg = 'Vas muy rápido: máximo 60 ladrillos por hora.';
+      else if(e && e.status === 404) msg = 'Los ladrillos aún no están activados.';
+      showToast(msg);
+    }finally{
+      c._bl = false;
+      threadPaint(pid);
+    }
+  }
+  async function libToggle(cid, pid){
+    cid = Number(cid); pid = Number(pid);
+    if(!myId()){ needLogin('Entra a tu cuenta para usar tu libreta'); return; }
+    const c = ladFindComment(cid, pid);
+    if(!c || c._bs) return;
+    const was = libSaved.has(cid);
+    c._bs = true;
+    if(was) libSaved.delete(cid); else libSaved.add(cid);
+    threadPaint(pid);
+    try{
+      const tok = await freshToken();
+      if(!tok) throw new Error('sesion');
+      let res;
+      if(!was){
+        res = await fetchTimeout(SUPABASE_URL + '/rest/v1/comentario_guardados', {
+          method: 'POST', headers: authHeaders(tok, { Prefer: 'return=minimal' }),
+          body: JSON.stringify({ comentario_id: cid, user_id: myId() })
+        });
+        if(res.status === 409){ libSaved.add(cid); return; }
+      } else {
+        res = await fetchTimeout(SUPABASE_URL + '/rest/v1/comentario_guardados?comentario_id=eq.' + cid + '&user_id=eq.' + encodeURIComponent(myId()), {
+          method: 'DELETE', headers: authHeaders(tok)
+        });
+      }
+      if(!res.ok){
+        let detail = '';
+        try{ detail = await res.text(); }catch(e){}
+        const err = new Error('libreta ' + res.status);
+        err.detail = detail; err.status = res.status;
+        throw err;
+      }
+      ladHintMark();
+      if(!was) showToast('Apuntado en tu libreta (Perfil → Mi libreta)');
+    }catch(e){
+      if(was) libSaved.add(cid); else libSaved.delete(cid);
+      let msg = 'No se pudo guardar en tu libreta. Intenta de nuevo.';
+      if(e && e.detail && /libreta_llena/.test(e.detail)) msg = 'Tu libreta está llena (500). Quita algo para apuntar más.';
+      else if(e && e.status === 404) msg = 'La libreta aún no está activada.';
+      showToast(msg);
+    }finally{
+      c._bs = false;
+      threadPaint(pid);
+    }
+  }
+
+  // contador de ladrillos recibidos (tarjeta en Perfil)
+  function ladPaintCard(){
+    const card = document.getElementById('me-lad');
+    if(!card) return;
+    const ed = document.getElementById('me-edit');
+    const editing = !!(ed && ed.style.display !== 'none');
+    card.style.display = (ladCardOk && myId() && !editing) ? '' : 'none';
+    const t = document.getElementById('lad-title');
+    if(t) t.textContent = '🧱 ' + ladCount + (ladCount === 1 ? ' ladrillo' : ' ladrillos');
+    const sub = document.getElementById('lad-sub');
+    if(sub) sub.textContent = ladCount
+      ? 'Cada ladrillo es alguien del gremio reconociendo un aporte tuyo.'
+      : 'Aún no tienes ladrillos. Cada vez que alguien reconozca un aporte tuyo en un comentario, sumas uno.';
+  }
+  async function ladRefresh(){
+    if(!myId()) return;
+    try{
+      const tok = await freshToken();
+      if(!tok || !myId()) return;
+      const res = await fetchTimeout(SUPABASE_URL + '/rest/v1/rpc/ladrillos_recibidos', {
+        method: 'POST', headers: authHeaders(tok), body: JSON.stringify({ uid: myId() })
+      });
+      if(res.status === 404){ ladCardOk = false; ladPaintCard(); return; }
+      if(!res.ok) return;
+      ladCount = Number(await res.json()) || 0;
+      ladCardOk = true;
+      ladPaintCard();
+    }catch(e){}
+  }
+  window.ladSync = function(){
+    const me = myId();
+    if(me !== ladOwner){
+      ladOwner = me;
+      ladMine.clear(); libSaved.clear(); ladCount = 0;
+      openThreads.forEach(id => { threadLoad(id); });   // para marcar lo mío tras entrar/salir
+    }
+    libClose();
+    if(me){ ladRefresh(); } else { ladCardOk = false; ladPaintCard(); }
+  };
+
+  // Mi libreta
+  function libClose(){
+    libToken++;
+    const el = document.getElementById('lib-panel');
+    if(el) el.style.display = 'none';
+  }
+  function libItem(c){
+    const a = c.autor || {};
+    const name = a.nombre_completo || 'Miembro de Proyecta';
+    const cid = Number(c.id);
+    return '<div class="notif-item" id="lib-' + cid + '" style="cursor:default">' +
+      '<div class="avatar">' + esc(initialsOf(name)) + '</div>' +
+      '<div class="notif-main"><div class="notif-line"><b>' + esc(name) + '</b> · ' + esc(timeAgo(c.creado_en)) + '</div>' +
+      '<div class="notif-snip" style="color:var(--ink)">' + esc(c.contenido).replace(/\n/g, '<br>') + '</div>' +
+      '<div class="lib-act"><button class="post-act on" type="button" onclick="libGo(' + Number(c.post_id) + ')">Ver la conversación →</button>' +
+      '<button class="post-act danger" type="button" onclick="libRemove(' + cid + ')">Quitar</button></div></div></div>';
+  }
+  const LIB_EMPTY = '<div class="feed-empty"><b>Tu libreta está vacía</b>Cuando un comentario te sirva, toca 📝 Me lo apunto y se guarda aquí. Solo tú lo ves.</div>';
+  async function libOpen(){
+    const panel = document.getElementById('lib-panel');
+    const list = document.getElementById('lib-list');
+    if(!panel || !list || !myId()) return;
+    panel.style.display = 'flex';
+    list.scrollTop = 0;
+    list.innerHTML = '<div class="feed-empty">Abriendo tu libreta…</div>';
+    const mine = ++libToken;
+    try{
+      const tok = await freshToken();
+      if(!tok) throw new Error('sesion');
+      const headers = authHeaders(tok);
+      const r1 = await fetchTimeout(SUPABASE_URL + '/rest/v1/comentario_guardados?select=comentario_id,creado_en&order=creado_en.desc&limit=100', { headers: headers });
+      if(!r1.ok) throw new Error('libreta ' + r1.status);
+      const saved = await r1.json();
+      if(!Array.isArray(saved)) throw new Error('formato');
+      saved.forEach(x => libSaved.add(Number(x.comentario_id)));
+      let rows = [];
+      if(saved.length){
+        const ids = saved.map(x => Number(x.comentario_id)).join(',');
+        const r2 = await fetchTimeout(SUPABASE_URL + '/rest/v1/comentarios?select=id,contenido,creado_en,autor_id,post_id&id=in.(' + ids + ')', { headers: headers });
+        if(!r2.ok) throw new Error('comentarios ' + r2.status);
+        rows = await r2.json();
+        await attachAuthors(rows, headers);
+      }
+      if(mine !== libToken) return;
+      const byId = {};
+      rows.forEach(r => { byId[r.id] = r; });
+      const items = saved.map(x => byId[x.comentario_id]).filter(Boolean);
+      list.innerHTML = items.length ? items.map(libItem).join('') : LIB_EMPTY;
+    }catch(e){
+      if(mine !== libToken) return;
+      list.innerHTML = '<div class="feed-empty"><b>No se pudo abrir tu libreta</b>Revisa tu conexión e inténtalo de nuevo.' +
+        '<div style="margin-top:14px;"><button class="btn-ghost" type="button" onclick="libOpen()">Reintentar</button></div></div>';
+    }
+  }
+  function libGo(pid){
+    libClose();
+    notifGo(Number(pid), 'comentario');
+  }
+  async function libRemove(cid){
+    cid = Number(cid);
+    if(!myId()) return;
+    try{
+      const tok = await freshToken();
+      if(!tok) throw new Error('sesion');
+      const res = await fetchTimeout(SUPABASE_URL + '/rest/v1/comentario_guardados?comentario_id=eq.' + cid + '&user_id=eq.' + encodeURIComponent(myId()), {
+        method: 'DELETE', headers: authHeaders(tok)
+      });
+      if(!res.ok) throw new Error('quitar ' + res.status);
+      libSaved.delete(cid);
+      const el = document.getElementById('lib-' + cid);
+      if(el) el.remove();
+      const list = document.getElementById('lib-list');
+      if(list && !list.querySelector('.notif-item')) list.innerHTML = LIB_EMPTY;
+      openThreads.forEach(id => threadPaint(id));
+    }catch(e){
+      showToast('No se pudo quitar de tu libreta. Intenta de nuevo.');
+    }
+  }
+
   // ===== AVISOS (campana 🔔) =====
   const NOTIF_TXT = {
     like: 'le dio me gusta a tu publicación',
     comentario: 'comentó tu publicación',
-    hilo: 'también comentó en una publicación donde tú comentaste'
+    hilo: 'también comentó en una publicación donde tú comentaste',
+    ladrillo: 'reconoció tu aporte 🧱'
   };
   let notifUnread = 0;
   let notifTimer = null;
@@ -2352,7 +2663,7 @@
     notifTimer = setInterval(() => { if(!document.hidden) notifPoll(); }, 60000);
   };
   document.addEventListener('visibilitychange', () => { if(!document.hidden && myId()) notifPoll(); });
-  document.addEventListener('keydown', e => { if(e.key === 'Escape') notifClose(); });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape'){ notifClose(); libClose(); } });
 
   function notifClose(){
     const el = document.getElementById('notif-panel');
@@ -2362,18 +2673,20 @@
     notifClose();
     go('perfil', document.querySelector('.navbtn[data-screen="perfil"]'));
   }
-  function notifItem(r, snip){
+  function notifItem(r, snip, csnip){
     const a = r.autor || {};
     const name = a.nombre_completo || 'Alguien de Proyecta';
     let ext = String(snip[r.post_id] || '').replace(/\s+/g, ' ').trim();
     const ok = ext !== '';
+    const mio = r.tipo === 'ladrillo';
+    if(mio && csnip && csnip[r.comentario_id]) ext = String(csnip[r.comentario_id]).replace(/\s+/g, ' ').trim();
     if(ext.length > 80) ext = ext.slice(0, 77).trimEnd() + '…';
-    const icon = r.tipo === 'like' ? '❤' : '💬';
+    const icon = r.tipo === 'like' ? '❤' : (r.tipo === 'ladrillo' ? '🧱' : '💬');
     const click = ok ? ' onclick="notifGo(' + Number(r.post_id) + ',\'' + esc(r.tipo) + '\')" onkeydown="if(event.key===\'Enter\')notifGo(' + Number(r.post_id) + ',\'' + esc(r.tipo) + '\')" tabindex="0"' : '';
     return '<div class="notif-item' + (r.leida ? '' : ' unread') + (ok ? '' : ' off') + '" role="button"' + click + '>' +
       '<div class="avatar">' + esc(initialsOf(name)) + '</div>' +
       '<div class="notif-main"><div class="notif-line"><b>' + esc(name) + '</b> ' + esc(NOTIF_TXT[r.tipo] || 'tuvo actividad en tu publicación') + '</div>' +
-      '<div class="notif-snip">' + (ok ? '«' + esc(ext) + '»' : 'Esa publicación ya no está disponible') + '</div>' +
+      '<div class="notif-snip">' + (ok ? (mio ? 'Tu comentario: ' : '') + '«' + esc(ext) + '»' : 'Esa publicación ya no está disponible') + '</div>' +
       '<div class="notif-time">' + icon + ' ' + esc(timeAgo(r.creado_en)) + '</div></div></div>';
   }
   async function notifOpen(){
@@ -2392,7 +2705,7 @@
       const tok = await freshToken();
       if(!tok) throw new Error('sesion');
       const headers = authHeaders(tok);
-      const res = await fetchTimeout(SUPABASE_URL + '/rest/v1/notificaciones?select=id,tipo,post_id,leida,creado_en,actor_id&order=creado_en.desc&limit=40', { headers: headers });
+      const res = await fetchTimeout(SUPABASE_URL + '/rest/v1/notificaciones?select=id,tipo,post_id,comentario_id,leida,creado_en,actor_id&order=creado_en.desc&limit=40', { headers: headers });
       if(!res.ok) throw new Error('avisos ' + res.status);
       const rows = await res.json();
       if(!Array.isArray(rows)) throw new Error('formato');
@@ -2411,7 +2724,15 @@
         notifSetBadge(0);
         return;
       }
-      list.innerHTML = rows.map(r => notifItem(r, snip)).join('');
+      const csnip = {};
+      const cids = Array.from(new Set(rows.filter(r => r.tipo === 'ladrillo' && r.comentario_id).map(r => Number(r.comentario_id))));
+      if(cids.length){
+        try{
+          const r4 = await fetchTimeout(SUPABASE_URL + '/rest/v1/comentarios?select=id,contenido&id=in.(' + cids.join(',') + ')', { headers: headers });
+          if(r4.ok) (await r4.json()).forEach(c => { csnip[c.id] = c.contenido; });
+        }catch(e){}
+      }
+      list.innerHTML = rows.map(r => notifItem(r, snip, csnip)).join('');
       // al verlos, se marcan como leídos (solo los que se mostraron)
       const unseen = rows.filter(r => !r.leida).map(r => Number(r.id));
       if(unseen.length){
