@@ -317,6 +317,32 @@
   .forum-meta{font-size:11px;color:var(--muted);margin-top:2px;}
   .forum-dot{width:8px;height:8px;border-radius:50%;background:var(--gold);margin-left:auto;flex-shrink:0;}
 
+  .sala-row{cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  .sala-row:active{background:#fbf9f3;}
+  .forum-end{margin-left:auto;display:flex;align-items:center;gap:10px;flex-shrink:0;}
+  .forum-end .forum-dot{margin-left:0;}
+  .forum-go{color:var(--muted);font-size:20px;line-height:1;}
+  .sala-bar{
+    display:none;background:var(--paper);border:1px solid var(--gold);border-radius:14px;padding:12px 13px;margin-bottom:12px;
+  }
+  .sala-bar-main{display:flex;align-items:center;gap:11px;}
+  .sala-bar-main .forum-ico{width:38px;height:38px;font-size:17px;}
+  .sala-bar-name{font-size:14px;font-weight:800;}
+  .sala-bar-desc{font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.35;}
+  .sala-bar-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:11px;}
+  .sala-bar-actions .btn-gold{width:auto;padding:9px 16px;font-size:12.5px;}
+  .sala-chip{
+    display:inline-flex;align-items:center;gap:4px;margin:0 0 9px 6px;padding:3px 9px;border-radius:100px;
+    border:1px solid var(--line);background:#faf8f2;color:var(--muted);font-family:'Archivo';
+    font-size:10.5px;font-weight:700;cursor:pointer;
+  }
+  .sala-chip:hover{color:var(--navy);border-color:var(--navy);}
+  .pub-select{
+    width:100%;padding:11px 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--paper);
+    font-family:'Archivo';font-size:16px;color:var(--ink);margin-bottom:14px;outline:none;
+  }
+  .pub-select:focus{border-color:var(--navy);}
+
   /* perfil */
   .profile-head{text-align:center;padding:6px 0 16px;}
   .p-avatar{
@@ -471,8 +497,9 @@
         <!-- INICIO / FEED -->
         <section class="screen active" id="s-inicio">
           <div id="install-card" class="install-card"></div>
+          <div id="sala-bar" class="sala-bar"></div>
           <div class="feed-bar">
-            <div class="sectionlabel">Publicaciones del gremio</div>
+            <div class="sectionlabel" id="feed-label">Publicaciones del gremio</div>
             <button class="post-act" type="button" onclick="feedLoad(true)">↻ Actualizar</button>
           </div>
           <div id="feed-list"><div class="feed-empty">Cargando publicaciones…</div></div>
@@ -881,6 +908,9 @@
               <div class="catpick" data-cat="Equipo">🚜 Equipo</div>
             </div>
 
+            <div class="sectionlabel">¿En qué sala? (opcional)</div>
+            <select id="pub-sala" class="pub-select" aria-label="Sala de la publicación"></select>
+
             <div class="composer">
               <textarea id="pub-text" maxlength="500" oninput="pubCount()" placeholder="Cuéntale al gremio qué estás construyendo, qué duda tienes o a quién buscas…"></textarea>
               <div class="composer-tools">
@@ -897,35 +927,9 @@
 
         <!-- COMUNIDAD -->
         <section class="screen" id="s-comunidad">
-          <div class="sectionlabel">Foros por especialidad</div>
-
-          <div class="forum-row">
-            <div class="forum-ico" style="background:var(--navy);">🏛️</div>
-            <div><div class="forum-name">Arquitectura</div><div class="forum-meta">2,140 miembros · 34 hoy</div></div>
-            <div class="forum-dot"></div>
-          </div>
-          <div class="forum-row">
-            <div class="forum-ico" style="background:var(--brick);">🏗️</div>
-            <div><div class="forum-name">Obra Civil</div><div class="forum-meta">3,860 miembros · 58 hoy</div></div>
-            <div class="forum-dot"></div>
-          </div>
-          <div class="forum-row">
-            <div class="forum-ico" style="background:var(--steel);">🌆</div>
-            <div><div class="forum-name">Urbanización</div><div class="forum-meta">910 miembros · 11 hoy</div></div>
-          </div>
-          <div class="forum-row">
-            <div class="forum-ico" style="background:var(--pine);">🔧</div>
-            <div><div class="forum-name">Instalaciones</div><div class="forum-meta">1,275 miembros · 19 hoy</div></div>
-          </div>
-          <div class="forum-row">
-            <div class="forum-ico" style="background:var(--gold);color:var(--navy);">🧱</div>
-            <div><div class="forum-name">Estructuras</div><div class="forum-meta">2,530 miembros · 41 hoy</div></div>
-            <div class="forum-dot"></div>
-          </div>
-          <div class="forum-row">
-            <div class="forum-ico" style="background:var(--navy-3);">📊</div>
-            <div><div class="forum-name">Presupuestos</div><div class="forum-meta">1,680 miembros · 22 hoy</div></div>
-          </div>
+          <div class="sectionlabel">Salas por especialidad</div>
+          <div id="sala-list"></div>
+          <div class="post-meta" style="margin-top:6px;font-size:11px;line-height:1.5;">Elige una sala para ver solo lo de ese tema. Al publicar escoges en cuál va, y todo lo que publiques también aparece en Inicio.</div>
         </section>
 
         <!-- PERFIL -->
@@ -1076,6 +1080,7 @@
   };
 
   function go(name, btn){
+    if(window.salaGuard) window.salaGuard(name, btn);
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById('s-' + name).classList.add('active');
     document.querySelectorAll('.navbtn').forEach(b => b.classList.remove('active'));
@@ -1084,6 +1089,7 @@
     document.getElementById('screenSub').textContent = titles[name][1];
     document.querySelector('.app-body').scrollTop = 0;
     if(name === 'inicio' && window.feedRefreshIfStale) window.feedRefreshIfStale();
+    if(name === 'comunidad' && window.comLoad) window.comLoad();
   }
 
   // directorio: expandir/colapsar tarjeta al tocarla
@@ -1536,7 +1542,8 @@
   const FEED_CACHE_KEY = 'proyecta_feed_v2';
   const APP_URL = 'https://app.proyectalatam.com/';
   const SEL_BASIC = 'id,categoria,contenido,creado_en,autor_id';
-  const SEL_RICH = SEL_BASIC + ',n_likes:likes(count),n_com:comentarios(count)';
+  const SEL_SALA = SEL_BASIC + ',sala';
+  const SEL_COUNTS = ',n_likes:likes(count),n_com:comentarios(count)';
   const CATS = {
     'Mi obra':['🏗','obra'], 'Duda':['❓','duda'], 'Solución':['💡','solucion'], 'Especialista':['👷','especialista'],
     'Vacante':['💼','vacante'], 'Proveedor':['🤝','proveedor'], 'Materiales':['🧱','materiales'], 'Equipo':['🚜','equipo']
@@ -1632,7 +1639,7 @@
     }
     const open = openThreads.has(id);
     return '<div class="card" id="post-' + id + '">' +
-      '<span class="tag ' + cat[1] + '">' + cat[0] + ' ' + esc(p.categoria || 'Publicación') + '</span>' +
+      '<span class="tag ' + cat[1] + '">' + cat[0] + ' ' + esc(p.categoria || 'Publicación') + '</span>' + salaChip(p) +
       '<div class="post-head"><div class="avatar">' + esc(initialsOf(name)) + '</div><div>' +
         '<div class="post-name">' + esc(name) + '</div><div class="post-meta">' + esc(meta) + '</div></div></div>' +
       '<div class="post-text">' + esc(p.contenido).replace(/\n/g, '<br>') + '</div>' +
@@ -1650,6 +1657,11 @@
     if(!box || !feedRows) return;
     const keep = {};
     box.querySelectorAll('.th-input').forEach(i => { if(i.value) keep[i.id] = i.value; });
+    if(!feedRows.length && feedFilter && salaOf(feedFilter)){
+      box.innerHTML = '<div class="feed-empty"><b>Aún no hay publicaciones en ' + esc(salaOf(feedFilter).n) + '</b>Sé el primero en abrir la conversación en esta sala.' +
+        '<div style="margin-top:14px;"><button class="btn-gold" type="button" onclick="salaPublish()">Publicar en esta sala</button></div></div>';
+      return;
+    }
     if(!feedRows.length){
       box.innerHTML = '<div class="feed-empty"><b>Aún no hay publicaciones</b>Sé el primero en compartirle algo al gremio: una obra, una duda, una vacante.' +
         '<div style="margin-top:14px;"><button class="btn-gold" type="button" onclick="go(\'publicar\', document.querySelector(\'.navbtn.publish\'))">Publicar ahora</button></div></div>';
@@ -1662,6 +1674,7 @@
   window.feedRender = feedRender;
 
   function feedSaveCache(){
+    if(feedFilter) return; // el caché es solo del feed completo, no de una sala
     try{ localStorage.setItem(FEED_CACHE_KEY, JSON.stringify((feedRows || []).map(p => Object.assign({}, p, { liked: false, _busy: undefined })))); }catch(e){}
   }
   function validToken(){
@@ -1692,9 +1705,14 @@
     return Object.assign({ 'Content-Type': 'application/json', apikey: SUPABASE_KEY, Authorization: 'Bearer ' + tok }, extra || {});
   }
 
+  let feedFilter = null;       // sala activa (slug) o null = todo el gremio
+  let feedLoadFilter = null;   // filtro con el que arrancó la carga en curso
+  let feedPending = false;     // pidieron otra sala mientras cargaba la anterior
   async function feedLoad(manual){
-    if(feedBusy) return;
+    if(feedBusy){ if(feedLoadFilter !== feedFilter) feedPending = true; return; }
     feedBusy = true;
+    const myFilter = feedFilter;
+    feedLoadFilter = myFilter;
     const box = document.getElementById('feed-list');
     if(manual && !feedRows) box.innerHTML = '<div class="feed-empty">Cargando publicaciones…</div>';
     try{
@@ -1702,13 +1720,19 @@
       const tok = validToken();
       if(tok) headers.Authorization = 'Bearer ' + tok;
       const base = SUPABASE_URL + '/rest/v1/posts?select=';
-      const tail = '&order=creado_en.desc&limit=30';
-      // Si faltan las tablas de me gusta/comentarios, cae al feed básico en vez de romperse.
-      let res = await fetchTimeout(base + SEL_RICH + tail, { headers: headers });
-      if(!res.ok) res = await fetchTimeout(base + SEL_BASIC + tail, { headers: headers });
-      if(!res.ok) throw new Error('posts ' + res.status);
+      const tail = '&order=creado_en.desc&limit=30' + (myFilter ? '&sala=eq.' + encodeURIComponent(myFilter) : '');
+      // Si faltan las tablas de me gusta/comentarios o la columna "sala", cae a versiones
+      // más simples del feed en vez de romperse.
+      const tries = myFilter ? [SEL_SALA + SEL_COUNTS, SEL_SALA] : [SEL_SALA + SEL_COUNTS, SEL_BASIC + SEL_COUNTS, SEL_SALA, SEL_BASIC];
+      let res = null;
+      for(const sel of tries){
+        res = await fetchTimeout(base + sel + tail, { headers: headers });
+        if(res.ok) break;
+      }
+      if(!res || !res.ok) throw new Error('posts ' + (res ? res.status : ''));
       const rows = await res.json();
       if(!Array.isArray(rows)) throw new Error('posts formato');
+      if(myFilter !== feedFilter) return; // cambiaron de sala mientras cargaba
       rows.forEach(p => {
         p.nlikes = countOf(p.n_likes); p.ncom = countOf(p.n_com); p.liked = false;
         delete p.n_likes; delete p.n_com;
@@ -1724,25 +1748,28 @@
           }
         }catch(e){}
       }
+      if(myFilter !== feedFilter) return;
       feedRows = rows;
       feedStamp = Date.now();
       feedSaveCache();
       feedRender();
       if(manual) openThreads.forEach(id => threadLoad(id));
     }catch(err){
+      if(myFilter !== feedFilter) return;
       feedErr = String((err && err.message) || err || '').slice(0, 80);
-      if(!feedRows){
+      if(!feedRows && !myFilter){
         try{ const c = JSON.parse(localStorage.getItem(FEED_CACHE_KEY) || 'null'); if(Array.isArray(c)) feedRows = c; }catch(e){}
       }
       if(feedRows){
         feedRender();
       } else {
-        box.innerHTML = '<div class="feed-empty"><b>No se pudo cargar el feed</b>Revisa tu conexión e inténtalo de nuevo.' +
+        box.innerHTML = '<div class="feed-empty"><b>No se pudo cargar ' + (myFilter ? 'esta sala' : 'el feed') + '</b>Revisa tu conexión e inténtalo de nuevo.' +
           '<div class="th-note" style="margin-top:8px;">Detalle técnico: ' + esc(feedErr || 'sin respuesta') + '</div>' +
           '<button class="btn-ghost" type="button" onclick="feedLoad(true)">Reintentar</button></div>';
       }
     }finally{
       feedBusy = false;
+      if(feedPending){ feedPending = false; feedLoad(manual); }
     }
   }
   window.feedRefreshIfStale = function(){ if(Date.now() - feedStamp > 60000) feedLoad(); };
@@ -1973,6 +2000,119 @@
     }
   }
 
+  // ===== SALAS (pestaña Comunidad) =====
+  const SALAS = [
+    { k: 'estudiantes',   n: 'Estudiantes',          ic: '🎓', bg: 'var(--navy)',   fg: '#fff',        d: 'Dudas, tareas, residencias y primeros pasos en la obra' },
+    { k: 'obra-civil',    n: 'Obra civil',           ic: '🏗️', bg: 'var(--brick)',  fg: '#fff',        d: 'Procesos, colados, residencia y control de obra' },
+    { k: 'estructuras',   n: 'Estructuras',          ic: '🧱', bg: 'var(--gold)',   fg: 'var(--navy)', d: 'Cimentación, concreto, acero y cálculo estructural' },
+    { k: 'arquitectura',  n: 'Arquitectura',         ic: '🏛️', bg: 'var(--navy)',   fg: '#fff',        d: 'Diseño, proyecto y detalles constructivos' },
+    { k: 'instalaciones', n: 'Instalaciones',        ic: '🔧', bg: 'var(--pine)',   fg: '#fff',        d: 'Hidráulica, eléctrica, sanitaria y especiales' },
+    { k: 'presupuestos',  n: 'Presupuestos y costos', ic: '📊', bg: 'var(--navy-3)', fg: '#fff',        d: 'Precios unitarios, volumetrías y licitaciones' },
+    { k: 'urbanizacion',  n: 'Urbanización',         ic: '🌆', bg: 'var(--steel)',  fg: '#fff',        d: 'Calles, redes, terracerías y desarrollos' }
+  ];
+  function salaOf(k){ return SALAS.find(x => x.k === k) || null; }
+  function salaChip(p){
+    const x = !feedFilter && p && p.sala ? salaOf(p.sala) : null;
+    return x ? '<button class="sala-chip" type="button" aria-label="Abrir la sala ' + esc(x.n) + '" onclick="openSala(\'' + x.k + '\')">' + x.ic + ' ' + esc(x.n) + '</button>' : '';
+  }
+
+  // contadores reales de cada sala
+  let comData = null, comStamp = 0, comBusy = false;
+  function comPaint(){
+    const box = document.getElementById('sala-list');
+    if(!box) return;
+    box.innerHTML = SALAS.map(x => {
+      const d = comData && comData[x.k];
+      let meta = 'Toca para entrar';
+      let hot = false;
+      if(comData){
+        if(!d){ meta = 'Sin publicaciones aún · sé el primero'; }
+        else {
+          meta = d.n + (d.n === 1 ? ' publicación' : ' publicaciones') + ' · última ' + timeAgo(d.last);
+          hot = (Date.now() - new Date(d.last).getTime()) < 86400000;
+        }
+      }
+      return '<div class="forum-row sala-row" role="button" tabindex="0" onclick="openSala(\'' + x.k + '\')" onkeydown="if(event.key===\'Enter\')openSala(\'' + x.k + '\')">' +
+        '<div class="forum-ico" style="background:' + x.bg + ';color:' + x.fg + ';">' + x.ic + '</div>' +
+        '<div><div class="forum-name">' + esc(x.n) + '</div><div class="forum-meta">' + esc(meta) + '</div></div>' +
+        '<div class="forum-end">' + (hot ? '<span class="forum-dot" title="Actividad en las últimas 24 h"></span>' : '') + '<span class="forum-go">›</span></div></div>';
+    }).join('');
+  }
+  window.comLoad = async function(force){
+    if(comBusy) return;
+    if(!force && comData && Date.now() - comStamp < 60000) return;
+    comBusy = true;
+    try{
+      const headers = { apikey: SUPABASE_KEY };
+      const tok = validToken();
+      if(tok) headers.Authorization = 'Bearer ' + tok;
+      const res = await fetchTimeout(SUPABASE_URL + '/rest/v1/posts?select=sala,creado_en&sala=not.is.null&order=creado_en.desc&limit=1000', { headers: headers });
+      if(!res.ok) throw new Error('salas ' + res.status);
+      const rows = await res.json();
+      if(!Array.isArray(rows)) throw new Error('formato');
+      const m = {};
+      rows.forEach(r => {
+        const o = m[r.sala] || (m[r.sala] = { n: 0, last: r.creado_en });
+        o.n++;
+        if(new Date(r.creado_en) > new Date(o.last)) o.last = r.creado_en;
+      });
+      comData = m; comStamp = Date.now();
+      comPaint();
+    }catch(e){ /* sin la columna o sin conexión: las salas se ven igual, sin números */ }
+    finally{ comBusy = false; }
+  };
+
+  // abrir una sala = el feed de Inicio filtrado por esa sala
+  function salaBarRender(){
+    const bar = document.getElementById('sala-bar');
+    const lab = document.getElementById('feed-label');
+    const x = feedFilter ? salaOf(feedFilter) : null;
+    if(lab) lab.textContent = x ? 'Publicaciones de la sala' : 'Publicaciones del gremio';
+    if(!bar) return;
+    if(!x){ bar.style.display = 'none'; bar.innerHTML = ''; return; }
+    bar.style.display = 'block';
+    bar.innerHTML = '<div class="sala-bar-main"><div class="forum-ico" style="background:' + x.bg + ';color:' + x.fg + ';">' + x.ic + '</div>' +
+      '<div><div class="sala-bar-name">Sala · ' + esc(x.n) + '</div><div class="sala-bar-desc">' + esc(x.d) + '</div></div></div>' +
+      '<div class="sala-bar-actions"><button class="btn-gold" type="button" onclick="salaPublish()">Publicar aquí</button>' +
+      '<button class="post-act" type="button" onclick="salaClear(true)">Ver todo ✕</button></div>';
+  }
+  function salaReset(){
+    feedFilter = null; feedRows = null; feedStamp = 0;
+    salaBarRender();
+    const box = document.getElementById('feed-list');
+    if(box) box.innerHTML = '<div class="feed-empty">Cargando publicaciones…</div>';
+  }
+  window.salaGuard = function(name, btn){
+    // tocar "Inicio" en la barra de abajo siempre muestra todo el gremio
+    if(feedFilter && name === 'inicio' && btn && btn.dataset && btn.dataset.screen === 'inicio') salaReset();
+  };
+  function salaClear(goHome){
+    salaReset();
+    if(goHome) go('inicio', document.querySelector('.navbtn[data-screen="inicio"]'));
+  }
+  function openSala(k){
+    const x = salaOf(k);
+    if(!x) return;
+    feedFilter = x.k; feedRows = null; feedStamp = 0;
+    salaBarRender();
+    const box = document.getElementById('feed-list');
+    if(box) box.innerHTML = '<div class="feed-empty">Cargando publicaciones…</div>';
+    go('inicio', document.querySelector('.navbtn[data-screen="comunidad"]'));
+    document.getElementById('screenTitle').textContent = x.n;
+    document.getElementById('screenSub').textContent = 'Sala · ' + x.d;
+    feedLoad(); // por si go() no la disparó
+  }
+  function salaPublish(){
+    const sel = document.getElementById('pub-sala');
+    if(sel && feedFilter) sel.value = feedFilter;
+    go('publicar', document.querySelector('.navbtn.publish'));
+  }
+  (function salaInit(){
+    const sel = document.getElementById('pub-sala');
+    if(sel) sel.innerHTML = '<option value="">General (sin sala)</option>' + SALAS.map(x => '<option value="' + x.k + '">' + x.ic + ' ' + esc(x.n) + '</option>').join('');
+    comPaint();
+  })();
+
   // ===== PUBLICAR =====
   function pubMsg(text, kind){
     const el = document.getElementById('pub-msg');
@@ -2001,6 +2141,8 @@
     if(txt.length > 500){ pubMsg('Máximo 500 caracteres.', 'err'); return; }
     const picked = document.querySelector('.catpick.on');
     const cat = picked && picked.dataset.cat ? picked.dataset.cat : 'Mi obra';
+    const salaSel = document.getElementById('pub-sala');
+    const sala = salaSel && salaOf(salaSel.value) ? salaSel.value : '';
     btn.disabled = true; btn.textContent = 'Publicando…';
     pubMsg('');
     try{
@@ -2009,7 +2151,7 @@
       const res = await fetch(SUPABASE_URL + '/rest/v1/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', apikey: SUPABASE_KEY, Authorization: 'Bearer ' + tok, Prefer: 'return=minimal' },
-        body: JSON.stringify({ autor_id: myId(), categoria: cat, contenido: txt })
+        body: JSON.stringify(sala ? { autor_id: myId(), categoria: cat, contenido: txt, sala: sala } : { autor_id: myId(), categoria: cat, contenido: txt })
       });
       if(!res.ok){
         let detail = '';
@@ -2019,7 +2161,13 @@
         throw new Error('No se pudo publicar (' + res.status + '). Intenta de nuevo.');
       }
       ta.value = ''; pubCount();
-      go('inicio', document.querySelector('.navbtn[data-screen="inicio"]'));
+      if(salaSel) salaSel.value = '';
+      comStamp = 0;
+      if(sala){
+        openSala(sala);          // se ve la publicación dentro de su sala
+      } else {
+        go('inicio', document.querySelector('.navbtn[data-screen="inicio"]'));
+      }
       await feedLoad(true);
     }catch(e){
       pubMsg(e instanceof TypeError ? 'Sin conexión. Intenta de nuevo.' : e.message, 'err');
