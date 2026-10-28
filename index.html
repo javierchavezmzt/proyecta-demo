@@ -482,6 +482,21 @@
   .th-send{padding:0 16px;border:none;border-radius:100px;cursor:pointer;font-weight:800;font-size:13px;
     background:linear-gradient(155deg,var(--gold-2),var(--gold));color:var(--navy);}
   .th-send:disabled{opacity:.6;cursor:default;}
+  /* mensajes directos */
+  #dm-title{flex:1;min-width:0;margin:0 10px 0 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  #dm-back{margin-right:10px;font-size:20px;line-height:1;}
+  .dm-pill{min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--gold);color:var(--navy);
+    font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;align-self:center;flex:none;}
+  .dm-wrap{flex:1;display:none;flex-direction:column;min-height:0;}
+  .dm-msgs{flex:1;overflow-y:auto;padding:14px 16px 8px;display:flex;flex-direction:column;gap:6px;-webkit-overflow-scrolling:touch;}
+  .dm-msgs::-webkit-scrollbar{display:none;}
+  .dm-b{max-width:82%;padding:9px 12px;border-radius:16px;font-size:14px;line-height:1.4;word-break:break-word;white-space:pre-wrap;}
+  .dm-b.me{align-self:flex-end;background:var(--navy);color:#fff;border-bottom-right-radius:4px;}
+  .dm-b.them{align-self:flex-start;background:var(--paper);border:1px solid var(--line);border-bottom-left-radius:4px;}
+  .dm-t{font-size:10.5px;opacity:.7;margin-top:3px;font-weight:600;}
+  .dm-foot{padding:8px 16px 14px;background:var(--cream);border-top:1px solid var(--line);}
+  .dm-tools{display:flex;gap:18px;margin-bottom:8px;}
+  .dm-note{font-size:11px;color:var(--muted);line-height:1.45;margin-top:8px;}
   .toast{position:absolute;left:50%;bottom:96px;transform:translateX(-50%) translateY(10px);background:var(--navy);color:#fff;
     font-size:12.5px;font-weight:600;padding:10px 16px;border-radius:100px;opacity:0;pointer-events:none;
     transition:opacity .2s, transform .2s;z-index:50;max-width:88%;text-align:center;line-height:1.35;}
@@ -513,6 +528,7 @@
           <div class="wordmark">PROYEC<span>TA</span></div>
           <div style="display:flex;gap:8px;">
             <div class="bell" role="button" tabindex="0" aria-label="Padrón de especialistas y proveedores" onclick="go('buscar', null)">🔎</div>
+            <div class="bell" id="dmBtn" role="button" tabindex="0" aria-label="Mensajes" style="display:none" onclick="dmOpen()" onkeydown="if(event.key==='Enter')dmOpen()">✉️<span class="bell-badge" id="dmBadge"></span></div>
             <div class="bell" id="bellBtn" role="button" tabindex="0" aria-label="Avisos" onclick="notifOpen()" onkeydown="if(event.key==='Enter')notifOpen()">🔔<span class="bell-badge" id="bellBadge"></span></div>
           </div>
         </div>
@@ -984,6 +1000,9 @@
               <button type="button" class="pass-toggle" id="pass-toggle" onclick="passToggle()" aria-label="Mostrar contraseña" aria-pressed="false">Mostrar</button>
             </div>
             <div class="auth-msg" id="auth-msg"></div>
+            <div id="auth-resend" style="display:none;margin:0 0 12px">
+              <button type="button" class="btn-ghost" id="auth-resend-btn" onclick="authResend()">Reenviar correo de confirmación</button>
+            </div>
             <button type="button" class="btn-gold" id="auth-btn" onclick="authSubmit()">Entrar</button>
           </div>
 
@@ -1014,6 +1033,13 @@
               <div class="auth-title" id="lad-title">🧱 0 ladrillos</div>
               <div class="auth-sub" id="lad-sub" style="margin-bottom:12px"></div>
               <button type="button" class="btn-ghost" onclick="libOpen()">📝 Mi libreta</button>
+            </div>
+            <!-- mensajes directos (solo se muestra si ya corrió el SQL de Mensajes) -->
+            <div class="auth-card" id="me-dm" style="display:none">
+              <div class="auth-title" id="dm-card-title">✉️ Mensajes directos</div>
+              <div class="auth-sub" id="dm-card-sub" style="margin-bottom:12px"></div>
+              <button type="button" class="btn-ghost" onclick="dmOpen()" style="margin-top:0">Abrir mis mensajes</button>
+              <button type="button" class="btn-ghost" id="dm-toggle-btn" onclick="dmToggleAccept()">Apagar mensajes</button>
             </div>
             <button type="button" class="btn-gold" id="me-edit-btn" onclick="profileEditOpen()" style="display:none">Editar perfil</button>
 
@@ -1093,6 +1119,25 @@
           <button class="notif-close" type="button" aria-label="Cerrar mi libreta" onclick="libClose()">✕</button>
         </div>
         <div class="notif-body" id="lib-list"></div>
+      </div>
+
+      <div id="dm-panel" class="notif-panel" role="dialog" aria-label="Mensajes">
+        <div class="notif-top">
+          <button class="notif-close" id="dm-back" type="button" aria-label="Volver a mis mensajes" onclick="dmShowList()" style="display:none">‹</button>
+          <div class="notif-title" id="dm-title">Mensajes</div>
+          <button class="notif-close" type="button" aria-label="Cerrar mensajes" onclick="dmClose()">✕</button>
+        </div>
+        <div class="notif-body" id="dm-list"></div>
+        <div class="dm-wrap" id="dm-wrap">
+          <div class="dm-msgs" id="dm-msgs"></div>
+          <div class="dm-foot">
+            <div class="dm-tools" id="dm-tools"></div>
+            <div class="th-form" id="dm-form"><input class="th-input" id="dm-input" type="text" maxlength="1000" placeholder="Escribe un mensaje…" onkeydown="if(event.key==='Enter')dmSend()"><button class="th-send" id="dm-send" type="button" onclick="dmSend()">Enviar</button></div>
+            <div class="th-note" id="dm-blocked" style="display:none">Bloqueaste a esta persona: ya no te puede escribir, y tú tampoco a ella.</div>
+            <div class="auth-msg" id="dm-msg"></div>
+            <div class="dm-note">Los mensajes no están cifrados: no compartas contraseñas ni datos bancarios. Si reportas una conversación, el equipo de Proyecta podrá leerla para revisarla.</div>
+          </div>
+        </div>
       </div>
 
       <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -1355,6 +1400,7 @@
   const AUTH_KEY = 'proyecta_session_v1';
   let authSession = null;
   let authMode = 'entrar';
+  let authResendEmail = '', authResendLeft = 0, authResendTimer = null;
 
   function authStore(s){
     try{ if(s) localStorage.setItem(AUTH_KEY, JSON.stringify(s)); else localStorage.removeItem(AUTH_KEY); }catch(e){}
@@ -1388,7 +1434,7 @@
     const c = String(e.code || '');
     const m = String(e.message || '').toLowerCase();
     if(c === 'invalid_credentials' || m.includes('invalid login')) return 'Correo o contraseña incorrectos.';
-    if(c === 'email_not_confirmed') return 'Falta confirmar tu correo. Revisa tu bandeja (y la carpeta de spam).';
+    if(c === 'email_not_confirmed') return 'Falta confirmar tu correo. Revisa tu bandeja y la carpeta de spam (en Hotmail u Outlook: "Correo no deseado" y "Otros"), o pide que te lo reenviemos.';
     if(c === 'user_already_exists' || c === 'email_exists' || m.includes('already registered')) return 'Ese correo ya tiene cuenta. Prueba en "Entrar".';
     if(c === 'weak_password') return 'La contraseña es muy débil. Usa al menos 6 caracteres.';
     if(c === 'validation_failed' || m.includes('valid email')) return 'Revisa que el correo esté bien escrito.';
@@ -1403,8 +1449,51 @@
     el.textContent = text || '';
     el.className = 'auth-msg' + (kind ? ' ' + kind : '');
   }
+  // Reenviar el correo de confirmación (con espera de 60 s para no saturar el envío)
+  function authResendPaint(){
+    const btn = document.getElementById('auth-resend-btn');
+    if(!btn) return;
+    btn.disabled = authResendLeft > 0;
+    btn.textContent = authResendLeft > 0 ? ('Reenviar en ' + authResendLeft + ' s') : 'Reenviar correo de confirmación';
+  }
+  function authResendHide(){
+    authResendEmail = '';
+    if(authResendTimer){ clearInterval(authResendTimer); authResendTimer = null; }
+    authResendLeft = 0;
+    const box = document.getElementById('auth-resend');
+    if(box) box.style.display = 'none';
+  }
+  function authResendCooldown(sec){
+    authResendLeft = sec;
+    authResendPaint();
+    if(authResendTimer) clearInterval(authResendTimer);
+    authResendTimer = setInterval(() => {
+      authResendLeft = Math.max(0, authResendLeft - 1);
+      authResendPaint();
+      if(authResendLeft <= 0){ clearInterval(authResendTimer); authResendTimer = null; }
+    }, 1000);
+  }
+  function authResendShow(email, sec){
+    authResendEmail = email;
+    document.getElementById('auth-resend').style.display = '';
+    authResendCooldown(sec || 0);
+  }
+  async function authResend(){
+    if(!authResendEmail || authResendLeft > 0) return;
+    const btn = document.getElementById('auth-resend-btn');
+    btn.disabled = true;
+    btn.textContent = 'Enviando…';
+    try{
+      await authCall('/auth/v1/resend', { type: 'signup', email: authResendEmail });
+      authMsg('Listo: te lo mandamos otra vez a ' + authResendEmail + '. Puede tardar unos minutos. Revisa Spam y Promociones; si es Hotmail u Outlook, revisa "Correo no deseado" y "Otros".', 'ok');
+    }catch(e){
+      authMsg(authErrorMsg(e), 'err');
+    }
+    authResendCooldown(60);
+  }
   function authSetMode(mode){
     authMode = mode;
+    authResendHide();
     const reg = mode === 'registro';
     document.getElementById('tab-entrar').classList.toggle('on', !reg);
     document.getElementById('tab-registro').classList.toggle('on', reg);
@@ -1433,7 +1522,8 @@
         if(!data.access_token){
           authSetMode('entrar');
           document.getElementById('auth-pass').value = '';
-          authMsg('✅ Cuenta creada. Te mandamos un correo a ' + correo + ' para verificarla. Ábrelo y toca el link de confirmación (si no lo ves, revisa Spam o Promociones). Después regresa y entra con tu correo y contraseña.', 'ok');
+          authMsg('✅ Cuenta creada. Te mandamos un correo a ' + correo + ' para verificarla. Ábrelo y toca el link de confirmación. Puede tardar unos minutos: revisa Spam y Promociones; si usas Hotmail u Outlook, revisa "Correo no deseado" y "Otros". Después regresa y entra con tu correo y contraseña.', 'ok');
+          authResendShow(correo, 60);
           return;
         }
       } else {
@@ -1445,6 +1535,7 @@
       await authRender();
     }catch(e){
       authMsg(authErrorMsg(e), 'err');
+      if(String(e.code || '') === 'email_not_confirmed') authResendShow(correo, 0);
     }finally{
       btn.disabled = false;
       btn.textContent = (authMode === 'registro') ? 'Crear mi cuenta' : 'Entrar';
@@ -1473,6 +1564,7 @@
     const logged = !!(authSession && authSession.user);
     if(window.pubRender) window.pubRender(logged);
     if(window.notifSync) window.notifSync();
+    if(window.dmSync) window.dmSync();
     if(window.ladSync) window.ladSync();
     if(window.passHide) window.passHide();
     if(window.feedRender) window.feedRender();
@@ -1538,6 +1630,7 @@
     const btn = document.getElementById('me-edit-btn');
     btn.textContent = filled ? 'Editar perfil' : 'Completar mi perfil';
     btn.style.display = '';
+    if(window.dmPaintCard) window.dmPaintCard();
   }
   function profileEditOpen(){
     const p = meProfile || {};
@@ -1550,6 +1643,7 @@
     document.getElementById('pf-msg').textContent = '';
     document.getElementById('me-summary').style.display = 'none';
     document.getElementById('me-lad').style.display = 'none';
+    document.getElementById('me-dm').style.display = 'none';
     document.getElementById('me-edit-btn').style.display = 'none';
     document.getElementById('me-logout').style.display = 'none';
     document.getElementById('me-edit').style.display = '';
@@ -1559,6 +1653,7 @@
     document.getElementById('me-logout').style.display = '';
     profileRenderSummary();
     if(window.ladPaintCard) window.ladPaintCard();
+    if(window.dmPaintCard) window.dmPaintCard();
   }
   function pfMsg(text, kind){
     const el = document.getElementById('pf-msg');
@@ -1729,10 +1824,11 @@
     const meta = [a.rol, a.ciudad, timeAgo(p.creado_en)].filter(Boolean).join(' · ');
     const id = Number(p.id);
     let act = '';
+    if(p.autor_id) dmNames[p.autor_id] = name;
     if(myId() && myId() === p.autor_id){
       act = '<button class="post-act danger" type="button" onclick="feedDelete(' + id + ')">🗑 Borrar</button>';
     } else if(myId()){
-      act = '<button class="post-act" type="button" onclick="feedReport(' + id + ', this)">⚑ Reportar</button>';
+      act = dmWriteBtn(p.autor_id) + '<button class="post-act" type="button" onclick="feedReport(' + id + ', this)">⚑ Reportar</button>';
     }
     const open = openThreads.has(id);
     return '<div class="card" id="post-' + id + '">' +
@@ -1945,6 +2041,7 @@
     const meta = [a.rol, timeAgo(c.creado_en)].filter(Boolean).join(' · ');
     const cid = Number(c.id);
     const own = !!(myId() && myId() === c.autor_id);
+    if(c.autor_id) dmNames[c.autor_id] = name;
     const nl = Number(c.nlad) || 0;
     let act = '';
     // 🧱 Ladrillo: "este comentario aportó" (no dice quién tiene la razón)
@@ -1966,7 +2063,7 @@
     if(own){
       act += '<button class="post-act danger" type="button" onclick="commentDelete(' + cid + ',' + Number(pid) + ')">🗑 Borrar</button>';
     } else if(myId()){
-      act += '<button class="post-act" type="button" onclick="commentReport(' + cid + ', this)">⚑ Reportar</button>';
+      act += dmWriteBtn(c.autor_id) + '<button class="post-act" type="button" onclick="commentReport(' + cid + ', this)">⚑ Reportar</button>';
     }
     return '<div class="th-c"><div class="th-meta"><b>' + esc(name) + '</b> · ' + esc(meta) + '</div>' +
       '<div class="th-text">' + esc(c.contenido).replace(/\n/g, '<br>') + '</div>' +
@@ -2682,6 +2779,7 @@
     ladrillo: 'reconoció tu aporte 🧱'
   };
   let notifUnread = 0;
+  let dmUnread = 0;
   let notifTimer = null;
 
   function notifSetBadge(n){
@@ -2691,12 +2789,14 @@
     const bell = document.getElementById('bellBtn');
     if(bell) bell.setAttribute('aria-label', n > 0 ? 'Avisos (' + n + ' sin leer)' : 'Avisos');
     try{
-      const r = n > 0 ? (navigator.setAppBadge && navigator.setAppBadge(n)) : (navigator.clearAppBadge && navigator.clearAppBadge());
+      const total = n + dmUnread;
+    const r = total > 0 ? (navigator.setAppBadge && navigator.setAppBadge(total)) : (navigator.clearAppBadge && navigator.clearAppBadge());
       if(r && r.catch) r.catch(() => {});
     }catch(e){}
   }
   async function notifPoll(){
     if(!myId()){ notifSetBadge(0); return; }
+    dmPoll();
     try{
       const tok = await freshToken();
       if(!tok || !myId()) return;
@@ -2713,7 +2813,7 @@
     notifTimer = setInterval(() => { if(!document.hidden) notifPoll(); }, 60000);
   };
   document.addEventListener('visibilitychange', () => { if(!document.hidden && myId()) notifPoll(); });
-  document.addEventListener('keydown', e => { if(e.key === 'Escape'){ notifClose(); libClose(); } });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape'){ notifClose(); libClose(); dmClose(); } });
 
   function notifClose(){
     const el = document.getElementById('notif-panel');
@@ -2818,6 +2918,347 @@
       el.classList.add('flash');
       setTimeout(() => el.classList.remove('flash'), 1900);
     }, 80);
+  }
+
+  // ===== MENSAJES DIRECTOS ✉️ =====
+  let dmAvail = null;        // null = aún no sabemos · false = falta correr el SQL de Mensajes
+  let dmOther = null;        // id de la persona con quien está abierta la conversación
+  let dmBlocked = false;     // ¿yo la bloqueé?
+  let dmTimer = null;        // refresco de la conversación abierta
+  let dmBusy = false;
+  let dmOwner = null;
+  const dmNames = {};        // id -> nombre (se llena al pintar publicaciones y comentarios)
+
+  function dmAcepta(){ return !meProfile || meProfile.acepta_mensajes !== false; }
+  function dmWriteBtn(authorId){
+    if(dmAvail !== true || !myId() || !authorId || authorId === myId()) return '';
+    return '<button class="post-act" type="button" onclick="dmOpen(\'' + esc(authorId) + '\')">✉ Escribirle</button>';
+  }
+  function dmMsg(text, kind){
+    const el = document.getElementById('dm-msg');
+    if(!el) return;
+    el.textContent = text || '';
+    el.className = 'auth-msg' + (kind ? ' ' + kind : '');
+  }
+  function dmSetBadge(n){
+    dmUnread = n;
+    const el = document.getElementById('dmBadge');
+    if(el){ el.textContent = n > 9 ? '9+' : String(n); el.style.display = n > 0 ? 'flex' : 'none'; }
+    const b = document.getElementById('dmBtn');
+    if(b) b.setAttribute('aria-label', n > 0 ? 'Mensajes (' + n + ' sin leer)' : 'Mensajes');
+    notifSetBadge(notifUnread);
+    dmPaintCard();
+  }
+  function dmShowBtn(){
+    const b = document.getElementById('dmBtn');
+    if(b) b.style.display = (dmAvail === true && myId()) ? 'flex' : 'none';
+  }
+  async function dmPoll(){
+    if(!myId()){ dmUnread = 0; dmShowBtn(); return; }
+    try{
+      const tok = await freshToken();
+      if(!tok || !myId()) return;
+      const res = await fetchTimeout(SUPABASE_URL + '/rest/v1/mensajes?select=id&para_id=eq.' + encodeURIComponent(myId()) + '&leido=eq.false&limit=100', { headers: authHeaders(tok) });
+      if(res.status === 404){ if(dmAvail !== false){ dmAvail = false; dmShowBtn(); dmPaintCard(); } return; }
+      if(!res.ok) return;
+      const rows = await res.json();
+      if(!Array.isArray(rows) || !myId()) return;
+      const was = dmAvail;
+      dmAvail = true;
+      dmShowBtn();
+      dmSetBadge(rows.length);
+      if(was !== true){
+        // ya sabemos que los mensajes existen: aparecen los botones "Escribirle"
+        if(window.feedRender) window.feedRender();
+        openThreads.forEach(id => threadPaint(id));
+      }
+    }catch(e){}
+  }
+  window.dmSync = function(){
+    const me = myId();
+    if(me !== dmOwner){
+      dmOwner = me;
+      dmClose();
+      dmUnread = 0;
+      dmOther = null;
+      dmShowBtn();
+    }
+    if(me) dmPoll(); else { dmSetBadge(0); dmShowBtn(); }
+  };
+
+  // --- tarjeta en Perfil: apagar / encender mensajes ---
+  function dmPaintCard(){
+    const card = document.getElementById('me-dm');
+    if(!card) return;
+    const ed = document.getElementById('me-edit');
+    const editing = !!(ed && ed.style.display !== 'none');
+    card.style.display = (dmAvail === true && myId() && !editing) ? '' : 'none';
+    const acepta = dmAcepta();
+    const sub = document.getElementById('dm-card-sub');
+    if(sub){
+      sub.textContent = (acepta
+        ? 'Cualquier persona de Proyecta puede escribirte. Si alguien te incomoda, bloquéala o repórtala desde la conversación.'
+        : 'Tienes los mensajes apagados: nadie te puede escribir. Puedes encenderlos cuando quieras.') +
+        (dmUnread ? ' Tienes ' + dmUnread + (dmUnread === 1 ? ' mensaje sin leer.' : ' mensajes sin leer.') : '');
+    }
+    const t = document.getElementById('dm-toggle-btn');
+    if(t) t.textContent = acepta ? 'Apagar mensajes' : 'Encender mensajes';
+  }
+  window.dmPaintCard = dmPaintCard;
+  async function dmToggleAccept(){
+    if(!myId()) return;
+    const quiero = !dmAcepta();
+    const btn = document.getElementById('dm-toggle-btn');
+    if(btn) btn.disabled = true;
+    try{
+      const tok = await freshToken();
+      if(!tok) throw new Error('sesion');
+      const res = await fetchTimeout(SUPABASE_URL + '/rest/v1/profiles?id=eq.' + encodeURIComponent(myId()), {
+        method: 'PATCH', headers: authHeaders(tok, { Prefer: 'return=representation' }), body: JSON.stringify({ acepta_mensajes: quiero })
+      });
+      if(!res.ok) throw new Error('perfil ' + res.status);
+      const rows = await res.json();
+      if(!rows.length) throw new Error('sin permiso');
+      meProfile = rows[0];
+      showToast(quiero ? 'Mensajes encendidos' : 'Mensajes apagados: nadie te puede escribir');
+    }catch(e){
+      showToast('No se pudo cambiar. Intenta de nuevo.');
+    }
+    if(btn) btn.disabled = false;
+    dmPaintCard();
+  }
+
+  // --- panel ---
+  function dmClose(){
+    if(dmTimer){ clearInterval(dmTimer); dmTimer = null; }
+    const el = document.getElementById('dm-panel');
+    if(el) el.style.display = 'none';
+  }
+  function dmOpen(otherId){
+    if(!myId()){ needLogin('Entra a tu cuenta para mandar mensajes'); return; }
+    if(dmAvail !== true){ showToast('Los mensajes aún no están disponibles.'); return; }
+    const panel = document.getElementById('dm-panel');
+    if(!panel) return;
+    panel.style.display = 'flex';
+    if(otherId) dmOpenThread(otherId); else dmShowList();
+  }
+  function dmShowList(){
+    if(dmTimer){ clearInterval(dmTimer); dmTimer = null; }
+    dmOther = null;
+    document.getElementById('dm-title').textContent = 'Mensajes';
+    document.getElementById('dm-back').style.display = 'none';
+    document.getElementById('dm-wrap').style.display = 'none';
+    const list = document.getElementById('dm-list');
+    list.style.display = '';
+    list.scrollTop = 0;
+    dmLoadList();
+  }
+  const DM_HINT = '<div class="th-hint" style="margin-top:14px">Los mensajes no están cifrados: no compartas contraseñas ni datos bancarios. Para escribirle a alguien, toca <b>✉ Escribirle</b> en sus publicaciones o comentarios.</div>';
+  async function dmLoadList(){
+    const list = document.getElementById('dm-list');
+    if(!list) return;
+    if(!list.innerHTML) list.innerHTML = '<div class="feed-empty">Cargando mensajes…</div>';
+    try{
+      const tok = await freshToken();
+      if(!tok) throw new Error('sesion');
+      const res = await fetchTimeout(SUPABASE_URL + '/rest/v1/rpc/mis_conversaciones', { method: 'POST', headers: authHeaders(tok), body: '{}' });
+      if(!res.ok) throw new Error('conv ' + res.status);
+      const rows = await res.json();
+      if(!Array.isArray(rows)) throw new Error('formato');
+      if(dmOther) return;  // mientras tanto abrieron una conversación
+      if(!rows.length){
+        list.innerHTML = '<div class="feed-empty"><b>Aún no tienes mensajes</b>Cuando alguien te escriba, o tú le escribas a alguien, aparece aquí.</div>' + DM_HINT;
+        return;
+      }
+      list.innerHTML = rows.map(r => {
+        const name = r.nombre || 'Miembro de Proyecta';
+        dmNames[r.otro_id] = name;
+        let snip = String(r.ultimo || '').replace(/\s+/g, ' ').trim();
+        if(snip.length > 80) snip = snip.slice(0, 77).trimEnd() + '…';
+        const n = Number(r.no_leidos) || 0;
+        const id = esc(r.otro_id);
+        return '<div class="notif-item' + (n ? ' unread' : '') + '" role="button" tabindex="0" onclick="dmOpenThread(\'' + id + '\')" onkeydown="if(event.key===\'Enter\')dmOpenThread(\'' + id + '\')">' +
+          '<div class="avatar">' + esc(initialsOf(name)) + '</div>' +
+          '<div class="notif-main"><div class="notif-line"><b>' + esc(name) + '</b>' + (r.rol ? ' · ' + esc(r.rol) : '') + '</div>' +
+          '<div class="notif-snip">' + (r.ultimo_mio ? 'Tú: ' : '') + esc(snip) + '</div>' +
+          '<div class="notif-time">' + esc(timeAgo(r.ultimo_en)) + (r.yo_bloqueo ? ' · bloqueada' : '') + '</div></div>' +
+          (n ? '<div class="dm-pill">' + (n > 9 ? '9+' : n) + '</div>' : '') + '</div>';
+      }).join('') + DM_HINT;
+    }catch(e){
+      if(dmOther) return;
+      list.innerHTML = '<div class="feed-empty"><b>No se pudieron cargar tus mensajes</b>Revisa tu conexión e inténtalo de nuevo.' +
+        '<div style="margin-top:14px;"><button class="btn-ghost" type="button" onclick="dmLoadList()">Reintentar</button></div></div>';
+    }
+  }
+
+  // --- conversación ---
+  function dmOpenThread(id){
+    dmOther = id;
+    dmBlocked = false;
+    const name = dmNames[id] || 'Miembro de Proyecta';
+    document.getElementById('dm-title').textContent = name;
+    document.getElementById('dm-back').style.display = '';
+    document.getElementById('dm-list').style.display = 'none';
+    const wrap = document.getElementById('dm-wrap');
+    wrap.style.display = 'flex';
+    document.getElementById('dm-msgs').innerHTML = '<div class="th-note">Cargando…</div>';
+    document.getElementById('dm-input').value = '';
+    dmMsg('');
+    dmPaintTools();
+    if(dmTimer) clearInterval(dmTimer);
+    dmTimer = setInterval(() => { if(!document.hidden && dmOther) dmLoadThread(true); }, 15000);
+    dmLoadThread(false);
+  }
+  function dmPaintTools(){
+    const tools = document.getElementById('dm-tools');
+    const form = document.getElementById('dm-form');
+    const note = document.getElementById('dm-blocked');
+    if(!tools) return;
+    tools.innerHTML =
+      '<button class="post-act" type="button" onclick="dmBlockToggle()">' + (dmBlocked ? '↩ Desbloquear' : '🚫 Bloquear') + '</button>' +
+      '<button class="post-act" type="button" onclick="dmReport()">⚑ Reportar</button>';
+    form.style.display = dmBlocked ? 'none' : '';
+    note.style.display = dmBlocked ? '' : 'none';
+  }
+  function dmBubble(m){
+    const mine = m.de_id === myId();
+    return '<div class="dm-b ' + (mine ? 'me' : 'them') + '">' + esc(m.contenido) + '<div class="dm-t">' + esc(timeAgo(m.creado_en)) + '</div></div>';
+  }
+  async function dmLoadThread(silent){
+    const other = dmOther;
+    if(!other || !myId()) return;
+    const box = document.getElementById('dm-msgs');
+    try{
+      const tok = await freshToken();
+      if(!tok) throw new Error('sesion');
+      const headers = authHeaders(tok);
+      const me = myId();
+      const q = 'or=(and(de_id.eq.' + me + ',para_id.eq.' + other + '),and(de_id.eq.' + other + ',para_id.eq.' + me + '))';
+      const [r1, r2, r3] = await Promise.all([
+        fetchTimeout(SUPABASE_URL + '/rest/v1/mensajes?select=id,de_id,para_id,contenido,leido,creado_en&' + q + '&order=creado_en.asc&limit=300', { headers: headers }),
+        fetchTimeout(SUPABASE_URL + '/rest/v1/bloqueos?select=bloqueado_id&bloqueado_id=eq.' + encodeURIComponent(other), { headers: headers }),
+        dmNames[other] ? Promise.resolve(null) : fetchTimeout(SUPABASE_URL + '/rest/v1/profiles?select=nombre_completo&id=eq.' + encodeURIComponent(other), { headers: headers })
+      ]);
+      if(!r1.ok) throw new Error('mensajes ' + r1.status);
+      const rows = await r1.json();
+      if(!Array.isArray(rows)) throw new Error('formato');
+      if(dmOther !== other) return;  // cambiaron de conversación mientras cargaba
+      if(r2.ok){ const b = await r2.json(); dmBlocked = Array.isArray(b) && b.length > 0; }
+      if(r3 && r3.ok){
+        const pr = await r3.json();
+        if(pr[0] && pr[0].nombre_completo){ dmNames[other] = pr[0].nombre_completo; document.getElementById('dm-title').textContent = pr[0].nombre_completo; }
+      }
+      dmPaintTools();
+      const atEnd = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
+      const sig = rows.map(m => m.id).join(',');
+      if(box.getAttribute('data-sig') !== sig){
+        box.innerHTML = rows.length
+          ? rows.map(dmBubble).join('')
+          : '<div class="th-note">Aún no hay mensajes. Escríbele algo claro y corto: quién eres y qué necesitas.</div>';
+        box.setAttribute('data-sig', sig);
+        if(!silent || atEnd) box.scrollTop = box.scrollHeight;
+      }
+      // al verlos, se marcan como leídos (solo los que me mandaron a mí)
+      const unseen = rows.some(m => m.para_id === me && !m.leido);
+      if(unseen){
+        try{
+          const r4 = await fetchTimeout(SUPABASE_URL + '/rest/v1/mensajes?para_id=eq.' + encodeURIComponent(me) + '&de_id=eq.' + encodeURIComponent(other) + '&leido=eq.false', {
+            method: 'PATCH', headers: authHeaders(tok, { Prefer: 'return=minimal' }), body: JSON.stringify({ leido: true })
+          });
+          if(r4.ok) dmPoll();
+        }catch(e){}
+      }
+    }catch(e){
+      if(!silent && dmOther === other){
+        box.innerHTML = '<div class="th-note">No se pudo cargar la conversación. <button class="post-act" type="button" onclick="dmLoadThread(false)">Reintentar</button></div>';
+      }
+    }
+  }
+  function dmErrText(detail, status){
+    if(/no_disponible/.test(detail)) return 'No se pudo enviar. Es posible que esta persona no esté recibiendo mensajes.';
+    if(/lo_bloqueaste/.test(detail)) return 'Bloqueaste a esta persona. Desbloquéala si quieres escribirle.';
+    if(/cuenta_suspendida/.test(detail)) return 'Tu cuenta está suspendida por ahora, así que no puedes mandar mensajes.';
+    if(/limite_mensajes/.test(detail)) return 'Llegaste al límite: máximo 40 mensajes por hora.';
+    if(/limite_conversaciones/.test(detail)) return 'Hoy ya le escribiste a 10 personas nuevas. Mañana puedes seguir, o contesta a quienes ya te escribieron.';
+    if(/sin_respuesta/.test(detail)) return 'Ya mandaste varios mensajes sin respuesta. Espera a que te conteste.';
+    if(/mensaje_vacio|mensaje_a_si_mismo/.test(detail)) return 'Escribe tu mensaje.';
+    if(status === 401 || status === 403) return 'Tu sesión venció. Vuelve a entrar desde Perfil.';
+    return 'No se pudo enviar (' + status + '). Intenta de nuevo.';
+  }
+  async function dmSend(){
+    const other = dmOther;
+    const inp = document.getElementById('dm-input');
+    const btn = document.getElementById('dm-send');
+    if(!other || !myId() || dmBusy) return;
+    const txt = inp.value.trim();
+    if(!txt){ dmMsg('Escribe tu mensaje.', 'err'); return; }
+    dmBusy = true; btn.disabled = true; dmMsg('');
+    try{
+      const tok = await freshToken();
+      if(!tok) throw new Error('Tu sesión venció. Vuelve a entrar desde Perfil.');
+      const res = await fetchTimeout(SUPABASE_URL + '/rest/v1/mensajes', {
+        method: 'POST', headers: authHeaders(tok, { Prefer: 'return=minimal' }),
+        body: JSON.stringify({ de_id: myId(), para_id: other, contenido: txt })
+      });
+      if(!res.ok){
+        let detail = '';
+        try{ detail = await res.text(); }catch(e){}
+        throw new Error(dmErrText(detail, res.status));
+      }
+      if(dmOther === other) inp.value = '';
+      await dmLoadThread(false);
+    }catch(e){
+      dmMsg(errText(e), 'err');
+    }finally{
+      dmBusy = false; btn.disabled = false;
+    }
+  }
+  async function dmBlockToggle(){
+    const other = dmOther;
+    if(!other || !myId()) return;
+    const name = dmNames[other] || 'esta persona';
+    try{
+      const tok = await freshToken();
+      if(!tok) throw new Error('sesion');
+      if(!dmBlocked){
+        if(!confirm('¿Bloquear a ' + name + '? Ya no te podrá escribir. No le avisamos.')) return;
+        const res = await fetchTimeout(SUPABASE_URL + '/rest/v1/bloqueos', {
+          method: 'POST', headers: authHeaders(tok, { Prefer: 'return=minimal' }),
+          body: JSON.stringify({ bloqueador_id: myId(), bloqueado_id: other })
+        });
+        if(!res.ok && res.status !== 409) throw new Error('bloqueo ' + res.status);
+        dmBlocked = true;
+        showToast('Bloqueada. Ya no te puede escribir.');
+      } else {
+        const res = await fetchTimeout(SUPABASE_URL + '/rest/v1/bloqueos?bloqueador_id=eq.' + encodeURIComponent(myId()) + '&bloqueado_id=eq.' + encodeURIComponent(other), {
+          method: 'DELETE', headers: authHeaders(tok, { Prefer: 'return=minimal' })
+        });
+        if(!res.ok) throw new Error('desbloqueo ' + res.status);
+        dmBlocked = false;
+        showToast('Desbloqueada.');
+      }
+      dmPaintTools();
+    }catch(e){
+      alert('No se pudo completar. Intenta de nuevo.');
+    }
+  }
+  async function dmReport(){
+    const other = dmOther;
+    if(!other || !myId()) return;
+    const motivo = window.prompt('Reportar esta conversación.\n\nAl reportar, el equipo de Proyecta podrá leer los últimos mensajes para revisarla.\n\n¿Qué pasó? (opcional)', '');
+    if(motivo === null) return;
+    try{
+      const tok = await freshToken();
+      if(!tok) throw new Error('sesion');
+      const res = await fetchTimeout(SUPABASE_URL + '/rest/v1/rpc/reportar_conversacion', {
+        method: 'POST', headers: authHeaders(tok),
+        body: JSON.stringify({ otro: other, motivo_txt: String(motivo).trim().slice(0, 500) || null })
+      });
+      if(!res.ok) throw new Error('reporte ' + res.status);
+      showToast(dmBlocked ? 'Reporte enviado. Lo vamos a revisar.' : 'Reporte enviado. Si quieres, bloquéala para que no te escriba.');
+    }catch(e){
+      alert('No se pudo enviar el reporte. Intenta de nuevo.');
+    }
   }
 
   async function authInit(){
