@@ -1,12 +1,10 @@
-const CACHE_NAME = 'proyecta-v3';
+const CACHE_NAME = 'proyecta-v4';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
-  './icon-192.png',
-  './icon-512.png',
-  './icon-maskable-512.png'
-];
+  './icon-192.png'
+];   // solo lo esencial: los íconos grandes se guardan cuando se piden (no compiten con la red al abrir)
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -35,19 +33,25 @@ self.addEventListener('fetch', (event) => {
 
   // La página (index.html): primero la red, así cada actualización llega
   // a la primera. Si no hay internet, se abre la última copia guardada.
+  // Con señal débil la red no "falla": se queda colgada. Por eso, si en 4 segundos
+  // no respondió, se abre la copia guardada (la versión nueva queda lista para la próxima vez).
   if (req.mode === 'navigate') {
+    // cache: 'no-cache' obliga a revisar con GitHub si hay versión nueva
+    // (si no, el navegador puede reutilizar su copia hasta ~10 minutos).
+    const network = fetch(req, { cache: 'no-cache' }).then((response) => {
+      if (response && response.status === 200) {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(req, clone));
+      }
+      return response;
+    });
+    const slow = new Promise((resolve) => setTimeout(() => resolve(null), 4000));
+    const fromCache = () => caches.match(req).then((c) => c || caches.match('./index.html'));
+    event.waitUntil(network.catch(() => {}));   // que la descarga termine y se guarde aunque se haya abierto la copia
     event.respondWith(
-      // cache: 'no-cache' obliga a revisar con GitHub si hay versión nueva
-      // (si no, el navegador puede reutilizar su copia hasta ~10 minutos).
-      fetch(req, { cache: 'no-cache' })
-        .then((response) => {
-          if (response && response.status === 200) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(req, clone));
-          }
-          return response;
-        })
-        .catch(() => caches.match(req).then((c) => c || caches.match('./index.html')))
+      Promise.race([network, slow])
+        .then((r) => r || fromCache().then((c) => c || network))
+        .catch(() => fromCache().then((c) => c || network))
     );
     return;
   }

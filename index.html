@@ -23,8 +23,12 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Proyecta">
+<link rel="preconnect" href="https://wycfcekpisedypybregi.supabase.co" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,500&family=Archivo+Black&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Las fuentes cargan sin bloquear: si la red va lenta, la app se pinta ya con letra del sistema y luego cambia -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Archivo+Black&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Archivo+Black&display=swap"></noscript>
 <style>
   :root{
     --navy:#0a1f3d;
@@ -1369,7 +1373,7 @@
   async function authCall(path, body, token){
     const headers = { 'Content-Type': 'application/json', apikey: SUPABASE_KEY };
     if(token) headers.Authorization = 'Bearer ' + token;
-    const res = await fetch(SUPABASE_URL + path, { method: 'POST', headers: headers, body: JSON.stringify(body || {}) });
+    const res = await fetchTimeout(SUPABASE_URL + path, { method: 'POST', headers: headers, body: JSON.stringify(body || {}) }, 12000);
     let data = {};
     try{ data = await res.json(); }catch(e){}
     if(!res.ok){
@@ -1390,6 +1394,7 @@
     if(c === 'validation_failed' || m.includes('valid email')) return 'Revisa que el correo esté bien escrito.';
     if(c.includes('rate_limit') || e.status === 429) return 'Demasiados intentos seguidos. Espera unos minutos e intenta de nuevo.';
     if(c === 'signup_disabled') return 'Los registros están cerrados por ahora.';
+    if(e && e.name === 'AbortError') return 'Tardó demasiado. Revisa tu señal e intenta de nuevo.';
     if(e instanceof TypeError) return 'Sin conexión. Revisa tu internet e intenta de nuevo.';
     return 'No se pudo completar: ' + e.message;
   }
@@ -1490,9 +1495,9 @@
     const st = document.getElementById('me-status');
     st.textContent = 'Verificando tu perfil…';
     try{
-      const res = await fetch(SUPABASE_URL + '/rest/v1/profiles?select=*&id=eq.' + encodeURIComponent(u.id), {
+      const res = await fetchTimeout(SUPABASE_URL + '/rest/v1/profiles?select=*&id=eq.' + encodeURIComponent(u.id), {
         headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + authSession.access_token }
-      });
+      }, 12000);
       if(!res.ok) throw new Error('profiles ' + res.status);
       const rows = await res.json();
       if(rows.length){
@@ -1818,7 +1823,7 @@
       const tries = myFilter ? [SEL_SALA + SEL_COUNTS, SEL_SALA] : [SEL_SALA + SEL_COUNTS, SEL_BASIC + SEL_COUNTS, SEL_SALA, SEL_BASIC];
       let res = null;
       for(const sel of tries){
-        res = await fetchTimeout(base + sel + tail, { headers: headers });
+        res = await fetchTimeout(base + sel + tail, { headers: headers }, 15000);
         if(res.ok) break;
       }
       if(!res || !res.ok) throw new Error('posts ' + (res ? res.status : ''));
@@ -1829,8 +1834,9 @@
         p.nlikes = countOf(p.n_likes); p.ncom = countOf(p.n_com); p.liked = false;
         delete p.n_likes; delete p.n_com;
       });
-      await attachAuthors(rows, headers);
-      if(tok && myId() && rows.length){
+      // autores y "mis me gusta" se piden al mismo tiempo (una espera menos con señal lenta)
+      const likesJob = async () => {
+        if(!(tok && myId() && rows.length)) return;
         try{
           const ids = rows.map(p => Number(p.id)).join(',');
           const r2 = await fetchTimeout(SUPABASE_URL + '/rest/v1/likes?select=post_id&user_id=eq.' + encodeURIComponent(myId()) + '&post_id=in.(' + ids + ')', { headers: headers });
@@ -1839,7 +1845,8 @@
             rows.forEach(p => { p.liked = mine.has(Number(p.id)); });
           }
         }catch(e){}
-      }
+      };
+      await Promise.all([attachAuthors(rows, headers), likesJob()]);
       if(myFilter !== feedFilter) return;
       feedRows = rows;
       feedStamp = Date.now();
@@ -1863,6 +1870,14 @@
       feedBusy = false;
       if(feedPending){ feedPending = false; feedLoad(manual); }
     }
+  }
+  // pinta el último feed guardado en el teléfono (si lo hay) mientras llega el nuevo
+  function feedPaintCache(){
+    if(feedRows || feedFilter) return;
+    try{
+      const c = JSON.parse(localStorage.getItem(FEED_CACHE_KEY) || 'null');
+      if(Array.isArray(c) && c.length){ feedRows = c.map(p => Object.assign({}, p, { liked: false })); feedRender(); }
+    }catch(e){}
   }
   window.feedRefreshIfStale = function(){ if(Date.now() - feedStamp > 60000) feedLoad(); };
 
@@ -2813,14 +2828,22 @@
     }
     if(linkResult === 'ok'){ window.__justConfirmed = true; }
     if(!authSession) authSession = authLoad();
+    // 1) Lo último que viste aparece al instante (sin esperar red) y el feed se pide YA.
+    feedPaintCache();
+    feedLoad();
+    // 2) Mientras tanto se renueva la sesión y se carga tu perfil (con tiempo límite).
+    let renewed = false;
     if(authSession){
       const now = Math.floor(Date.now()/1000);
       if(!authSession.expires_at || authSession.expires_at < now + 60){
-        await authRefresh();
+        renewed = await authRefresh();
       }
     }
     await authRender();
-    feedLoad();
+    // 3) Si la sesión se renovó, se vuelve a pedir el feed para marcar tus me gusta.
+    if(renewed && authSession){
+      if(feedBusy) feedPending = true; else feedLoad();
+    }
     if(linkResult === 'error' && !authSession){
       authMsg('El link del correo venció o ya se usó. Entra con tu correo y contraseña; si no puedes, crea la cuenta de nuevo.', 'err');
     }
