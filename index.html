@@ -346,6 +346,7 @@
   .sala-bar-main .forum-ico{width:38px;height:38px;font-size:17px;}
   .sala-bar-name{font-size:14px;font-weight:800;}
   .sala-bar-desc{font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.35;}
+  .sala-bar-rule{font-size:11px;color:var(--muted);line-height:1.45;margin-top:10px;padding-top:9px;border-top:1px dashed var(--line);}
   .sala-bar-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:11px;}
   .sala-bar-actions .btn-gold{width:auto;padding:9px 16px;font-size:12.5px;}
   .sala-chip{
@@ -2122,7 +2123,10 @@
     { k: 'arquitectura',  n: 'Arquitectura',         ic: '🏛️', bg: 'var(--navy)',   fg: '#fff',        d: 'Diseño, proyecto y detalles constructivos' },
     { k: 'instalaciones', n: 'Instalaciones',        ic: '🔧', bg: 'var(--pine)',   fg: '#fff',        d: 'Hidráulica, eléctrica, sanitaria y especiales' },
     { k: 'presupuestos',  n: 'Presupuestos y costos', ic: '📊', bg: 'var(--navy-3)', fg: '#fff',        d: 'Precios unitarios, volumetrías y licitaciones' },
-    { k: 'urbanizacion',  n: 'Urbanización',         ic: '🌆', bg: 'var(--steel)',  fg: '#fff',        d: 'Calles, redes, terracerías y desarrollos' }
+    { k: 'urbanizacion',  n: 'Urbanización',         ic: '🌆', bg: 'var(--steel)',  fg: '#fff',        d: 'Calles, redes, terracerías y desarrollos' },
+    { k: 'proveedores',   n: 'Proveedores',          ic: '🤝', bg: 'var(--navy-2)', fg: 'var(--gold)', d: 'Materiales, equipos y servicios: novedades, productos y soluciones para obra',
+      r: 'Aquí sí puedes ofrecer lo tuyo. Da datos útiles (especificación, cobertura, tiempos) y evita repetir el mismo anuncio: lo que se vea como spam se reporta y se oculta.',
+      ph: 'Cuéntale al gremio qué ofreces: material, equipo o servicio, con datos que sirvan (especificación, cobertura, tiempos de entrega)…', cat: 'Proveedor' }
   ];
   function salaOf(k){ return SALAS.find(x => x.k === k) || null; }
   function salaChip(p){
@@ -2187,6 +2191,7 @@
     bar.style.display = 'block';
     bar.innerHTML = '<div class="sala-bar-main"><div class="forum-ico" style="background:' + x.bg + ';color:' + x.fg + ';">' + x.ic + '</div>' +
       '<div><div class="sala-bar-name">Sala · ' + esc(x.n) + '</div><div class="sala-bar-desc">' + esc(x.d) + '</div></div></div>' +
+      (x.r ? '<div class="sala-bar-rule">' + esc(x.r) + '</div>' : '') +
       '<div class="sala-bar-actions"><button class="btn-gold" type="button" onclick="salaPublish()">Publicar aquí</button>' +
       '<button class="post-act" type="button" onclick="salaClear(true)">Ver todo ✕</button></div>';
   }
@@ -2216,14 +2221,33 @@
     document.getElementById('screenSub').textContent = 'Sala · ' + x.d;
     feedLoad(); // por si go() no la disparó
   }
+  const PUB_PH = 'Cuéntale al gremio qué estás construyendo, qué duda tienes o a quién buscas…';
+  // al elegir una sala con ajustes propios (Proveedores): categoría sugerida y texto de ayuda
+  function salaApply(){
+    const sel = document.getElementById('pub-sala');
+    const ta = document.getElementById('pub-text');
+    const x = sel ? salaOf(sel.value) : null;
+    if(ta) ta.placeholder = x && x.ph ? x.ph : PUB_PH;
+    if(x && x.cat){
+      const c = document.querySelector('.catpick[data-cat="' + x.cat + '"]');
+      if(c){
+        document.querySelectorAll('.catpick').forEach(z => z.classList.remove('on'));
+        c.classList.add('on');
+      }
+    }
+  }
   function salaPublish(){
     const sel = document.getElementById('pub-sala');
     if(sel && feedFilter) sel.value = feedFilter;
+    salaApply();
     go('publicar', document.querySelector('.navbtn.publish'));
   }
   (function salaInit(){
     const sel = document.getElementById('pub-sala');
-    if(sel) sel.innerHTML = '<option value="">General (sin sala)</option>' + SALAS.map(x => '<option value="' + x.k + '">' + x.ic + ' ' + esc(x.n) + '</option>').join('');
+    if(sel){
+      sel.innerHTML = '<option value="">General (sin sala)</option>' + SALAS.map(x => '<option value="' + x.k + '">' + x.ic + ' ' + esc(x.n) + '</option>').join('');
+      sel.addEventListener('change', salaApply);
+    }
     comPaint();
   })();
 
@@ -2271,11 +2295,12 @@
         let detail = '';
         try{ detail = await res.text(); }catch(e){}
         if(/limite_posts/.test(detail)) throw new Error('Llegaste al límite: máximo 5 publicaciones por hora. Intenta más tarde.');
+        if(/posts_sala_valida/.test(detail)) throw new Error('Esa sala aún no está activa. Elige otra o publica en General.');
         if(res.status === 401 || res.status === 403) throw new Error('Tu sesión venció. Vuelve a entrar desde Perfil.');
         throw new Error('No se pudo publicar (' + res.status + '). Intenta de nuevo.');
       }
       ta.value = ''; pubCount();
-      if(salaSel) salaSel.value = '';
+      if(salaSel){ salaSel.value = ''; salaApply(); }
       comStamp = 0;
       if(sala){
         openSala(sala);          // se ve la publicación dentro de su sala
@@ -2373,6 +2398,7 @@
   let ladOwner = null;
   let ladCardOk = false;
   let ladCount = 0;
+  let ladGiven = 0;
   let libToken = 0;
   const LAD_HINT_KEY = 'proyecta_lad_hint_v1';
   function ladHintSeen(){ try{ return localStorage.getItem(LAD_HINT_KEY) === '1'; }catch(e){ return false; } }
@@ -2513,11 +2539,15 @@
     const editing = !!(ed && ed.style.display !== 'none');
     card.style.display = (ladCardOk && myId() && !editing) ? '' : 'none';
     const t = document.getElementById('lad-title');
-    if(t) t.textContent = '🧱 ' + ladCount + (ladCount === 1 ? ' ladrillo' : ' ladrillos');
+    if(t) t.textContent = '🧱 ' + ladCount + (ladCount === 1 ? ' ladrillo recibido' : ' ladrillos recibidos');
     const sub = document.getElementById('lad-sub');
-    if(sub) sub.textContent = ladCount
-      ? 'Cada ladrillo es alguien del gremio reconociendo un aporte tuyo.'
-      : 'Aún no tienes ladrillos. Cada vez que alguien reconozca un aporte tuyo en un comentario, sumas uno.';
+    if(sub){
+      let txt = ladCount
+        ? 'Cada ladrillo es alguien del gremio reconociendo un aporte tuyo.'
+        : 'Aún no recibes ladrillos. Cada vez que alguien reconozca un aporte tuyo en un comentario, sumas uno.';
+      if(ladGiven) txt += ' Tú has reconocido ' + ladGiven + (ladGiven === 1 ? ' aporte' : ' aportes') + ' de otros.';
+      sub.textContent = txt;
+    }
   }
   async function ladRefresh(){
     if(!myId()) return;
@@ -2532,13 +2562,18 @@
       ladCount = Number(await res.json()) || 0;
       ladCardOk = true;
       ladPaintCard();
+      // los que yo he dado (se ve en mi propio historial; no suman a mi cuenta)
+      try{
+        const r2 = await fetchTimeout(SUPABASE_URL + '/rest/v1/comentario_ladrillos?select=comentario_id&user_id=eq.' + encodeURIComponent(myId()) + '&limit=1000', { headers: authHeaders(tok) });
+        if(r2.ok){ const l2 = await r2.json(); ladGiven = Array.isArray(l2) ? l2.length : 0; ladPaintCard(); }
+      }catch(e){}
     }catch(e){}
   }
   window.ladSync = function(){
     const me = myId();
     if(me !== ladOwner){
       ladOwner = me;
-      ladMine.clear(); libSaved.clear(); ladCount = 0;
+      ladMine.clear(); libSaved.clear(); ladCount = 0; ladGiven = 0;
       openThreads.forEach(id => { threadLoad(id); });   // para marcar lo mío tras entrar/salir
     }
     libClose();
