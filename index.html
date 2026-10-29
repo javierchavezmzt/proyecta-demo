@@ -503,12 +503,14 @@
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
   @media (max-width:600px){
-    body{padding:0;background:var(--cream);}
+    body{padding:0;background:var(--cream);min-height:100vh;min-height:100dvh;}
     .rig-label{display:none;}
+    /* dvh = alto REAL visible (con la barra del navegador). Con vh el menú
+       de abajo quedaba escondido hasta llegar al final del feed. */
     .device{
-      width:100vw;height:100vh;border-radius:0;padding:0;box-shadow:none;background:none;
+      width:100vw;height:100vh;height:100dvh;border-radius:0;padding:0;box-shadow:none;background:none;
     }
-    .screen-wrap{border-radius:0;height:100vh;}
+    .screen-wrap{border-radius:0;height:100vh;height:100dvh;}
     .notch{display:none;}
     .app-top{padding-top:20px;}
   }
