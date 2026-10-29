@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora de Concreto — PROYECTA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f1f3f7;
+    --card:#ffffff;
+    --ink:#0e1f33;
+    --ink-soft:#4a5b73;
+    --teal:#163a63;
+    --teal-deep:#0a1f3d;
+    --gold:#c9a04a;
+    --gold-soft:#f0e3c4;
+    --line:#dde2ea;
+    --hair:#e6e9ef;
+    --shadow:0 1px 2px rgba(10,31,61,.06), 0 12px 28px -12px rgba(10,31,61,.25);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    font-family:'Archivo',sans-serif;
+    background:
+      radial-gradient(1200px 600px at 85% -10%, rgba(184,138,60,.10), transparent 60%),
+      radial-gradient(1000px 700px at -10% 110%, rgba(15,97,96,.10), transparent 55%),
+      var(--paper);
+    color:var(--ink);
+    line-height:1.5;
+    min-height:100vh;
+    padding:28px 18px 64px;
+  }
+  /* ---- barra para volver a la app ---- */
+  .topbar{position:sticky;top:0;z-index:30;margin:-28px -18px 22px;padding:12px 18px;
+    background:var(--teal-deep);box-shadow:0 2px 10px rgba(10,31,61,.25)}
+  .topbar a{display:inline-flex;align-items:center;gap:8px;color:#fff;font-weight:700;font-size:15px;
+    text-decoration:none;padding:6px 4px}
+  .topbar a .ar{color:var(--gold);font-size:20px;line-height:1}
+  .printonly{display:none}
+  .wrap{max-width:940px;margin:0 auto}
+
+  /* Header */
+  header.brand{
+    display:flex;align-items:center;justify-content:space-between;
+    gap:20px;flex-wrap:wrap;
+    border-bottom:2px solid var(--teal-deep);
+    padding-bottom:18px;margin-bottom:26px;
+  }
+  .brand-left{display:flex;align-items:center;gap:16px}
+  /* .logo ya no se usa en el HTML, regla eliminada */
+  .brand h1{
+    font-family:'Archivo',sans-serif;font-weight:700;font-size:1.42rem;
+    letter-spacing:-.005em;color:var(--teal-deep);line-height:1.1;
+  }
+  .brand .sub{font-size:.74rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-top:3px}
+  .proj{text-align:right;font-size:.82rem;color:var(--ink-soft)}
+  .proj input{
+    font-family:'Archivo',sans-serif;font-size:.92rem;color:var(--ink);font-weight:600;
+    border:none;border-bottom:1.5px dashed var(--line);background:transparent;
+    text-align:right;padding:2px 0;width:200px;
+  }
+  .proj input:focus{outline:none;border-bottom-color:var(--gold)}
+  .proj label{display:block;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:1px}
+
+  /* Layout */
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  @media(max-width:760px){.grid{grid-template-columns:1fr}}
+
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:16px;
+    padding:22px 22px 24px;box-shadow:var(--shadow);
+  }
+  .card h2{
+    font-family:'Archivo',sans-serif;font-weight:700;font-size:1.06rem;color:var(--teal-deep);
+    margin-bottom:4px;display:flex;align-items:center;gap:9px;
+  }
+  .card h2 .num{
+    font-family:'IBM Plex Mono',monospace;font-size:.7rem;font-weight:600;
+    background:var(--gold-soft);color:var(--gold);
+    width:22px;height:22px;border-radius:6px;display:grid;place-items:center;flex:none;
+  }
+  .card .hint{font-size:.78rem;color:var(--ink-soft);margin-bottom:16px}
+
+  label.fld{display:block;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);font-weight:600;margin:14px 0 6px}
+  select,input[type=number]{
+    width:100%;font-family:'Archivo',sans-serif;font-size:1rem;color:var(--ink);
+    padding:11px 13px;border:1.5px solid var(--line);border-radius:10px;background:#fcfbf7;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  select:focus,input[type=number]:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(15,97,96,.12)}
+
+  /* f'c selector */
+  .fc-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-top:6px}
+  @media(max-width:420px){.fc-grid{grid-template-columns:repeat(3,1fr)}}
+  .fc-btn{
+    font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:.95rem;
+    padding:12px 4px 9px;border:1.5px solid var(--line);border-radius:11px;background:#fcfbf7;
+    cursor:pointer;text-align:center;color:var(--ink-soft);transition:all .15s;line-height:1.15;
+  }
+  .fc-btn small{display:block;font-family:'Archivo',sans-serif;font-size:.6rem;letter-spacing:.05em;font-weight:600;text-transform:uppercase;margin-top:3px;opacity:.7}
+  .fc-btn:hover{border-color:var(--teal)}
+  .fc-btn.active{background:linear-gradient(135deg,var(--teal),var(--teal-deep));color:#fff;border-color:var(--teal-deep);box-shadow:0 6px 14px -8px rgba(15,97,96,.7)}
+  .fc-btn.active small{opacity:.85}
+
+  /* dimension helper */
+  .dims{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .dims label.fld{margin-top:8px}
+  .or{display:flex;align-items:center;gap:10px;margin:18px 0 4px;color:var(--gold);font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;font-weight:700}
+  .or::before,.or::after{content:"";flex:1;height:1px;background:var(--hair)}
+
+  /* Results */
+  .result-card{grid-column:1/-1;background:linear-gradient(180deg,var(--teal),var(--teal-deep));border:none;color:#eef4f3;padding:26px 26px 28px}
+  .result-card h2{color:#fff}
+  .result-card h2 .num{background:rgba(184,138,60,.25);color:var(--gold-soft)}
+  .vol-line{
+    display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;
+    border-bottom:1px solid rgba(255,255,255,.13);padding-bottom:16px;margin-bottom:20px;
+  }
+  .vol-line .big{font-family:'Archivo',sans-serif;font-size:2rem;font-weight:700;color:#fff}
+  .vol-line .tag{font-size:.78rem;color:rgba(238,244,243,.7)}
+  .vol-line .pill{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:.78rem;background:rgba(255,255,255,.1);padding:5px 11px;border-radius:99px;color:var(--gold-soft)}
+
+  .mats{display:grid;grid-template-columns:repeat(4,1fr);gap:13px}
+  @media(max-width:680px){.mats{grid-template-columns:repeat(2,1fr)}}
+  .mat{
+    background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.1);
+    border-radius:13px;padding:16px 15px 15px;position:relative;overflow:hidden;
+  }
+  .mat .ic{width:30px;height:30px;margin-bottom:9px;color:var(--gold-soft);opacity:.92}
+  .mat .ic svg{width:100%;height:100%}
+  .mat .qty{font-family:'IBM Plex Mono',monospace;font-size:1.7rem;font-weight:600;color:#fff;line-height:1}
+  .mat .unit{font-size:.74rem;color:rgba(238,244,243,.72);margin-top:3px}
+  .mat .name{font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--gold-soft);margin-bottom:10px}
+  .mat .alt{font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:rgba(238,244,243,.55);margin-top:6px;border-top:1px dashed rgba(255,255,255,.14);padding-top:6px}
+
+  .recipe{
+    margin-top:22px;background:rgba(184,138,60,.13);border:1px solid rgba(184,138,60,.32);
+    border-radius:13px;padding:16px 18px;
+  }
+  .recipe .rh{font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--gold-soft);margin-bottom:9px}
+  .recipe .rrow{font-family:'IBM Plex Mono',monospace;font-size:.95rem;color:#fff;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline}
+  .recipe .rrow b{color:var(--gold-soft);font-weight:600}
+  .recipe .rnote{font-family:'Archivo',sans-serif;font-size:.74rem;color:rgba(238,244,243,.65);margin-top:8px}
+
+  .spec{display:flex;gap:18px;flex-wrap:wrap;margin-top:18px;font-size:.78rem;color:rgba(238,244,243,.78)}
+  .spec span b{color:#fff;font-family:'IBM Plex Mono',monospace}
+
+  /* note + buttons */
+  .note{
+    grid-column:1/-1;font-size:.78rem;color:var(--ink-soft);background:#fbf8f0;
+    border:1px solid var(--gold-soft);border-left:3px solid var(--gold);border-radius:10px;
+    padding:14px 16px;line-height:1.55;
+  }
+  .note b{color:var(--teal-deep)}
+  .actions{grid-column:1/-1;display:flex;gap:12px;justify-content:flex-end;flex-wrap:wrap}
+  .btn{
+    font-family:'Archivo',sans-serif;font-weight:600;font-size:.9rem;cursor:pointer;
+    padding:11px 20px;border-radius:10px;border:1.5px solid var(--teal-deep);
+    background:var(--teal-deep);color:#fff;transition:transform .12s, box-shadow .12s;
+  }
+  .btn:hover{transform:translateY(-1px);box-shadow:0 8px 18px -10px rgba(10,61,60,.7)}
+  .btn.ghost{background:transparent;color:var(--teal-deep)}
+  footer{grid-column:1/-1;text-align:center;font-size:.72rem;color:var(--ink-soft);margin-top:8px;line-height:1.5}
+  footer .ing{font-family:'Archivo',sans-serif;color:var(--teal-deep);font-weight:700;font-size:.92rem}
+
+  @media print{
+    body{background:#fff;padding:0}
+    .actions,.no-print,.topbar{display:none!important}
+    .printonly{display:block!important}
+    .card,.result-card{box-shadow:none;break-inside:avoid}
+    .result-card{background:#0a1f3d!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .mat,.recipe{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  }
+</style>
+</head>
+<body>
+<div class="topbar"><a href="/" id="volver"><span class="ar">&#8249;</span> Volver a Proyecta</a></div>
+<div class="wrap">
+
+  <header class="brand">
+    <div class="brand-left">
+      <div>
+        <h1>CALCULADORA DE CONCRETO HECHO EN OBRA</h1>
+        <div class="sub">Sacos de 25 kg y dosificación por bote de 19 litros</div>
+      </div>
+    </div>
+    <div class="proj no-print-edit" style="align-self:flex-start">
+      <div style="font-family:'Archivo',sans-serif;font-weight:700;font-size:1.6rem;letter-spacing:.02em;color:var(--teal-deep);line-height:1.1">PROYECTA</div>
+    </div>
+  </header>
+
+  <div class="printonly" style="font-size:.78rem;color:var(--ink-soft);margin:-10px 0 16px">
+    Versión beta · desarrollada por <b>Javier Chávez y Ricardo Medina</b> · app.proyectalatam.com · Mazatlán, Sinaloa · <span id="repFecha"></span>
+  </div>
+
+  <div class="grid">
+
+    <!-- INPUTS -->
+    <section class="card">
+      <h2><span class="num">1</span> RESISTENCIA</h2>
+      <p class="hint">Selecciona la resistencia de proyecto f′c.</p>
+
+      <label class="fld">Resistencia f′c</label>
+      <div class="fc-grid" id="fcGrid">
+        <div class="fc-btn" data-fc="100">100<small>kg/cm²</small></div>
+        <div class="fc-btn" data-fc="150">150<small>kg/cm²</small></div>
+        <div class="fc-btn active" data-fc="200">200<small>kg/cm²</small></div>
+        <div class="fc-btn" data-fc="250">250<small>kg/cm²</small></div>
+        <div class="fc-btn" data-fc="300">300<small>kg/cm²</small></div>
+      </div>
+
+      <label class="fld">Tipo de cemento (saco 25 kg)</label>
+      <div style="font-family:'Archivo',sans-serif;font-size:1rem;color:var(--ink);padding:11px 13px;border:1.5px solid var(--line);border-radius:10px;background:#fcfbf7">CPC 30R — uso estructural general</div>
+      <p class="hint" style="margin-top:8px" id="marcaNote">La dosificación se basa en cemento <b>CPC 30R</b> (recomendado para zona costera). Cualquier marca comercial que cumpla esta norma funciona igual — lo que importa es el tipo de cemento, no el fabricante.</p>
+    </section>
+
+    <!-- VOLUME -->
+    <section class="card">
+      <h2><span class="num">2</span> VOLUMEN A COLAR</h2>
+      <p class="hint">Captura el volumen directamente, o usa el ayudante de dimensiones para un elemento rectangular.</p>
+
+      <label class="fld" for="volm3">Volumen de concreto (m³)</label>
+      <input id="volm3" type="number" min="0" step="0.01" value="0">
+
+      <div class="or">Ayudante de dimensiones</div>
+      <div class="dims">
+        <div><label class="fld">Largo (m)</label><input id="dL" type="number" min="0" step="0.01" placeholder="0"></div>
+        <div><label class="fld">Ancho (m)</label><input id="dA" type="number" min="0" step="0.01" placeholder="0"></div>
+        <div><label class="fld">Espesor (m)</label><input id="dE" type="number" min="0" step="0.01" placeholder="0"></div>
+      </div>
+
+      <label class="fld" for="merma">Desperdicio / merma (%)</label>
+      <input id="merma" type="number" min="0" max="30" step="1" value="0">
+    </section>
+
+    <!-- RESULTS -->
+    <section class="card result-card">
+      <h2><span class="num">3</span> MATERIALES REQUERIDOS</h2>
+
+      <div class="vol-line">
+        <span class="big" id="rVol">1.07</span>
+        <span class="tag">m³ de concreto</span>
+        <span class="pill" id="rProp">Proporción 1 : 2 : 3</span>
+      </div>
+
+      <div class="mats">
+        <div class="mat">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 8h12l-1 12H7L6 8z"/><path d="M5 8l1-3h12l1 3"/><path d="M9 12h6"/></svg></div>
+          <div class="name">Cemento</div>
+          <div class="qty" id="rCem">7.5</div>
+          <div class="unit">sacos de 25 kg</div>
+          <div class="alt" id="rCemAlt">≈ 374 kg</div>
+        </div>
+        <div class="mat">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="14" r="3"/><circle cx="15" cy="11" r="3.4"/><circle cx="16" cy="17" r="2.4"/></svg></div>
+          <div class="name">Grava</div>
+          <div class="qty" id="rGra">34.2</div>
+          <div class="unit">botes de 19 L</div>
+          <div class="alt" id="rGraAlt">≈ 0.65 m³</div>
+        </div>
+        <div class="mat">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 18h16"/><path d="M6 18c1-4 3-7 6-7s5 3 6 7"/><circle cx="9" cy="13" r=".6" fill="currentColor"/><circle cx="13" cy="11.5" r=".6" fill="currentColor"/><circle cx="15" cy="14" r=".6" fill="currentColor"/></svg></div>
+          <div class="name">Arena</div>
+          <div class="qty" id="rAre">28.7</div>
+          <div class="unit">botes de 19 L</div>
+          <div class="alt" id="rAreAlt">≈ 0.55 m³</div>
+        </div>
+        <div class="mat">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3s6 6.5 6 11a6 6 0 01-12 0c0-4.5 6-11 6-11z"/></svg></div>
+          <div class="name">Agua</div>
+          <div class="qty" id="rAgu">11.0</div>
+          <div class="unit">botes de 19 L</div>
+          <div class="alt" id="rAguAlt">≈ 209 litros</div>
+        </div>
+      </div>
+
+      <div class="recipe">
+        <div class="rh">Dosificación de mezclado en obra · por cada saco de cemento</div>
+        <div class="rrow">
+          <span>1 saco</span><span>+</span>
+          <span><b id="recGra">4.6</b> botes grava</span><span>+</span>
+          <span><b id="recAre">3.8</b> botes arena</span><span>+</span>
+          <span><b id="recAgu">2.0</b> botes agua</span>
+        </div>
+        <div class="rnote">El agua es el dato más sensible: añádela poco a poco hasta lograr una mezcla manejable sin que “suelte” agua. Pasarse de agua baja directamente la resistencia.</div>
+      </div>
+
+      <div class="spec">
+        <span>Relación agua/cemento: <b id="sAC">0.56</b></span>
+        <span>Cemento por m³: <b id="sCemM3">7.0</b> sacos</span>
+        <span>Agregado máx.: <b>≈ 3/4″ (19 mm)</b></span>
+      </div>
+    </section>
+
+    <div class="note">
+      <b>Nota técnica.</b> Cálculo en saco de <b>25 kg</b>, conforme a la NOM-036-1-STPS-2018 (límite de carga manual en México). Las cantidades son una <b>estimación volumétrica para concreto hecho en obra</b> (revenimiento de 10 cm, grava de ¾″). Sirven para firmes, banquetas, contratrabes ligeras, dalas, castillos y elementos de baja responsabilidad. Para elementos <b>estructurales de responsabilidad</b> (losas, columnas, trabes principales) lo correcto es un <b>diseño de mezcla de laboratorio</b> o concreto <b>premezclado certificado</b>, que garantiza f′c con pruebas de cilindros. La humedad de la arena y la calidad de los agregados modifican estos valores: ajusta el agua en campo. Proporciones de agua/arena/grava tomadas de ficha técnica de cemento CPC 30R (norma NMX-C-414-ONNCCE), convertidas a saco de 25 kg; sacos por m³ validados con fuente independiente. Si se requiere mayor trabajabilidad, añade agua y cemento en proporción 1:1 hasta lograr la consistencia deseada.
+    </div>
+
+    <div class="actions">
+      <button class="btn ghost" onclick="window.print()">Imprimir / Guardar PDF</button>
+      <button class="btn" onclick="resetAll()">Reiniciar</button>
+    </div>
+
+    <footer>
+      <span class="ing" style="text-transform:uppercase;letter-spacing:.06em">Calcula, consulta y construye con confianza</span><br>
+      <span style="font-size:.78rem;color:var(--ink-soft);margin-top:4px;display:inline-block">Javier Chávez y Ricardo Medina</span><br>
+      <span style="font-size:.7rem;color:var(--ink-soft);display:inline-block;margin-top:2px">Versión beta · proyectalatam.com</span>
+    </footer>
+
+  </div>
+</div>
+
+<script>
+  // Tabla de dosificación — grava ¾". Fuente: ficha técnica CEMEX (Cemento CPC 30R
+  // Extra), proporciones para revenimiento de 10 cm, convertidas a saco de 25 kg
+  // conforme a NOM-036-1-STPS-2018 (límite de carga manual de 25 kg en México,
+  // vigente desde 2020; adopción por fabricantes como Cementos Moctezuma desde 2023).
+  // sacos = sacos de cemento de 25kg por m³ (= 2 × sacos de 50kg, validado con
+  // fuente independiente: Cementos Torices confirma 8 sacos de 50kg/m³ para f'c=250).
+  // agua/arena/grava = botes de 19L POR CADA SACO de 25kg de cemento.
+  const SACO_KG = 25;
+  const TABLA = {
+    100: { sacos:10.0, aguaSaco:1.375, arenaSaco:3.50, gravaSaco:4.00, prop:"1 : 4 : 3.5" },
+    150: { sacos:12.0, aguaSaco:1.25, arenaSaco:2.75, gravaSaco:3.25, prop:"1 : 3.25 : 2.75" },
+    200: { sacos:14.0, aguaSaco:1.00, arenaSaco:2.00, gravaSaco:3.00, prop:"1 : 3 : 2" },
+    250: { sacos:16.0, aguaSaco:0.75, arenaSaco:1.75, gravaSaco:2.50, prop:"1 : 2.5 : 1.75" },
+    300: { sacos:18.0, aguaSaco:0.75, arenaSaco:1.25, gravaSaco:2.25, prop:"1 : 2.25 : 1.25" },
+  };
+  const CUBETA = 19; // litros
+  let fc = 200;
+
+  const $ = id => document.getElementById(id);
+
+  function fmtBote(x){ return String(parseFloat(x.toFixed(2))); }   // 2.75 se queda 2.75 (no 2.8)
+  function num(v){ const n = parseFloat(v); return isNaN(n) ? 0 : n; }
+
+  function calc(){
+    // volumen: dimensiones tienen prioridad si las 3 están llenas
+    const L=num($('dL').value), A=num($('dA').value), E=num($('dE').value);
+    if(L>0 && A>0 && E>0){
+      const v = L*A*E;
+      $('volm3').value = v.toFixed(2);
+    }
+    let vol = num($('volm3').value);
+    const merma = num($('merma').value)/100;
+    const volTot = vol * (1+merma);
+
+    const d = TABLA[fc];
+    const sacos = d.sacos * volTot;
+    const aguaCub  = d.aguaSaco  * sacos;
+    const arenaCub = d.arenaSaco * sacos;
+    const gravaCub = d.gravaSaco * sacos;
+    const aguaL    = aguaCub * CUBETA;
+
+    // salidas
+    $('rVol').textContent = volTot.toFixed(2);
+    $('rProp').textContent = "Cem : Grava : Arena = " + d.prop;
+    $('rCem').textContent = sacos.toFixed(1);
+    $('rCemAlt').textContent = "≈ " + Math.round(sacos*SACO_KG) + " kg";
+    $('rAre').textContent = arenaCub.toFixed(1);
+    $('rAreAlt').textContent = "≈ " + (arenaCub*CUBETA/1000).toFixed(2) + " m³";
+    $('rGra').textContent = gravaCub.toFixed(1);
+    $('rGraAlt').textContent = "≈ " + (gravaCub*CUBETA/1000).toFixed(2) + " m³";
+    $('rAgu').textContent = aguaCub.toFixed(1);
+    $('rAguAlt').textContent = "≈ " + Math.round(aguaL) + " litros";
+
+    // receta por saco — directo de la tabla CEMEX, sin multiplicar (esto es lo que se usa en obra)
+    $('recAre').textContent = fmtBote(d.arenaSaco);
+    $('recGra').textContent = fmtBote(d.gravaSaco);
+    $('recAgu').textContent = fmtBote(d.aguaSaco);
+
+    // specs
+    const ac = (d.aguaSaco*CUBETA) / SACO_KG;
+    $('sAC').textContent = ac.toFixed(2);
+    $('sCemM3').textContent = d.sacos.toFixed(1);
+  }
+
+  // f'c selector
+  $('fcGrid').addEventListener('click', e=>{
+    const b = e.target.closest('.fc-btn'); if(!b) return;
+    document.querySelectorAll('.fc-btn').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    fc = parseInt(b.dataset.fc);
+    calc();
+  });
+
+  ['volm3','dL','dA','dE','merma'].forEach(id=> $(id).addEventListener('input', calc));
+  // si editan volumen directo, limpiar dimensiones para no sobreescribir
+  $('volm3').addEventListener('input', ()=>{ ['dL','dA','dE'].forEach(id=>$(id).value=''); });
+
+  function resetAll(){
+    $('volm3').value="0"; ['dL','dA','dE'].forEach(id=>$(id).value='');
+    $('merma').value="0";
+    document.querySelectorAll('.fc-btn').forEach(x=>x.classList.remove('active'));
+    document.querySelector('.fc-btn[data-fc="200"]').classList.add('active'); fc=200;
+    calc();
+  }
+
+  calc();
+  document.getElementById("repFecha").textContent = new Date().toLocaleDateString("es-MX",{day:"2-digit",month:"long",year:"numeric"});
+
+  /* "Volver a Proyecta": si venimos de la app, regresa a donde estabas; si abrieron la calculadora directo, va al inicio */
+  document.getElementById("volver").addEventListener("click",function(e){
+    try{
+      if(history.length>1 && document.referrer && new URL(document.referrer).origin===location.origin){
+        e.preventDefault(); history.back();
+      }
+    }catch(_){}
+  });
+</script>
+</body>
+</html>
