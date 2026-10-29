@@ -280,10 +280,11 @@
             </div>
             <div>
               <label class="fld" for="mermaP">Merma piezas</label>
-              <div class="inp-u"><input type="number" id="mermaP" step="1" min="0" value="5"><span class="u">%</span></div>
+              <div class="inp-u"><input type="number" id="mermaP" step="1" min="0" value="10"><span class="u">%</span></div>
             </div>
           </div>
           <p class="hint">Resta en <b>vanos</b> el área de puertas y ventanas (largo × alto de cada una).</p>
+          <p class="hint" id="mermaHint"></p>
         </div>
       </section>
 
@@ -466,9 +467,15 @@ Object.entries(PIEZAS).forEach(([k,p])=>{
 sel.value="tabique7";
 
 /* ============================ LÓGICA UI ============================ */
+/* Merma sugerida por tipo de pieza (editable): tabique recocido 10 %, tabicón y block 5 % */
+function mermaSugerida(p){ return p.tipo==="tabique" ? 10 : 5; }
 function setPieza(k){
   state.key=k;
   const p=PIEZAS[k];
+  const ms=mermaSugerida(p);
+  $("mermaP").value=ms;
+  $("mermaHint").innerHTML="Merma sugerida para esta pieza: <b>"+ms+" %</b>"+
+    (p.tipo==="tabique"?" (el tabique recocido se parte más al acarrear y cortar).":" (puedes ajustarla según tu obra).");
   // Orientaciones — siempre oculto, usa la orientación default automáticamente
   const ow=$("orientWrap"), seg=$("orientSeg");
   ow.style.display="none";
@@ -677,7 +684,7 @@ $("btnReset").onclick=()=>{
   sel.value="tabique7"; setPieza("tabique7");
   $("junta").value=1; $("juntaVal").textContent="1.0";
   $("mLargo").value=1; $("mAlto").value=1; $("nMuros").value=1;
-  $("mArea").value=26; $("vanos").value=0; $("mermaP").value=5;
+  $("mArea").value=26; $("vanos").value=0;
   $("prop").value="5"; $("mermaM").value=10;
   state.modo="dim"; [...$("modoSeg").children].forEach((c,i)=>c.classList.toggle("on",i===0));
   $("modoDim").style.display="block"; $("modoArea").style.display="none";
@@ -722,7 +729,6 @@ function buildReport(){
 
 /* ============================ INIT ============================ */
 setPieza("tabique7");
-$("mermaP").value=5;
 
 /* "Volver a Proyecta": si venimos de la app, regresa a donde estabas; si abrieron la calculadora directo, va al inicio */
 document.getElementById("volver").addEventListener("click",function(e){
