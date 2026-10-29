@@ -364,7 +364,7 @@
   <footer class="app">
     <div style="text-align:center;width:100%">
       <div style="font-family:'Archivo',sans-serif;font-weight:700;font-size:.92rem;letter-spacing:.06em;text-transform:uppercase;color:var(--teal-deep)">Calcula, consulta y construye con confianza</div>
-      <div style="font-size:.78rem;color:var(--ink-soft);margin-top:4px">Javier - Ricardo - Maritza</div>
+      <div style="font-size:.78rem;color:var(--ink-soft);margin-top:4px">Javier Chávez y Ricardo Medina</div>
     </div>
   </footer>
 </div>
@@ -377,9 +377,9 @@
       <div class="t">Cuantificación de Mampostería</div>
     </div>
     <div class="rmeta">
-      <b>Ing. Ricardo A. Medina Páez</b><br>
-      Cédula Profesional 7641151<br>
-      R&amp;MP Proyectos de Construcción<br>
+      Versión beta · desarrollada por<br>
+      <b>Javier Chávez y Ricardo Medina</b><br>
+      app.proyectalatam.com<br>
       Mazatlán, Sinaloa · <span id="repFecha"></span>
     </div>
   </div>
@@ -405,7 +405,7 @@
 
   <div class="rfoot">
     <span>Documento generado con la suite PROYECTA · Estimación con fines de presupuesto, sujeta a verificación en obra.</span>
-    <span>Página 1/1</span>
+    <span>proyectalatam.com</span>
   </div>
 </div>
 
@@ -708,7 +708,6 @@ function buildReport(){
     rRow("<b>Piezas totales (con merma)</b>", "<b>"+nf(m.piezasTot)+" pzas</b>")+
     rRow("Volumen de mortero", nf(m.mat.vol,3)+" m³");
   const mat =
-    rRow("Volumen de mortero", nf(m.mat.vol,3)+" m³")+
     rRow("Cemento — botes de 19 L", "<b>"+nf(m.mat.cubCem)+" botes</b>")+
     rRow("Arena — botes de 19 L", "<b>"+nf(m.mat.cubAre)+" botes</b>")+
     rRow("Arena — volumen", nf(m.mat.areM3,2)+" m³")+
