@@ -1,0 +1,721 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calculadora de Ladrillos y Blocks — PROYECTA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f1f3f7;
+    --panel:#ffffff;
+    --ink:#0e1f33;
+    --ink-soft:#4a5b73;
+    --teal:#163a63;
+    --teal-deep:#0a1f3d;
+    --gold:#c9a04a;
+    --gold-soft:#f0e3c4;
+    --line:#dde2ea;
+    --hair:#e6e9ef;
+    --shadow:0 1px 2px rgba(10,31,61,.06),0 12px 28px -12px rgba(10,31,61,.25);
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --disp:'Archivo',sans-serif;
+    --body:'Archivo',sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--body);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    padding:28px 18px 64px;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:0}
+
+  /* ---- header ---- */
+  header.app{
+    display:flex;align-items:flex-start;justify-content:space-between;
+    gap:20px;flex-wrap:wrap;
+    border-bottom:2px solid var(--teal-deep);
+    padding-bottom:18px;margin-bottom:26px;
+  }
+  .brand h1{
+    font-family:var(--body);font-weight:700;font-size:1.42rem;
+    letter-spacing:-.005em;color:var(--teal-deep);line-height:1.1;
+    text-transform:uppercase;margin:0;
+  }
+  .brand .sub{font-size:.74rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-top:3px}
+  .brand-right{font-family:var(--body);font-weight:700;font-size:1.6rem;letter-spacing:.02em;color:var(--teal-deep);line-height:1.1}
+
+  /* ---- layout ---- */
+  .grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.02fr);gap:22px}
+  @media(max-width:880px){.grid{grid-template-columns:1fr}}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}
+  .card + .card{margin-top:18px}
+  .card-h{display:flex;align-items:center;gap:10px;padding:14px 18px 12px;border-bottom:1px solid var(--line)}
+  .card-h .n{font-family:var(--mono);font-size:12px;color:#fff;background:var(--teal);
+    width:24px;height:24px;border-radius:6px;display:grid;place-items:center;flex:0 0 auto;font-weight:600}
+  .card-h h2{font-family:var(--disp);text-transform:uppercase;letter-spacing:.05em;font-size:18px;margin:0}
+  .card-b{padding:16px 18px}
+
+  label.fld{display:block;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);
+    margin:0 0 5px;font-weight:600}
+  .row{display:grid;gap:12px}
+  .row.c2{grid-template-columns:1fr 1fr}
+  .row.c3{grid-template-columns:1fr 1fr 1fr}
+  .row + .row{margin-top:14px}
+  @media(max-width:420px){.row.c3{grid-template-columns:1fr 1fr}}
+
+  select,input[type=number],input[type=text]{
+    width:100%;font-family:var(--body);font-size:15px;color:var(--ink);background:#fff;
+    border:1px solid var(--line);border-radius:8px;padding:10px 11px;outline:none;-webkit-appearance:none}
+  select:focus,input:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(52,88,107,.14)}
+  .inp-u{position:relative}
+  .inp-u .u{position:absolute;right:11px;top:50%;transform:translateY(-50%);font-family:var(--mono);
+    font-size:12px;color:var(--ink-soft);pointer-events:none}
+  .inp-u input{padding-right:38px}
+
+  /* segmented */
+  .seg{display:flex;gap:6px;flex-wrap:wrap}
+  .seg button{flex:1;min-width:78px;font-family:var(--body);font-size:13px;font-weight:600;cursor:pointer;
+    background:#fff;border:1px solid var(--line);border-radius:8px;padding:9px 8px;color:var(--ink-soft)}
+  .seg button.on{background:var(--teal);border-color:var(--teal);color:#fff}
+  .seg.clay button.on{background:var(--gold);border-color:var(--gold)}
+
+  /* junta slider */
+  .junta-readout{font-family:var(--mono);font-size:26px;font-weight:600;color:var(--gold)}
+  input[type=range]{width:100%;accent-color:var(--gold);height:24px}
+  .ticks{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--ink-soft);margin-top:2px}
+
+  .hint{font-size:12px;color:var(--ink-soft);margin-top:8px}
+
+  /* ---- blueprint drawing ---- */
+  .blueprint{background:
+      linear-gradient(var(--panel),var(--panel)) padding-box,
+      repeating-linear-gradient(0deg,transparent 0 23px,rgba(52,88,107,.06) 23px 24px),
+      repeating-linear-gradient(90deg,transparent 0 23px,rgba(52,88,107,.06) 23px 24px);
+    border:1px solid var(--line);border-radius:10px;padding:6px}
+  .blueprint svg{display:block;width:100%;height:auto}
+  .piece-name{font-family:var(--mono);font-size:12px;letter-spacing:.04em;color:var(--teal);
+    text-align:center;margin:8px 2px 2px}
+
+  /* ---- results ---- */
+  .results .card-h{border-bottom:1px solid var(--line)}
+  .readouts{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);
+    border-radius:10px;overflow:hidden;border:1px solid var(--line)}
+  .ro{background:var(--panel);padding:14px 14px 12px}
+  .ro .lab{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);font-weight:600}
+  .ro .val{font-family:var(--mono);font-size:30px;font-weight:600;line-height:1.05;margin-top:4px}
+  .ro .val small{font-size:13px;color:var(--ink-soft);font-weight:500;margin-left:3px}
+  .ro.hero{grid-column:1/-1;background:var(--teal-deep);color:#fff}
+  .ro.hero .lab{color:rgba(255,255,255,.65)}
+  .ro.hero .val{color:#fff;font-size:38px}
+  .ro.hero .val small{color:rgba(255,255,255,.65)}
+  .ro.clay .val{color:var(--gold)}
+  .ro.slate .val{color:var(--teal)}
+
+  .matline{display:flex;justify-content:space-between;align-items:baseline;padding:11px 2px;border-bottom:1px dashed var(--line)}
+  .matline:last-child{border-bottom:none}
+  .matline .k{font-size:14px}
+  .matline .v{font-family:var(--mono);font-size:18px;font-weight:600}
+  .matline .v small{font-size:12px;color:var(--ink-soft);font-weight:500}
+
+  details.method{margin-top:14px;border:1px solid var(--line);border-radius:10px;background:#fff}
+  details.method summary{cursor:pointer;padding:11px 14px;font-size:13px;font-weight:600;color:var(--teal);
+    list-style:none}
+  details.method summary::-webkit-details-marker{display:none}
+  details.method summary::before{content:"▸";margin-right:8px;color:var(--gold)}
+  details.method[open] summary::before{content:"▾"}
+  details.method .mb{padding:0 14px 14px;font-size:12.5px;color:var(--ink-soft)}
+  details.method code{font-family:var(--mono);background:var(--paper);padding:1px 5px;border-radius:4px;color:var(--ink)}
+
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+  .btn{font-family:var(--body);font-weight:600;font-size:14px;cursor:pointer;border-radius:9px;
+    padding:11px 18px;border:1px solid var(--ink);background:var(--ink);color:#fff}
+  .btn.ghost{background:#fff;color:var(--ink)}
+  .btn:active{transform:translateY(1px)}
+
+  footer.app{margin-top:30px;padding-top:14px;border-top:1px solid var(--line);
+    font-size:11.5px;color:var(--ink-soft);text-align:center}
+
+  /* ---- print report ---- */
+  #report{display:none}
+  @media print{
+    body{background:#fff}
+    .wrap, header.app, footer.app, .actions{display:none !important}
+    #report{display:block}
+    @page{margin:14mm}
+  }
+  /* report styles (shared, only shown on print) */
+  #report{font-family:var(--body);color:#000}
+  #report .rh{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #000;padding-bottom:10px}
+  #report .rh .t{font-family:var(--disp);text-transform:uppercase;font-size:24px;letter-spacing:.02em}
+  #report .rh .k{font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--gold)}
+  #report .rmeta{font-size:11px;text-align:right;color:#333}
+  #report h3{font-family:var(--disp);text-transform:uppercase;letter-spacing:.04em;font-size:14px;
+    border-bottom:1px solid #999;padding-bottom:3px;margin:18px 0 8px}
+  #report table{width:100%;border-collapse:collapse;font-size:12px}
+  #report td{padding:5px 6px;border-bottom:1px solid #ddd}
+  #report td.k{color:#555}
+  #report td.v{text-align:right;font-family:var(--mono);font-weight:600}
+  #report .rfoot{margin-top:22px;border-top:1px solid #000;padding-top:8px;font-size:10.5px;color:#333;
+    display:flex;justify-content:space-between}
+  #report .two{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="app">
+    <div class="brand">
+      <div>
+        <h1>CALCULADORA DE LADRILLOS Y BLOCKS</h1>
+        <div class="sub">Piezas por m² y materiales de mortero</div>
+      </div>
+    </div>
+    <div class="brand-right">PROYECTA</div>
+  </header>
+
+  <div class="grid">
+
+    <!-- ============ LEFT: INPUTS ============ -->
+    <div class="col">
+
+      <!-- 1. PIEZA -->
+      <section class="card">
+        <div class="card-h"><span class="n">1</span><h2>Pieza</h2></div>
+        <div class="card-b">
+          <label class="fld" for="pieza">Tipo de pieza</label>
+          <select id="pieza"></select>
+
+          <div class="row c1" id="orientWrap" style="margin-top:14px;display:none">
+            <div>
+              <label class="fld">Aparejo / asiento del muro</label>
+              <div class="seg clay" id="orientSeg"></div>
+            </div>
+          </div>
+
+          <div class="row c3" style="margin-top:14px">
+            <div>
+              <label class="fld" for="dL">Largo (cara)</label>
+              <div class="inp-u"><input type="number" id="dL" step="0.5" min="1"><span class="u">cm</span></div>
+            </div>
+            <div>
+              <label class="fld" for="dH">Alto (cara)</label>
+              <div class="inp-u"><input type="number" id="dH" step="0.5" min="1"><span class="u">cm</span></div>
+            </div>
+            <div>
+              <label class="fld" for="dE">Espesor muro</label>
+              <div class="inp-u"><input type="number" id="dE" step="0.5" min="1"><span class="u">cm</span></div>
+            </div>
+          </div>
+          <p class="hint">El dibujo de la derecha se actualiza con estas medidas. Para una pieza propia elige <b>Personalizada</b> y captura las tres dimensiones.</p>
+        </div>
+      </section>
+
+      <!-- 2. JUNTA -->
+      <section class="card">
+        <div class="card-h"><span class="n">2</span><h2>Junta / Boquilla</h2></div>
+        <div class="card-b">
+          <div style="display:flex;align-items:baseline;justify-content:space-between">
+            <label class="fld" for="junta" style="margin:0">Espesor de junta</label>
+            <span class="junta-readout"><span id="juntaVal">1.0</span> <small style="font-size:14px;color:var(--ink-soft)">cm</small></span>
+          </div>
+          <input type="range" id="junta" min="1" max="3" step="0.5" value="1">
+          <div class="ticks"><span>1.0</span><span>1.5</span><span>2.0</span><span>2.5</span><span>3.0</span></div>
+        </div>
+      </section>
+
+      <!-- 3. MURO -->
+      <section class="card">
+        <div class="card-h"><span class="n">3</span><h2>Muro</h2></div>
+        <div class="card-b">
+          <div class="seg" id="modoSeg" style="margin-bottom:14px">
+            <button data-modo="dim" class="on">Largo × Alto</button>
+            <button data-modo="area">Área directa</button>
+          </div>
+
+          <div id="modoDim">
+            <div class="row c2">
+              <div>
+                <label class="fld" for="mLargo">Largo del muro</label>
+                <div class="inp-u"><input type="number" id="mLargo" step="0.1" min="0" value="1"><span class="u">m</span></div>
+              </div>
+              <div>
+                <label class="fld" for="mAlto">Altura del muro</label>
+                <div class="inp-u"><input type="number" id="mAlto" step="0.1" min="0" value="1"><span class="u">m</span></div>
+              </div>
+            </div>
+            <div class="row c1" style="margin-top:14px">
+              <div>
+                <label class="fld" for="nMuros">N° de muros iguales</label>
+                <input type="number" id="nMuros" step="1" min="1" value="1">
+              </div>
+            </div>
+          </div>
+
+          <div id="modoArea" style="display:none">
+            <label class="fld" for="mArea">Área total a levantar</label>
+            <div class="inp-u"><input type="number" id="mArea" step="0.1" min="0" value="26"><span class="u">m²</span></div>
+          </div>
+
+          <div class="row c2" style="margin-top:14px">
+            <div>
+              <label class="fld" for="vanos">Descuento de vanos</label>
+              <div class="inp-u"><input type="number" id="vanos" step="0.1" min="0" value="0"><span class="u">m²</span></div>
+            </div>
+            <div>
+              <label class="fld" for="mermaP">Merma piezas</label>
+              <div class="inp-u"><input type="number" id="mermaP" step="1" min="0" value="5"><span class="u">%</span></div>
+            </div>
+          </div>
+          <p class="hint">Resta en <b>vanos</b> el área de puertas y ventanas (largo × alto de cada una).</p>
+        </div>
+      </section>
+
+      <!-- 4. MORTERO -->
+      <section class="card">
+        <div class="card-h"><span class="n">4</span><h2>Mortero</h2></div>
+        <div class="card-b">
+          <div id="morMezcla">
+            <div class="row c2">
+              <div>
+                <label class="fld" for="prop">Proporción (Cemento : Arena)</label>
+                <select id="prop">
+                  <option value="4">1 : 4</option>
+                  <option value="5" selected>1 : 5 (muro común)</option>
+                  <option value="6">1 : 6 (económico)</option>
+                </select>
+              </div>
+              <div>
+                <label class="fld" for="mermaM">Merma mortero</label>
+                <div class="inp-u"><input type="number" id="mermaM" step="1" min="0" value="10"><span class="u">%</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ============ RIGHT: DRAWING + RESULTS ============ -->
+    <div class="col">
+
+      <section class="card">
+        <div class="card-h"><span class="n" style="font-size:14px;font-family:'Archivo',sans-serif">F</span><h2>Ficha de la pieza</h2></div>
+        <div class="card-b">
+          <div class="blueprint"><div id="svgBox"></div></div>
+          <div class="piece-name" id="pieceName">—</div>
+        </div>
+      </section>
+
+      <section class="card results">
+        <div class="card-h"><span class="n" style="font-size:14px;font-family:'Archivo',sans-serif">R</span><h2>Resultado</h2></div>
+        <div class="card-b">
+          <div class="readouts">
+            <div class="ro hero">
+              <div class="lab">Piezas totales (con merma)</div>
+              <div class="val" id="rPiezas">—</div>
+            </div>
+            <div class="ro clay">
+              <div class="lab">Piezas por m²</div>
+              <div class="val" id="rPiezasM2">—</div>
+            </div>
+            <div class="ro slate">
+              <div class="lab">Área neta a levantar</div>
+              <div class="val" id="rArea">— <small>m²</small></div>
+            </div>
+          </div>
+
+          <h3 style="font-family:var(--disp);text-transform:uppercase;letter-spacing:.05em;font-size:15px;margin:18px 0 6px;color:var(--teal)">Mortero y materiales</h3>
+          <div id="matBox">
+            <div class="matline"><span class="k">Volumen de mortero</span><span class="v" id="rMortero">—</span></div>
+          </div>
+
+          <details class="method">
+            <summary>Metodología y supuestos del cálculo</summary>
+            <div class="mb" id="methodTxt"></div>
+          </details>
+
+          <div class="actions">
+            <button class="btn" id="btnPdf">Generar PDF / Imprimir</button>
+            <button class="btn ghost" id="btnReset">Restablecer</button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <footer class="app">
+    <div style="text-align:center;width:100%">
+      <div style="font-family:'Archivo',sans-serif;font-weight:700;font-size:.92rem;letter-spacing:.06em;text-transform:uppercase;color:var(--teal-deep)">Calcula, consulta y construye con confianza</div>
+      <div style="font-size:.78rem;color:var(--ink-soft);margin-top:4px">Javier - Ricardo - Maritza</div>
+    </div>
+  </footer>
+</div>
+
+<!-- ===================== PRINTABLE REPORT ===================== -->
+<div id="report">
+  <div class="rh">
+    <div>
+      <div class="k">PROYECTA · HERRAMIENTAS DE INGENIERÍA</div>
+      <div class="t">Cuantificación de Mampostería</div>
+    </div>
+    <div class="rmeta">
+      <b>Ing. Ricardo A. Medina Páez</b><br>
+      Cédula Profesional 7641151<br>
+      R&amp;MP Proyectos de Construcción<br>
+      Mazatlán, Sinaloa · <span id="repFecha"></span>
+    </div>
+  </div>
+
+  <div class="two">
+    <div>
+      <h3>Datos de la pieza</h3>
+      <table id="repPieza"></table>
+    </div>
+    <div>
+      <h3>Datos del muro</h3>
+      <table id="repMuro"></table>
+    </div>
+  </div>
+
+  <h3>Resultados</h3>
+  <table id="repRes"></table>
+
+  <h3>Materiales para mortero</h3>
+  <table id="repMat"></table>
+
+  <p style="font-size:11px;color:#444;margin-top:14px" id="repMetodo"></p>
+
+  <div class="rfoot">
+    <span>Documento generado con la suite PROYECTA · Estimación con fines de presupuesto, sujeta a verificación en obra.</span>
+    <span>Página 1/1</span>
+  </div>
+</div>
+
+<script>
+/* ============================ CATÁLOGO ============================ */
+const PIEZAS = {
+  block10:{n:"Block hueco de concreto 10×20×40", tipo:"block", hueco:true, base:{L:40,H:20,E:10}},
+  block12:{n:"Block hueco de concreto 12×20×40", tipo:"block", hueco:true, base:{L:40,H:20,E:12}},
+  block15:{n:"Block hueco de concreto 15×20×40", tipo:"block", hueco:true, base:{L:40,H:20,E:15}},
+  block20:{n:"Block hueco de concreto 20×20×40", tipo:"block", hueco:true, base:{L:40,H:20,E:20}},
+  tabique6a:{n:"Tabique rojo recocido 6×12×24", tipo:"tabique", hueco:false,
+    orient:{
+      "Soga (12 cm)":{L:24,H:6,E:12},
+      "Cabeza (24 cm)":{L:12,H:6,E:24},
+      "Canto (6 cm)":{L:24,H:12,E:6}
+    }, defOri:"Soga (12 cm)"},
+  tabique6b:{n:"Tabique rojo recocido 6×13×26", tipo:"tabique", hueco:false,
+    orient:{
+      "Soga (13 cm)":{L:26,H:6,E:13},
+      "Cabeza (26 cm)":{L:13,H:6,E:26},
+      "Canto (6 cm)":{L:26,H:13,E:6}
+    }, defOri:"Soga (13 cm)"},
+  tabique7:{n:"Tabique rojo recocido 7×14×28", tipo:"tabique", hueco:false,
+    orient:{
+      "Soga (14 cm)":{L:28,H:7,E:14},
+      "Cabeza (28 cm)":{L:14,H:7,E:28},
+      "Canto (7 cm)":{L:28,H:14,E:7}
+    }, defOri:"Soga (14 cm)"},
+  tabicon10:{n:"Tabicón de concreto 10×14×28", tipo:"tabicon", hueco:false,
+    orient:{
+      "Soga (14 cm)":{L:28,H:10,E:14},
+      "Plano (10 cm)":{L:28,H:14,E:10}
+    }, defOri:"Soga (14 cm)"},
+  tabicon12:{n:"Tabicón de concreto 12×14×28", tipo:"tabicon", hueco:false,
+    orient:{
+      "Soga (14 cm)":{L:28,H:12,E:14},
+      "Plano (12 cm)":{L:28,H:14,E:12}
+    }, defOri:"Soga (14 cm)"},
+  tabicon15:{n:"Tabicón de concreto 15×20×40", tipo:"tabicon", hueco:false,
+    orient:{
+      "Soga (20 cm)":{L:40,H:15,E:20},
+      "Plano (15 cm)":{L:40,H:20,E:15}
+    }, defOri:"Soga (20 cm)"},
+  custom:{n:"Personalizada", tipo:"block", hueco:false, base:{L:40,H:20,E:15}, custom:true}
+};
+
+/* ============================ ESTADO ============================ */
+const $=id=>document.getElementById(id);
+let state={
+  key:"tabique7", ori:null, modo:"dim", mortero:"mezcla"
+};
+
+/* ---- poblar select ---- */
+const sel=$("pieza");
+Object.entries(PIEZAS).forEach(([k,p])=>{
+  const o=document.createElement("option"); o.value=k; o.textContent=p.n; sel.appendChild(o);
+});
+sel.value="tabique7";
+
+/* ============================ LÓGICA UI ============================ */
+function setPieza(k){
+  state.key=k;
+  const p=PIEZAS[k];
+  // Orientaciones — siempre oculto, usa la orientación default automáticamente
+  const ow=$("orientWrap"), seg=$("orientSeg");
+  ow.style.display="none";
+  if(p.orient){ state.ori = p.defOri; }
+  else { state.ori=null; }
+  applyDims();
+}
+function curDims(){
+  const p=PIEZAS[state.key];
+  if(p.orient) return p.orient[state.ori];
+  return p.base;
+}
+function applyDims(){
+  const d=curDims();
+  $("dL").value=d.L; $("dH").value=d.H; $("dE").value=d.E;
+  compute();
+}
+
+sel.onchange=()=>setPieza(sel.value);
+["dL","dH","dE"].forEach(id=>$(id).addEventListener("input",()=>{ state.key=state.key; compute(); }));
+
+/* junta */
+$("junta").addEventListener("input",e=>{ $("juntaVal").textContent=parseFloat(e.target.value).toFixed(1); compute(); });
+
+/* modo muro */
+$("modoSeg").addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b)return;
+  state.modo=b.dataset.modo;
+  [...$("modoSeg").children].forEach(c=>c.classList.toggle("on",c===b));
+  $("modoDim").style.display = state.modo==="dim"?"block":"none";
+  $("modoArea").style.display= state.modo==="area"?"block":"none";
+  compute();
+});
+
+/* modo mortero — solo cemento+arena */
+state.mortero="mezcla";
+
+["mLargo","mAlto","nMuros","mArea","vanos","mermaP","prop","mermaM"]
+  .forEach(id=>$(id).addEventListener("input",compute));
+
+/* ============================ DIBUJO ACOTADO ============================ */
+function drawPiece(L,H,E,hueco,name){
+  const W=380, Hsvg=300;
+  // proyección oblicua: profundidad a 30°, factor 0.5
+  const ox=Math.cos(30*Math.PI/180), oy=Math.sin(30*Math.PI/180);
+  const dep=0.55;
+  // escala para encajar (L+E*dep) ancho, (H+E*dep) alto, con margen para acotaciones
+  const maxW=L+E*dep*ox, maxH=H+E*dep*oy;
+  const padL=70, padR=90, padT=54, padB=58;
+  const sc=Math.min((W-padL-padR)/maxW,(Hsvg-padT-padB)/maxH);
+  const w=L*sc, h=H*sc, dx=E*dep*ox*sc, dy=E*dep*oy*sc;
+  // origen frente inferior-izq
+  const x0=padL, y0=Hsvg-padB - 0;          // esquina inf-izq del frente
+  const yTop=y0-h;
+  const clay="#A8472B", clayD="#7E331E", clayL="#C9633F", slate="#34586B";
+  let s=`<svg viewBox="0 0 ${W} ${Hsvg}" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace,Menlo,Consolas,monospace">`;
+  // caras: top, right, front
+  // top
+  s+=`<path d="M${x0},${yTop} L${x0+dx},${yTop-dy} L${x0+w+dx},${yTop-dy} L${x0+w},${yTop} Z" fill="${clayL}" stroke="${clayD}" stroke-width="1.2"/>`;
+  // right
+  s+=`<path d="M${x0+w},${yTop} L${x0+w+dx},${yTop-dy} L${x0+w+dx},${y0-dy} L${x0+w},${y0} Z" fill="${clayD}" stroke="${clayD}" stroke-width="1.2"/>`;
+  // front
+  s+=`<rect x="${x0}" y="${yTop}" width="${w}" height="${h}" fill="${clay}" stroke="${clayD}" stroke-width="1.2"/>`;
+  // huecos en frente
+  if(hueco){
+    const cav = 2;
+    if(cav===2){
+      const gap=w*0.07, cw=(w-3*gap)/2, ch=h*0.6, cy=yTop+(h-ch)/2;
+      [x0+gap, x0+2*gap+cw].forEach(cx=>{
+        s+=`<rect x="${cx}" y="${cy}" width="${cw}" height="${ch}" rx="3" fill="#8E3A22" stroke="${clayD}" stroke-width="1"/>`;
+      });
+    } else {
+      const cols=4,rows=2,gx=w*0.05,gy=h*0.16,cw=(w-(cols+1)*gx)/cols,ch=(h-(rows+1)*gy)/rows;
+      for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+        s+=`<rect x="${x0+gx+(cw+gx)*c}" y="${yTop+gy+(ch+gy)*r}" width="${cw}" height="${ch}" rx="2" fill="#8E3A22"/>`;
+      }
+    }
+  }
+  // ---- acotaciones (estilo plano) ----
+  const dimC=slate, off=20, tick=4;
+  const dl=(x1,y1,x2,y2)=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${dimC}" stroke-width="1"/>`;
+  const ext=(x1,y1,x2,y2)=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${dimC}" stroke-width=".7" stroke-dasharray="2 2"/>`;
+  const txt=(x,y,t,anchor="middle")=>`<text x="${x}" y="${y}" fill="${dimC}" font-size="12.5" font-weight="600" text-anchor="${anchor}">${t}</text>`;
+  // Largo (abajo)
+  const yL=y0+off;
+  s+=ext(x0,y0,x0,yL+6)+ext(x0+w,y0,x0+w,yL+6);
+  s+=dl(x0,yL,x0+w,yL);
+  s+=dl(x0,yL-tick,x0,yL+tick)+dl(x0+w,yL-tick,x0+w,yL+tick);
+  s+=`<rect x="${x0+w/2-26}" y="${yL+6}" width="52" height="16" fill="#FCFCFB"/>`;
+  s+=txt(x0+w/2,yL+18,fmtCm(L));
+  s+=`<text x="${x0+w/2}" y="${yL-6}" fill="${dimC}" font-size="9" text-anchor="middle" opacity=".8">LARGO</text>`;
+  // Alto (izquierda)
+  const xH=x0-off;
+  s+=ext(x0,yTop,xH-6,yTop)+ext(x0,y0,xH-6,y0);
+  s+=dl(xH,yTop,xH,y0);
+  s+=dl(xH-tick,yTop,xH+tick,yTop)+dl(xH-tick,y0,xH+tick,y0);
+  s+=`<g transform="translate(${xH-7},${(yTop+y0)/2}) rotate(-90)"><rect x="-24" y="-8" width="48" height="16" fill="#FCFCFB"/><text fill="${dimC}" font-size="12.5" font-weight="600" text-anchor="middle" dy="4">${fmtCm(H)}</text></g>`;
+  s+=`<g transform="translate(${xH-22},${(yTop+y0)/2}) rotate(-90)"><text fill="${dimC}" font-size="9" text-anchor="middle" opacity=".8">ALTO</text></g>`;
+  // Espesor — etiqueta arriba a la derecha, fuera del bloque, dentro del viewBox
+  const ex1=x0+w, ey1=yTop, ex2=x0+w+dx, ey2=yTop-dy;
+  const elx=ex2+14, ely=ey2-30;
+  s+=`<line x1="${ex2}" y1="${ey2}" x2="${elx+24}" y2="${ely+14}" stroke="${dimC}" stroke-width="1" stroke-dasharray="3,2"/>`;
+  s+=`<rect x="${elx}" y="${ely}" width="58" height="18" rx="3" fill="#fff" stroke="${dimC}" stroke-width=".8"/>`;
+  s+=`<text x="${elx+29}" y="${ely+13}" fill="${dimC}" font-size="12" font-weight="600" text-anchor="middle">${fmtCm(E)}</text>`;
+  s+=`</svg>`;
+  $("svgBox").innerHTML=s;
+  $("pieceName").textContent=name;
+}
+function fmtCm(v){ return (Math.round(v*10)/10).toString().replace(/\.0$/,"")+" cm"; }
+
+/* ============================ CÁLCULO ============================ */
+const nf=(v,d=0)=>v.toLocaleString("es-MX",{minimumFractionDigits:d,maximumFractionDigits:d});
+let last={};
+
+/* redondea hacia arriba, pero sin que el ruido de decimales (1560.0000000000002) sume una pieza de más */
+function ceilSeguro(x){ return Math.ceil(Math.round(x*1e6)/1e6); }
+
+function compute(){
+  const L=+$("dL").value||0, H=+$("dH").value||0, E=+$("dE").value||0;
+  const j=+$("junta").value||0;
+  const p=PIEZAS[state.key];
+  const hueco = state.key==="custom" ? false : p.hueco;
+  const name = (p.orient? p.n+" · "+state.ori : p.n);
+  drawPiece(L,H,E,hueco,name);
+
+  if(L<=0||H<=0||E<=0){ return; }
+
+  // metros
+  const Lm=L/100, Hm=H/100, Em=E/100, jm=j/100;
+  const cell=(Lm+jm)*(Hm+jm);                 // m² por pieza (cara + junta)
+  const piezasM2 = 1/cell;
+
+  // área muro
+  let area=0;
+  if(state.modo==="dim"){
+    area=(+$("mLargo").value||0)*(+$("mAlto").value||0)*(+$("nMuros").value||1);
+  } else {
+    area=(+$("mArea").value||0);
+  }
+  const vanos=(+$("vanos").value||0);
+  area=Math.max(0, area - vanos);
+
+  const mermaP=(+$("mermaP").value||0)/100;
+  const piezasTot=ceilSeguro(piezasM2*area*(1+mermaP));
+
+  // mortero (volumen de junta, asiento a todo el espesor)
+  const morteroM2 = Em*(1 - (Lm*Hm)/cell);    // m³ por m² de muro
+  let morteroVol = morteroM2*area;
+
+  // materiales
+  let mat={};
+  if(state.mortero==="mezcla"){
+    const mermaM=(+$("mermaM").value||0)/100;
+    const vol = morteroVol*(1+mermaM);
+    const n=+$("prop").value;                 // 1 : n
+    const dry=1.25;                            // factor de esponjamiento/desperdicio seco
+    const cemM3 = dry*vol*(1/(1+n));
+    const areM3 = dry*vol*(n/(1+n));
+    const sacos = ceilSeguro(cemM3/0.01735);     // saco 25 kg ≈ 0.01735 m³
+    const areTon= areM3*1.45;                  // ≈1450 kg/m³
+    const cub=0.019;                           // bote 19 L
+    const cubCem=ceilSeguro(cemM3/cub);
+    const cubAre=ceilSeguro(areM3/cub);
+    mat={tipo:"mezcla", vol, n, cemM3, areM3, sacos, areTon, cubCem, cubAre};
+  }
+
+  // ---- pintar resultados ----
+  $("rPiezas").textContent = nf(piezasTot)+" ";
+  $("rPiezasM2").textContent = nf(piezasM2,1);
+  $("rArea").innerHTML = nf(area,2)+' <small>m²</small>';
+
+  let mb="";
+  mb+=line("Volumen de mortero", nf(mat.vol,3), "m³");
+  mb+=line("Cemento — botes (19 L)", "<b>"+nf(mat.cubCem)+"</b>", "botes");
+  mb+=line("Arena — botes (19 L)", "<b>"+nf(mat.cubAre)+"</b>", "botes");
+  mb+=line("Arena — volumen", nf(mat.areM3,2), "m³");
+  mb+=line("Cemento — sacos (25 kg)", "<b>"+nf(mat.sacos)+"</b>", "sacos");
+  mb+=line("Dosificación por revoltura", "1 : "+mat.n, "(botes cem : arena)");
+  $("matBox").innerHTML=mb;
+
+  $("methodTxt").innerHTML = methodHTML(L,H,E,j,piezasM2,morteroM2,mat);
+
+  last={L,H,E,j,name,piezasM2,piezasTot,area,vanos,mermaP,morteroM2,mat,
+        modo:state.modo, mLargo:+$("mLargo").value||0, mAlto:+$("mAlto").value||0, nMuros:+$("nMuros").value||1};
+}
+function line(k,v,u){
+  return `<div class="matline"><span class="k">${k}</span><span class="v">${v} <small>${u}</small></span></div>`;
+}
+function methodHTML(L,H,E,j,pm2,mM2,mat){
+  let t=`Piezas/m² = 1 / [(largo+junta) × (alto+junta)] = 1 / [(${(L+j)}) × (${(H+j)})] cm → <code>${nf(pm2,2)} pzas/m²</code>. `;
+  t+=`Volumen de junta por m² = espesor × [1 − (área pieza ÷ celda)] = <code>${nf(mM2,4)} m³/m²</code>, asiento a todo el espesor del muro. `;
+  if(mat.tipo==="mezcla"){
+    t+=`Mortero proporción 1:${mat.n}, factor seco 1.25; saco de cemento de 25 kg ≈ 0.01735 m³; bote de 19 L = 0.019 m³; arena ≈ 1.45 ton/m³. `;
+  }
+  t+=`Merma de piezas y de mortero ya incluidas. Cifras redondeadas hacia arriba para compra de material.`;
+  return t;
+}
+
+/* ============================ PDF / IMPRIMIR ============================ */
+$("btnPdf").onclick=()=>{
+  if(!last.name){ compute(); }
+  buildReport();
+  window.print();
+};
+$("btnReset").onclick=()=>{
+  sel.value="tabique7"; setPieza("tabique7");
+  $("junta").value=1; $("juntaVal").textContent="1.0";
+  $("mLargo").value=1; $("mAlto").value=1; $("nMuros").value=1;
+  $("mArea").value=26; $("vanos").value=0; $("mermaP").value=5;
+  $("prop").value="5"; $("mermaM").value=10;
+  state.modo="dim"; [...$("modoSeg").children].forEach((c,i)=>c.classList.toggle("on",i===0));
+  $("modoDim").style.display="block"; $("modoArea").style.display="none";
+  state.mortero="mezcla";
+  compute();
+};
+
+function rRow(k,v){ return `<tr><td class="k">${k}</td><td class="v">${v}</td></tr>`; }
+function buildReport(){
+  const d=new Date();
+  $("repFecha").textContent=d.toLocaleDateString("es-MX",{day:"2-digit",month:"long",year:"numeric"});
+  const m=last;
+  $("repPieza").innerHTML =
+    rRow("Pieza", m.name)+
+    rRow("Cara (largo × alto)", fmtCm(m.L)+" × "+fmtCm(m.H))+
+    rRow("Espesor de muro", fmtCm(m.E))+
+    rRow("Junta / boquilla", fmtCm(m.j))+
+    rRow("Piezas por m²", nf(m.piezasM2,1));
+  let muro = (m.modo==="dim")
+    ? rRow("Largo × Alto", nf(m.mLargo,2)+" × "+nf(m.mAlto,2)+" m")+rRow("N° de muros", m.nMuros)
+    : "";
+  $("repMuro").innerHTML =
+    muro+
+    rRow("Descuento de vanos", nf(m.vanos,2)+" m²")+
+    rRow("Área neta", nf(m.area,2)+" m²")+
+    rRow("Merma de piezas", nf(m.mermaP*100,0)+" %");
+  $("repRes").innerHTML =
+    rRow("<b>Piezas totales (con merma)</b>", "<b>"+nf(m.piezasTot)+" pzas</b>")+
+    rRow("Volumen de mortero", nf(m.mat.vol,3)+" m³");
+  const mat =
+    rRow("Volumen de mortero", nf(m.mat.vol,3)+" m³")+
+    rRow("Cemento — botes de 19 L", "<b>"+nf(m.mat.cubCem)+" botes</b>")+
+    rRow("Arena — botes de 19 L", "<b>"+nf(m.mat.cubAre)+" botes</b>")+
+    rRow("Arena — volumen", nf(m.mat.areM3,2)+" m³")+
+    rRow("Cemento — sacos de 25 kg", "<b>"+nf(m.mat.sacos)+" sacos</b>")+
+    rRow("Dosificación por revoltura", "1 : "+m.mat.n+" (botes cem : arena)");
+  $("repMat").innerHTML=mat;
+  $("repMetodo").textContent =
+    "Método: piezas/m² = 1 ÷ [(largo+junta)(alto+junta)]; volumen de mortero = junta a todo el espesor del muro. "+
+    "Mortero cemento+arena con factor seco 1.25 (saco 25 kg ≈ 0.01735 m³, bote de 19 L = 0.019 m³, arena ≈ 1.45 ton/m³). "+
+    "Cifras estimadas para presupuesto, sujetas a verificación en obra.";
+}
+
+/* ============================ INIT ============================ */
+setPieza("tabique7");
+$("mermaP").value=5;
+</script>
+</body>
+</html>
