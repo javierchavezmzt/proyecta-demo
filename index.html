@@ -463,6 +463,13 @@
   .post-act.liked{color:var(--brick);}
   .post-act.on{color:var(--navy);}
   .foot-end{margin-left:auto;display:flex;gap:12px;}
+  /* ---- editar publicación / comentario ---- */
+  .edit-box{margin-bottom:10px;}
+  .edit-box textarea{display:block;width:100%;box-sizing:border-box;padding:10px 12px;border-radius:12px;border:1.5px solid var(--navy);
+    font-family:inherit;font-size:16px;line-height:1.45;resize:vertical;outline:none;background:#fff;margin-bottom:8px;}
+  .edit-row{display:flex;gap:14px;align-items:center;flex-wrap:wrap;}
+  .edit-msg{font-size:12px;color:#b3261e;margin-top:6px;}
+  .ed-tag{font-style:italic;opacity:.8;}
   .thread{border-top:1px solid var(--line);margin-top:12px;padding-top:10px;}
   .th-note{font-size:12px;color:var(--muted);padding:4px 0 8px;line-height:1.5;}
   .th-c{background:#f6f3ec;border-radius:12px;padding:9px 11px;margin-bottom:8px;}
@@ -1739,6 +1746,8 @@
   const SEL_BASIC = 'id,categoria,contenido,creado_en,autor_id';
   const SEL_SALA = SEL_BASIC + ',sala';
   const SEL_COUNTS = ',n_likes:likes(count),n_com:comentarios(count)';
+  const SEL_ED = ',editado_en';          // columna nueva (Proyecta_SQL_Editar.sql); si falta, el feed cae a lo de antes
+  let edAvail = null;                    // null = aún no sé; false = la columna no existe todavía
   const CATS = {
     'Mi obra':['🏗','obra'], 'Duda':['❓','duda'], 'Solución':['💡','solucion'], 'Especialista':['👷','especialista'],
     'Vacante':['💼','vacante'], 'Proveedor':['🤝','proveedor'], 'Materiales':['🧱','materiales'], 'Equipo':['🚜','equipo']
@@ -1826,10 +1835,12 @@
     const cat = CATS[p.categoria] || ['💬', 'obra'];
     const meta = [a.rol, a.ciudad, timeAgo(p.creado_en)].filter(Boolean).join(' · ');
     const id = Number(p.id);
+    const edTag = p.editado_en ? ' · <span class="ed-tag">editado</span>' : '';
     let act = '';
     if(p.autor_id) dmNames[p.autor_id] = name;
     if(myId() && myId() === p.autor_id){
-      act = '<button class="post-act danger" type="button" onclick="feedDelete(' + id + ')">🗑 Borrar</button>';
+      act = (canEdit(p.creado_en) ? '<button class="post-act" type="button" onclick="postEditStart(' + id + ')">✏️ Editar</button>' : '') +
+            '<button class="post-act danger" type="button" onclick="feedDelete(' + id + ')">🗑 Borrar</button>';
     } else if(myId()){
       act = dmWriteBtn(p.autor_id) + '<button class="post-act" type="button" onclick="feedReport(' + id + ', this)">⚑ Reportar</button>';
     }
@@ -1837,8 +1848,10 @@
     return '<div class="card" id="post-' + id + '">' +
       '<span class="tag ' + cat[1] + '">' + cat[0] + ' ' + esc(p.categoria || 'Publicación') + '</span>' + salaChip(p) +
       '<div class="post-head"><div class="avatar">' + esc(initialsOf(name)) + '</div><div>' +
-        '<div class="post-name">' + esc(name) + '</div><div class="post-meta">' + esc(meta) + '</div></div></div>' +
-      '<div class="post-text">' + esc(p.contenido).replace(/\n/g, '<br>') + '</div>' +
+        '<div class="post-name">' + esc(name) + '</div><div class="post-meta">' + esc(meta) + edTag + '</div></div></div>' +
+      (editing['p' + id] !== undefined
+        ? editBoxHtml('p' + id, 500, 'postEditSave(' + id + ')', 'postEditCancel(' + id + ')')
+        : '<div class="post-text">' + esc(p.contenido).replace(/\n/g, '<br>') + '</div>') +
       '<div class="post-foot">' +
         '<button class="post-act' + (p.liked ? ' liked' : '') + '" id="lk-' + id + '" type="button" aria-pressed="' + (p.liked ? 'true' : 'false') + '" aria-label="Me gusta" onclick="likeToggle(' + id + ')">' + likeInner(p) + '</button>' +
         '<button class="post-act' + (open ? ' on' : '') + '" id="cm-' + id + '" type="button" aria-label="Comentarios" onclick="threadToggle(' + id + ')">💬 ' + (p.ncom || 0) + '</button>' +
@@ -1919,13 +1932,15 @@
       const tail = '&order=creado_en.desc&limit=30' + (myFilter ? '&sala=eq.' + encodeURIComponent(myFilter) : '');
       // Si faltan las tablas de me gusta/comentarios o la columna "sala", cae a versiones
       // más simples del feed en vez de romperse.
-      const tries = myFilter ? [SEL_SALA + SEL_COUNTS, SEL_SALA] : [SEL_SALA + SEL_COUNTS, SEL_BASIC + SEL_COUNTS, SEL_SALA, SEL_BASIC];
+      const triesOld = myFilter ? [SEL_SALA + SEL_COUNTS, SEL_SALA] : [SEL_SALA + SEL_COUNTS, SEL_BASIC + SEL_COUNTS, SEL_SALA, SEL_BASIC];
+      const tries = edAvail === false ? triesOld : [SEL_SALA + SEL_ED + SEL_COUNTS].concat(triesOld);
       let res = null;
       for(const sel of tries){
         res = await fetchTimeout(base + sel + tail, { headers: headers }, 15000);
         if(res.ok) break;
       }
       if(!res || !res.ok) throw new Error('posts ' + (res ? res.status : ''));
+      edAvail = /editado_en/.test(res.url || '') ? true : false;
       const rows = await res.json();
       if(!Array.isArray(rows)) throw new Error('posts formato');
       if(myFilter !== feedFilter) return; // cambiaron de sala mientras cargaba
@@ -2041,7 +2056,7 @@
   function commentHtml(c, pid){
     const a = c.autor || {};
     const name = a.nombre_completo || 'Miembro de Proyecta';
-    const meta = [a.rol, timeAgo(c.creado_en)].filter(Boolean).join(' · ');
+    const meta = [a.rol, timeAgo(c.creado_en)].filter(Boolean).join(' · ') + (c.editado_en ? ' · <span class="ed-tag">editado</span>' : '');
     const cid = Number(c.id);
     const own = !!(myId() && myId() === c.autor_id);
     if(c.autor_id) dmNames[c.autor_id] = name;
@@ -2064,13 +2079,16 @@
         '" onclick="libToggle(' + cid + ',' + Number(pid) + ')">' + (sv ? '✓ Apuntado' : '📝 Me lo apunto') + '</button>';
     }
     if(own){
-      act += '<button class="post-act danger" type="button" onclick="commentDelete(' + cid + ',' + Number(pid) + ')">🗑 Borrar</button>';
+      act += (canEdit(c.creado_en) ? '<button class="post-act" type="button" onclick="commentEditStart(' + cid + ',' + Number(pid) + ')">✏️ Editar</button>' : '') +
+             '<button class="post-act danger" type="button" onclick="commentDelete(' + cid + ',' + Number(pid) + ')">🗑 Borrar</button>';
     } else if(myId()){
       act += dmWriteBtn(c.autor_id) + '<button class="post-act" type="button" onclick="commentReport(' + cid + ', this)">⚑ Reportar</button>';
     }
-    return '<div class="th-c"><div class="th-meta"><b>' + esc(name) + '</b> · ' + esc(meta) + '</div>' +
-      '<div class="th-text">' + esc(c.contenido).replace(/\n/g, '<br>') + '</div>' +
-      (act ? '<div class="th-act">' + act + '</div>' : '') + '</div>';
+    const ed = own && editing['c' + cid] !== undefined;
+    return '<div class="th-c"><div class="th-meta"><b>' + esc(name) + '</b> · ' + meta + '</div>' +
+      (ed ? editBoxHtml('c' + cid, 300, 'commentEditSave(' + cid + ',' + Number(pid) + ')', 'commentEditCancel(' + cid + ',' + Number(pid) + ')')
+          : '<div class="th-text">' + esc(c.contenido).replace(/\n/g, '<br>') + '</div>') +
+      (act && !ed ? '<div class="th-act">' + act + '</div>' : '') + '</div>';
   }
   function threadPaint(id){
     const el = document.getElementById('thl-' + id);
@@ -2090,7 +2108,10 @@
       const headers = { apikey: SUPABASE_KEY };
       const tok = validToken();
       if(tok) headers.Authorization = 'Bearer ' + tok;
-      const res = await fetchTimeout(SUPABASE_URL + '/rest/v1/comentarios?select=id,contenido,creado_en,autor_id&post_id=eq.' + Number(id) + '&order=creado_en.asc&limit=100', { headers: headers });
+      const cUrl = sel => SUPABASE_URL + '/rest/v1/comentarios?select=' + sel + '&post_id=eq.' + Number(id) + '&order=creado_en.asc&limit=100';
+      let res = null;
+      if(edAvail !== false) res = await fetchTimeout(cUrl('id,contenido,creado_en,autor_id,editado_en'), { headers: headers });
+      if(!res || !res.ok) res = await fetchTimeout(cUrl('id,contenido,creado_en,autor_id'), { headers: headers });
       if(!res.ok) throw new Error('comentarios ' + res.status);
       const rows = await res.json();
       if(!Array.isArray(rows)) throw new Error('formato');
@@ -2187,6 +2208,91 @@
     }catch(e){
       btn.disabled = false;
       alert('No se pudo enviar el reporte. Intenta de nuevo.');
+    }
+  }
+
+  // ----- editar publicación / comentario -----
+  const EDIT_MS = 24 * 3600 * 1000;   // ventana de edición: 24 horas (el servidor también lo exige)
+  function canEdit(iso){ const t = new Date(iso).getTime(); return !!t && (Date.now() - t) < EDIT_MS; }
+  const editing = {};   // 'p12' (publicación) / 'c5' (comentario) -> texto que se está editando
+  function editBoxHtml(key, max, saveCall, cancelCall){
+    return '<div class="edit-box"><textarea id="ed-' + key + '" rows="4" maxlength="' + max + '" ' +
+      'oninput="editing[\'' + key + '\']=this.value">' + esc(editing[key]) + '</textarea>' +
+      '<div class="edit-row"><button class="th-send" type="button" id="eds-' + key + '" onclick="' + saveCall + '">Guardar</button>' +
+      '<button class="post-act" type="button" onclick="' + cancelCall + '">Cancelar</button></div>' +
+      '<div class="edit-msg" id="edm-' + key + '"></div></div>';
+  }
+  function editFocus(key){
+    const t = document.getElementById('ed-' + key);
+    if(t){ t.focus(); try{ t.setSelectionRange(t.value.length, t.value.length); }catch(e){} }
+  }
+  function editMsg(key, text){ const el = document.getElementById('edm-' + key); if(el) el.textContent = text || ''; }
+  async function editPatch(table, id, txt){
+    const tok = await freshToken();
+    if(!tok) throw new Error('Tu sesión venció. Vuelve a entrar desde Perfil.');
+    const res = await fetchTimeout(SUPABASE_URL + '/rest/v1/' + table + '?id=eq.' + Number(id), {
+      method: 'PATCH', headers: authHeaders(tok, { Prefer: 'return=representation' }), body: JSON.stringify({ contenido: txt })
+    });
+    if(res.status === 401 || res.status === 403) throw new Error('Tu sesión venció. Vuelve a entrar desde Perfil.');
+    let detail = '';
+    if(!res.ok){ try{ detail = await res.text(); }catch(e){} }
+    if(/cuenta_suspendida/.test(detail)) throw new Error('Tu cuenta está suspendida y no puede editar.');
+    if(/edicion_expirada/.test(detail)) throw new Error('Ya pasaron 24 horas: solo puedes borrarlo y volver a publicar.');
+    if(!res.ok) throw new Error('No se pudo guardar (' + res.status + '). Intenta de nuevo.');
+    const rows = await res.json();
+    if(!rows.length) throw new Error('No se pudo guardar el cambio. Intenta de nuevo.');
+    return rows[0];
+  }
+  function postEditStart(id){
+    const p = findPost(id); if(!p || !myId() || myId() !== p.autor_id) return;
+    if(!canEdit(p.creado_en)){ showToast('Ya pasaron 24 horas: solo puedes borrarla.'); return; }
+    editing['p' + id] = p.contenido;
+    feedRender(); editFocus('p' + id);
+  }
+  function postEditCancel(id){ delete editing['p' + id]; feedRender(); }
+  async function postEditSave(id){
+    const key = 'p' + id, p = findPost(id);
+    if(!p) return;
+    const txt = String(editing[key] === undefined ? '' : editing[key]).trim();
+    if(!txt){ editMsg(key, 'El texto no puede quedar vacío.'); return; }
+    if(txt === p.contenido){ postEditCancel(id); return; }
+    const b = document.getElementById('eds-' + key); if(b) b.disabled = true;
+    editMsg(key, '');
+    try{
+      const row = await editPatch('posts', id, txt);
+      p.contenido = row.contenido || txt;
+      p.editado_en = row.editado_en || new Date().toISOString();
+      delete editing[key];
+      feedSaveCache(); feedRender(); showToast('Publicación actualizada');
+    }catch(e){
+      editMsg(key, errText(e)); const b2 = document.getElementById('eds-' + key); if(b2) b2.disabled = false;
+    }
+  }
+  function commentEditStart(cid, pid){
+    const t = threadCache[pid]; if(!Array.isArray(t)) return;
+    const c = t.find(x => Number(x.id) === Number(cid)); if(!c || !myId() || myId() !== c.autor_id) return;
+    if(!canEdit(c.creado_en)){ showToast('Ya pasaron 24 horas: solo puedes borrarlo.'); return; }
+    editing['c' + cid] = c.contenido;
+    threadPaint(pid); editFocus('c' + cid);
+  }
+  function commentEditCancel(cid, pid){ delete editing['c' + cid]; threadPaint(pid); }
+  async function commentEditSave(cid, pid){
+    const key = 'c' + cid, t = threadCache[pid];
+    const c = Array.isArray(t) ? t.find(x => Number(x.id) === Number(cid)) : null;
+    if(!c) return;
+    const txt = String(editing[key] === undefined ? '' : editing[key]).trim();
+    if(!txt){ editMsg(key, 'El comentario no puede quedar vacío.'); return; }
+    if(txt === c.contenido){ commentEditCancel(cid, pid); return; }
+    const b = document.getElementById('eds-' + key); if(b) b.disabled = true;
+    editMsg(key, '');
+    try{
+      const row = await editPatch('comentarios', cid, txt);
+      c.contenido = row.contenido || txt;
+      c.editado_en = row.editado_en || new Date().toISOString();
+      delete editing[key];
+      threadPaint(pid); showToast('Comentario actualizado');
+    }catch(e){
+      editMsg(key, errText(e)); const b2 = document.getElementById('eds-' + key); if(b2) b2.disabled = false;
     }
   }
 
