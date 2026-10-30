@@ -1071,16 +1071,37 @@
               <div class="auth-title">Editar perfil</div>
               <div class="auth-sub">Esto es lo que verá el gremio. Tu correo y tu contraseña no se muestran.</div>
               <input class="auth-input" id="pf-nombre" type="text" placeholder="Nombre completo" autocomplete="name" maxlength="80">
-              <select class="auth-input" id="pf-rol">
+              <select class="auth-input" id="pf-rol" onchange="pfRolChange()">
                 <option value="">¿Cuál es tu rol?</option>
                 <option>Ing. Civil</option>
                 <option>Arquitecto</option>
                 <option>Técnico o residente de obra</option>
+                <option>Oficios</option>
                 <option>Estudiante</option>
                 <option>Proveedor</option>
                 <option>Otro</option>
               </select>
               <input class="auth-input" id="pf-esp" type="text" list="pf-esp-list" placeholder="Especialidad (ej. Estructuras)" maxlength="60">
+              <select class="auth-input" id="pf-oficio" style="display:none" onchange="pfRolChange()">
+                <option value="">¿Cuál es tu oficio?</option>
+                <optgroup label="Obra negra">
+                  <option>Albañil</option><option>Fierrero (armador)</option><option>Cimbrero</option><option>Colador de concreto</option>
+                </optgroup>
+                <optgroup label="Instalaciones">
+                  <option>Electricista</option><option>Plomero</option><option>Instalador de gas</option><option>Aire acondicionado</option>
+                </optgroup>
+                <optgroup label="Acabados">
+                  <option>Yesero</option><option>Pintor</option><option>Colocador de piso y azulejo</option><option>Tablaroquero</option><option>Impermeabilizador</option>
+                </optgroup>
+                <optgroup label="Carpintería y metal">
+                  <option>Carpintero</option><option>Herrero</option><option>Soldador</option><option>Cancelería y aluminio</option><option>Vidriero</option>
+                </optgroup>
+                <optgroup label="Maquinaria y transporte">
+                  <option>Operador de maquinaria</option><option>Chofer de volteo</option>
+                </optgroup>
+                <option value="__otro">Otro (escríbelo)</option>
+              </select>
+              <input class="auth-input" id="pf-oficio-otro" type="text" placeholder="Escribe tu oficio (ej. Estucador)" maxlength="60" style="display:none">
               <datalist id="pf-esp-list">
                 <option value="Estructuras"><option value="Topografía"><option value="Hidráulica">
                 <option value="Arquitectura"><option value="Obra civil"><option value="Valuación">
@@ -1665,10 +1686,10 @@
       const p = rows[0];
       const name = p.nombre_completo || 'Miembro de Proyecta';
       dmNames[uid] = name;
-      const sub = [p.rol, p.ciudad].filter(Boolean).join(' · ');
+      const sub = [rolShow(p.rol, p.especialidad), p.ciudad].filter(Boolean).join(' · ');
       const row = (k, v) => v ? '<div class="pf-row"><b>' + k + '</b>' + esc(v).replace(/\n/g, '<br>') + '</div>' : '';
       const anos = (p.anos_experiencia || p.anos_experiencia === 0) ? p.anos_experiencia + (Number(p.anos_experiencia) === 1 ? ' año' : ' años') : '';
-      const rows2 = row('Especialidad', p.especialidad) + row('Experiencia', anos) + row('Sobre mí', p.bio);
+      const rows2 = row(p.rol === 'Oficios' ? 'Oficio' : 'Especialidad', p.especialidad) + row('Experiencia', anos) + row('Sobre mí', p.bio);
       let act = '';
       if(dmAvail === true){
         act = p.acepta_mensajes === false
@@ -1688,6 +1709,22 @@
   // ===== EDITAR PERFIL =====
   let meProfile = null;
 
+  // Para quien tiene el rol "Oficios", lo que se muestra bajo el nombre es su oficio (ej. "Yesero").
+  function rolShow(rol, esp){ return (rol === 'Oficios' && esp) ? esp : (rol || ''); }
+  function pfRolChange(){
+    const rol = document.getElementById('pf-rol').value;
+    const esp = document.getElementById('pf-esp'), of = document.getElementById('pf-oficio'), ot = document.getElementById('pf-oficio-otro');
+    const ofi = rol === 'Oficios';
+    esp.style.display = ofi ? 'none' : '';
+    of.style.display = ofi ? '' : 'none';
+    ot.style.display = (ofi && of.value === '__otro') ? '' : 'none';
+  }
+  function pfOficioValue(){
+    const of = document.getElementById('pf-oficio');
+    if(of.value === '__otro') return document.getElementById('pf-oficio-otro').value.trim();
+    return of.value;
+  }
+
   function profileRenderSummary(){
     const p = meProfile || {};
     const rows = [
@@ -1703,6 +1740,7 @@
       document.getElementById(row).style.display = val ? '' : 'none';
       if(val) filled++;
     });
+    const espLab = document.querySelector('#row-esp b'); if(espLab) espLab.textContent = (p.rol === 'Oficios') ? 'Oficio:' : 'Especialidad:';
     document.getElementById('sum-empty').style.display = filled ? 'none' : '';
     document.getElementById('me-summary').style.display = '';
     const btn = document.getElementById('me-edit-btn');
@@ -1714,7 +1752,15 @@
     const p = meProfile || {};
     document.getElementById('pf-nombre').value = p.nombre_completo || '';
     document.getElementById('pf-rol').value = p.rol || '';
-    document.getElementById('pf-esp').value = p.especialidad || '';
+    document.getElementById('pf-esp').value = (p.rol === 'Oficios') ? '' : (p.especialidad || '');
+    // oficio: si está en la lista se selecciona; si no, va a "Otro (escríbelo)"
+    const of = document.getElementById('pf-oficio'), ot = document.getElementById('pf-oficio-otro');
+    of.value = ''; ot.value = '';
+    if(p.rol === 'Oficios' && p.especialidad){
+      of.value = p.especialidad;
+      if(of.value !== p.especialidad){ of.value = '__otro'; ot.value = p.especialidad; }
+    }
+    pfRolChange();
     document.getElementById('pf-ciudad').value = p.ciudad || '';
     document.getElementById('pf-anos').value = (p.anos_experiencia === 0 || p.anos_experiencia) ? p.anos_experiencia : '';
     document.getElementById('pf-bio').value = p.bio || '';
@@ -1748,7 +1794,7 @@
     const body = {
       nombre_completo: nombre,
       rol: document.getElementById('pf-rol').value || null,
-      especialidad: document.getElementById('pf-esp').value.trim() || null,
+      especialidad: (document.getElementById('pf-rol').value === 'Oficios' ? pfOficioValue() : document.getElementById('pf-esp').value.trim()) || null,
       ciudad: document.getElementById('pf-ciudad').value.trim() || null,
       anos_experiencia: anos,
       bio: document.getElementById('pf-bio').value.trim().slice(0, 280) || null
@@ -1902,7 +1948,7 @@
     const a = p.autor || {};
     const name = a.nombre_completo || 'Miembro de Proyecta';
     const cat = CATS[p.categoria] || ['💬', 'obra'];
-    const meta = [a.rol, a.ciudad, timeAgo(p.creado_en)].filter(Boolean).join(' · ');
+    const meta = [rolShow(a.rol, a.especialidad), a.ciudad, timeAgo(p.creado_en)].filter(Boolean).join(' · ');
     const id = Number(p.id);
     const edTag = p.editado_en ? ' · <span class="ed-tag">editado</span>' : '';
     let act = '';
@@ -1971,7 +2017,11 @@
     const ids = Array.from(new Set(rows.map(r => r.autor_id).filter(Boolean)));
     if(!ids.length) return;
     try{
-      const res = await fetchTimeout(SUPABASE_URL + '/rest/v1/profiles?select=id,nombre_completo,rol,ciudad&id=in.(' + ids.map(encodeURIComponent).join(',') + ')', { headers: headers });
+      const inList = '&id=in.(' + ids.map(encodeURIComponent).join(',') + ')';
+      const pUrl = '/rest/v1/profiles?select=';
+      // con especialidad (para mostrar el oficio); si el SQL de Oficios aún no corre, cae a lo de antes
+      let res = await fetchTimeout(SUPABASE_URL + pUrl + 'id,nombre_completo,rol,especialidad,ciudad' + inList, { headers: headers });
+      if(!res.ok) res = await fetchTimeout(SUPABASE_URL + pUrl + 'id,nombre_completo,rol,ciudad' + inList, { headers: headers });
       if(!res.ok) return;
       const list = await res.json();
       const map = {};
@@ -2125,7 +2175,7 @@
   function commentHtml(c, pid){
     const a = c.autor || {};
     const name = a.nombre_completo || 'Miembro de Proyecta';
-    const meta = [a.rol, timeAgo(c.creado_en)].filter(Boolean).join(' · ') + (c.editado_en ? ' · <span class="ed-tag">editado</span>' : '');
+    const meta = esc([rolShow(a.rol, a.especialidad), timeAgo(c.creado_en)].filter(Boolean).join(' · ')) + (c.editado_en ? ' · <span class="ed-tag">editado</span>' : '');
     const cid = Number(c.id);
     const own = !!(myId() && myId() === c.autor_id);
     if(c.autor_id) dmNames[c.autor_id] = name;
@@ -2408,6 +2458,7 @@
   // ===== SALAS (pestaña Comunidad) =====
   const SALAS = [
     { k: 'estudiantes',   n: 'Estudiantes',          ic: '🎓', bg: 'var(--navy)',   fg: '#fff',        d: 'Dudas, tareas, residencias y primeros pasos en la obra' },
+    { k: 'oficios',       n: 'Oficios',              ic: '🛠️', bg: 'var(--pine)',   fg: '#fff',        d: 'Albañiles, electricistas, plomeros, yeseros, carpinteros, fierreros y más. Aquí se habla de la obra desde el trabajo de manos.' },
     { k: 'obra-civil',    n: 'Obra civil',           ic: '🏗️', bg: 'var(--brick)',  fg: '#fff',        d: 'Procesos, colados, residencia y control de obra' },
     { k: 'estructuras',   n: 'Estructuras',          ic: '🧱', bg: 'var(--gold)',   fg: 'var(--navy)', d: 'Cimentación, concreto, acero y cálculo estructural' },
     { k: 'arquitectura',  n: 'Arquitectura',         ic: '🏛️', bg: 'var(--navy)',   fg: '#fff',        d: 'Diseño, proyecto y detalles constructivos' },
