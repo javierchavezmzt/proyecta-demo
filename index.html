@@ -6,11 +6,11 @@
 <title>Proyecta — La comunidad de los que construyen</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0a1f3d">
-<meta name="description" content="La comunidad de los que construyen: herramientas gratis, especialistas verificados y gremio de la construcción en LATAM.">
+<meta name="description" content="La comunidad de los que construyen: herramientas gratis, especialistas verificados y comunidad de la construcción en LATAM.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Proyecta">
 <meta property="og:title" content="Proyecta — La comunidad de los que construyen">
-<meta property="og:description" content="Herramientas gratis, especialistas y gremio de la construcción en LATAM. Entra, regístrate y platica con quienes construyen.">
+<meta property="og:description" content="Herramientas gratis, especialistas y comunidad de la construcción en LATAM. Entra, regístrate y platica con quienes construyen.">
 <meta property="og:url" content="https://app.proyectalatam.com/">
 <meta property="og:image" content="https://app.proyectalatam.com/og-image.png">
 <meta property="og:image:width" content="1200">
@@ -1000,7 +1000,7 @@
             <select id="pub-sala" class="pub-select" aria-label="Sala de la publicación"></select>
 
             <div class="composer">
-              <textarea id="pub-text" maxlength="500" oninput="pubCount()" placeholder="Cuéntale al gremio qué estás construyendo, qué duda tienes o a quién buscas…"></textarea>
+              <textarea id="pub-text" maxlength="500" oninput="pubCount()" placeholder="Cuéntale a la comunidad qué estás construyendo, qué duda tienes o a quién buscas…"></textarea>
               <div class="composer-tools">
                 <div style="font-size:11px;color:var(--muted);font-weight:600;">📷 Fotos: pronto</div>
                 <span id="pub-count" style="font-size:11px;color:var(--muted);font-weight:600;">0/500</span>
@@ -1009,7 +1009,7 @@
 
             <div id="pub-msg" class="auth-msg"></div>
             <button id="pub-btn" class="btn-gold" type="button" onclick="pubSend()">Publicar</button>
-            <div class="post-meta" style="margin-top:12px;font-size:11px;line-height:1.5;">Escribe con respeto y sobre temas del gremio. Las publicaciones que no cumplan se ocultan. Máximo 5 publicaciones por hora.</div>
+            <div class="post-meta" style="margin-top:12px;font-size:11px;line-height:1.5;">Escribe con respeto y sobre temas de construcción. Las publicaciones que no cumplan se ocultan. Máximo 5 publicaciones por hora.</div>
           </div>
         </section>
 
@@ -1026,7 +1026,7 @@
           <!-- cuenta: sin sesión -->
           <div id="auth-out" class="auth-card">
             <div class="auth-title">Únete a Proyecta</div>
-            <div class="auth-sub">Crea tu cuenta gratis para tener tu perfil y publicar en el feed del gremio.</div>
+            <div class="auth-sub">Crea tu cuenta gratis para tener tu perfil y publicar en el feed de la comunidad.</div>
             <div class="auth-tabs">
               <button type="button" class="auth-tab on" id="tab-entrar" onclick="authSetMode('entrar')">Entrar</button>
               <button type="button" class="auth-tab" id="tab-registro" onclick="authSetMode('registro')">Crear cuenta</button>
@@ -1064,7 +1064,7 @@
               <div class="sum-row" id="row-ciudad"><b>Ciudad:</b> <span id="sum-ciudad"></span></div>
               <div class="sum-row" id="row-anos"><b>Experiencia:</b> <span id="sum-anos"></span></div>
               <div class="sum-row" id="row-bio"><b>Sobre mí:</b> <span id="sum-bio"></span></div>
-              <div class="sum-empty" id="sum-empty">Aún no has completado tu perfil. Cuéntale al gremio quién eres.</div>
+              <div class="sum-empty" id="sum-empty">Aún no has completado tu perfil. Cuéntale a la comunidad quién eres.</div>
             </div>
             <!-- ladrillos recibidos + libreta (solo se muestra si ya corrió el SQL de Ladrillos) -->
             <div class="auth-card" id="me-lad" style="display:none">
@@ -1084,7 +1084,7 @@
             <!-- formulario de edición -->
             <div class="auth-card" id="me-edit" style="display:none">
               <div class="auth-title">Editar perfil</div>
-              <div class="auth-sub">Esto es lo que verá el gremio. Tu correo y tu contraseña no se muestran.</div>
+              <div class="auth-sub">Esto es lo que verá la comunidad. Tu correo y tu contraseña no se muestran.</div>
               <input class="auth-input" id="pf-nombre" type="text" placeholder="Nombre completo" autocomplete="name" maxlength="80">
               <select class="auth-input" id="pf-rol" onchange="pfRolChange()">
                 <option value="">¿Cuál es tu rol?</option>
@@ -1234,7 +1234,7 @@
     inicio:      ["Inicio","Lo que se está construyendo hoy en LATAM"],
     buscar:      ["Padrón Proyecta","Especialistas y proveedores seleccionados por Proyecta"],
     herramientas:["Herramientas","Gratis, para resolver tu obra hoy"],
-    publicar:    ["Publicar","Compártele algo real al gremio"],
+    publicar:    ["Publicar","Compártele algo real a la comunidad"],
     comunidad:   ["Comunidad","Conversaciones por especialidad"],
     perfil:      ["Mi perfil","Tu identidad de obra real"]
   };
@@ -2009,7 +2009,7 @@
       return;
     }
     if(!feedRows.length){
-      box.innerHTML = '<div class="feed-empty"><b>Aún no hay publicaciones</b>Sé el primero en compartirle algo al gremio: una obra, una duda, una vacante.' +
+      box.innerHTML = '<div class="feed-empty"><b>Aún no hay publicaciones</b>Sé el primero en compartirle algo a la comunidad: una obra, una duda, una vacante.' +
         '<div style="margin-top:14px;"><button class="btn-gold" type="button" onclick="go(\'publicar\', document.querySelector(\'.navbtn.publish\'))">Publicar ahora</button></div></div>';
       return;
     }
@@ -2489,7 +2489,7 @@
     { k: 'urbanizacion',  n: 'Urbanización',         ic: '🌆', bg: 'var(--steel)',  fg: '#fff',        d: 'Calles, redes, terracerías y desarrollos' },
     { k: 'proveedores',   n: 'Proveedores',          ic: '🤝', bg: 'var(--navy-2)', fg: 'var(--gold)', d: 'Materiales, equipos y servicios: novedades, productos y soluciones para obra',
       r: 'Aquí sí puedes ofrecer lo tuyo. Da datos útiles (especificación, cobertura, tiempos) y evita repetir el mismo anuncio: lo que se vea como spam se reporta y se oculta.',
-      ph: 'Cuéntale al gremio qué ofreces: material, equipo o servicio, con datos que sirvan (especificación, cobertura, tiempos de entrega)…', cat: 'Proveedor' }
+      ph: 'Cuéntale a la comunidad qué ofreces: material, equipo o servicio, con datos que sirvan (especificación, cobertura, tiempos de entrega)…', cat: 'Proveedor' }
   ];
   function salaOf(k){ return SALAS.find(x => x.k === k) || null; }
   function salaChip(p){
@@ -2584,7 +2584,7 @@
     document.getElementById('screenSub').textContent = 'Sala · ' + x.d;
     feedLoad(); // por si go() no la disparó
   }
-  const PUB_PH = 'Cuéntale al gremio qué estás construyendo, qué duda tienes o a quién buscas…';
+  const PUB_PH = 'Cuéntale a la comunidad qué estás construyendo, qué duda tienes o a quién buscas…';
   // al elegir una sala con ajustes propios (Proveedores): categoría sugerida y texto de ayuda
   function salaApply(){
     const sel = document.getElementById('pub-sala');
@@ -2932,7 +2932,7 @@
     const sub = document.getElementById('lad-sub');
     if(sub){
       let txt = ladCount
-        ? 'Cada ladrillo es alguien del gremio reconociendo un aporte tuyo.'
+        ? 'Cada ladrillo es alguien de la comunidad reconociendo un aporte tuyo.'
         : 'Aún no recibes ladrillos. Cada vez que alguien reconozca un aporte tuyo en un comentario, sumas uno.';
       if(ladGiven) txt += ' Tú has reconocido ' + ladGiven + (ladGiven === 1 ? ' aporte' : ' aportes') + ' de otros.';
       sub.textContent = txt;
