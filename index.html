@@ -1657,10 +1657,19 @@
     const st = document.getElementById('me-status');
     st.textContent = 'Verificando tu perfil…';
     try{
-      const res = await fetchTimeout(SUPABASE_URL + '/rest/v1/profiles?select=' + PF_SEL + '&id=eq.' + encodeURIComponent(u.id), {
+      const getPerfil = () => fetchTimeout(SUPABASE_URL + '/rest/v1/profiles?select=' + PF_SEL + '&id=eq.' + encodeURIComponent(u.id), {
         headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + authSession.access_token }
       }, 12000);
-      if(!res.ok) throw new Error('profiles ' + res.status);
+      // si falla la red, se marca para decirlo con precisión (y no confundirlo con un error al pintar)
+      const getNet = async () => { try{ return await getPerfil(); }catch(fe){ fe.net = true; throw fe; } };
+      let res = await getNet();
+      // token vencido (por ejemplo, si el reloj del teléfono va atrasado): se renueva la sesión y se reintenta una vez
+      if(res.status === 401){
+        const ok = await authRefresh();
+        if(!authSession){ await authRender(); return; }
+        if(ok) res = await getNet();
+      }
+      if(!res.ok){ const er = new Error('profiles ' + res.status); er.status = res.status; throw er; }
       const rows = await res.json();
       if(rows.length){
         meProfile = rows[0];
@@ -1674,7 +1683,16 @@
         st.textContent = 'Tu cuenta existe, pero tu perfil aún no se creó en la base de datos.';
       }
     }catch(e){
-      st.textContent = 'Sesión iniciada. No se pudo verificar tu perfil ahora mismo.';
+      // nunca se deja a la persona sin salida: se dice qué pasó y hay botón para reintentar
+      const why = e && e.status ? ' (error ' + e.status + ')'
+        : (e && e.name === 'AbortError' ? ' (tardó demasiado)'
+        : (e && e.net ? ' (sin conexión)'
+        : ' (fallo interno: ' + String((e && e.message) || e).slice(0, 60) + ')'));
+      st.textContent = 'Sesión iniciada. No se pudo verificar tu perfil' + why + '. ';
+      const rb = document.createElement('button');
+      rb.type = 'button'; rb.className = 'post-act'; rb.textContent = '↻ Reintentar';
+      rb.onclick = () => { authRender(); };
+      st.appendChild(rb);
     }
   }
   // ===== VER EL PERFIL DE OTRA PERSONA (solo con sesión iniciada) =====
@@ -1762,7 +1780,7 @@
     const btn = document.getElementById('me-edit-btn');
     btn.textContent = filled ? 'Editar perfil' : 'Completar mi perfil';
     btn.style.display = '';
-    if(window.dmPaintCard) window.dmPaintCard();
+    try{ if(window.dmPaintCard) window.dmPaintCard(); }catch(_){}
   }
   function profileEditOpen(){
     const p = meProfile || {};
