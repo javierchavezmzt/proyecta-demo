@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador Hidráulico — PROYECTA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap"></noscript>
+<style>
+  :root{
+    --paper:#f1f3f7;
+    --card:#ffffff;
+    --ink:#0e1f33;
+    --ink-soft:#4a5b73;
+    --navy:#0a1f3d;
+    --navy-3:#1c3a68;
+    --gold:#c9a04a;
+    --gold-ink:#8a6516;
+    --gold-soft:#f0e3c4;
+    --brick:#b3542e;
+    --pine:#3f6d4e;
+    --steel:#3d6b7d;
+    --line:#dde2ea;
+    --hair:#e6e9ef;
+    --shadow:0 1px 2px rgba(10,31,61,.06), 0 12px 28px -12px rgba(10,31,61,.25);
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    font-family:'Archivo',system-ui,-apple-system,sans-serif;
+    background:
+      radial-gradient(1200px 600px at 85% -10%, rgba(201,160,74,.10), transparent 60%),
+      radial-gradient(1000px 700px at -10% 110%, rgba(28,58,104,.08), transparent 55%),
+      var(--paper);
+    color:var(--ink);line-height:1.5;min-height:100vh;padding:28px 16px 56px;
+  }
+  /* ---- barra para volver a la app ---- */
+  .topbar{position:sticky;top:0;z-index:30;margin:-28px -16px 22px;padding:12px 18px;
+    background:var(--navy);box-shadow:0 2px 10px rgba(10,31,61,.25)}
+  .topbar a{display:inline-flex;align-items:center;gap:8px;color:#fff;font-weight:700;font-size:15px;
+    text-decoration:none;padding:6px 4px}
+  .topbar a .ar{color:var(--gold);font-size:20px;line-height:1}
+  .wrap{max-width:860px;margin:0 auto}
+
+  /* encabezado */
+  header.brand{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;
+    border-bottom:2px solid var(--navy);padding-bottom:16px;margin-bottom:22px}
+  .brand h1{font-weight:700;font-size:1.4rem;letter-spacing:-.005em;color:var(--navy);line-height:1.15}
+  .brand .sub{font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-ink);font-weight:700;margin-top:5px}
+  .brand .wm{font-weight:800;font-size:1.5rem;letter-spacing:.02em;color:var(--navy);line-height:1.1;flex-shrink:0}
+  .brand .wm span{color:var(--gold)}
+  @media(max-width:480px){.brand h1{font-size:1.2rem}.brand .wm{font-size:1.05rem;margin-top:3px}.brand .sub{letter-spacing:.08em;font-size:.7rem}}
+  .badge{display:inline-block;font-size:.68rem;background:var(--gold-soft);color:var(--gold-ink);padding:3px 10px;border-radius:100px;font-weight:700;margin-top:8px;letter-spacing:.08em}
+
+  /* controles */
+  .controls{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 18px 14px;margin-bottom:16px;box-shadow:var(--shadow)}
+  .sec-title{font-size:.72rem;font-weight:700;color:var(--ink-soft);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px 22px}
+  @media(max-width:560px){.grid2{grid-template-columns:1fr}}
+  .ctrl{padding:6px 0 8px}
+  .ctrl label{display:block;font-size:.82rem;color:var(--ink-soft);font-weight:600;margin-bottom:2px}
+  .ctrl-row{display:flex;align-items:center;gap:12px}
+  .val{font-size:.95rem;font-weight:700;color:var(--navy);min-width:78px;text-align:right;white-space:nowrap}
+
+  input[type=range]{flex:1;-webkit-appearance:none;appearance:none;height:30px;background:transparent;outline:none;cursor:pointer;touch-action:pan-y}
+  input[type=range]::-webkit-slider-runnable-track{height:5px;background:var(--line);border-radius:3px}
+  input[type=range]::-moz-range-track{height:5px;background:var(--line);border-radius:3px}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;margin-top:-9.5px;
+    background:var(--gold);border:3px solid #fff;box-shadow:0 0 0 2px var(--navy),0 2px 6px rgba(10,31,61,.3)}
+  input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--gold);border:3px solid #fff;box-shadow:0 0 0 2px var(--navy)}
+  input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 3px var(--navy-3),0 0 0 6px rgba(201,160,74,.45)}
+
+  /* pestañas */
+  .tabs{display:flex;gap:8px;margin-bottom:12px}
+  .tab{flex:1;max-width:240px;padding:11px 14px;font-family:inherit;font-size:.9rem;font-weight:700;border-radius:100px;
+    border:1.5px solid var(--line);background:var(--card);color:var(--ink-soft);cursor:pointer;transition:all .15s}
+  .tab.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+
+  canvas{width:100%;display:block;border-radius:16px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow)}
+
+  /* métricas */
+  .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px}
+  @media(max-width:600px){.metrics{grid-template-columns:repeat(2,1fr)}}
+  .metric{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 13px;box-shadow:0 1px 2px rgba(10,31,61,.05)}
+  .metric-label{font-size:.74rem;color:var(--ink-soft);margin-bottom:6px;line-height:1.25;font-weight:600}
+  .metric-value{font-size:1.3rem;font-weight:800;color:var(--navy);line-height:1}
+  .metric-unit{font-size:.72rem;color:var(--ink-soft);margin-top:4px}
+  .metric.hi{border-color:var(--gold);background:#fffdf7}.metric.hi .metric-value{color:var(--gold-ink)}
+  .metric.hi2{border-color:var(--navy-3)}.metric.hi2 .metric-value{color:var(--navy-3)}
+  .regimen{font-size:1rem !important}
+  .regimen.sub{color:var(--steel)}.regimen.super{color:var(--brick)}.regimen.crit{color:var(--gold-ink)}
+
+  /* leyenda del perfil */
+  .legend{display:flex;gap:8px 18px;flex-wrap:wrap;margin:12px 0 0}
+  .legend-item{display:flex;align-items:center;gap:7px;font-size:.78rem;color:var(--ink-soft);font-weight:600}
+  .lswatch{width:28px;height:0;border-top:3px solid}
+
+  .footer{margin-top:26px;padding-top:14px;border-top:1px solid var(--line);text-align:center;font-size:.76rem;color:var(--ink-soft)}
+  .footer b{color:var(--navy)}
+</style>
+</head>
+<body>
+<div class="topbar"><a href="/" id="volver"><span class="ar">&#8249;</span> Volver a Proyecta</a></div>
+<div class="wrap">
+
+  <header class="brand">
+    <div>
+      <h1>Simulador Hidráulico<br>Canal Trapezoidal</h1>
+      <div class="sub">Manning · Número de Froude · Perfil de flujo</div>
+      <span class="badge">VERSIÓN BETA</span>
+    </div>
+    <div class="wm">PROYECT<span>A</span></div>
+  </header>
+
+  <div class="controls">
+    <div class="sec-title">Parámetros del canal</div>
+    <div class="grid2">
+      <div class="ctrl"><label for="base">Base (b) — ancho de plantilla</label>
+        <div class="ctrl-row"><input type="range" id="base" min="0.5" max="5" step="0.1" value="2">
+        <span class="val"><span id="v-base">2.0</span> m</span></div></div>
+      <div class="ctrl"><label for="tirante">Tirante hidráulico (y)</label>
+        <div class="ctrl-row"><input type="range" id="tirante" min="0.1" max="3" step="0.05" value="1">
+        <span class="val"><span id="v-tirante">1.00</span> m</span></div></div>
+      <div class="ctrl"><label for="talud">Talud lateral (z : 1 vertical)</label>
+        <div class="ctrl-row"><input type="range" id="talud" min="0" max="3" step="0.25" value="1.5">
+        <span class="val">z = <span id="v-talud">1.50</span></span></div></div>
+      <div class="ctrl"><label for="pendiente">Pendiente longitudinal (S₀)</label>
+        <div class="ctrl-row"><input type="range" id="pendiente" min="0.0001" max="0.05" step="0.0001" value="0.001">
+        <span class="val"><span id="v-pendiente">0.0010</span></span></div></div>
+      <div class="ctrl"><label for="manning">Coeficiente de Manning (n)</label>
+        <div class="ctrl-row"><input type="range" id="manning" min="0.010" max="0.035" step="0.001" value="0.014">
+        <span class="val">n = <span id="v-manning">0.014</span></span></div></div>
+      <div class="ctrl"><label for="borde">Borde libre (Bl)</label>
+        <div class="ctrl-row"><input type="range" id="borde" min="0.1" max="1.0" step="0.05" value="0.3">
+        <span class="val"><span id="v-borde">0.30</span> m</span></div></div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" id="tab-sec" type="button" onclick="setTab('sec')">Sección transversal</button>
+    <button class="tab" id="tab-per" type="button" onclick="setTab('per')">Perfil longitudinal</button>
+  </div>
+
+  <canvas id="cSec" height="360" role="img" aria-label="Sección transversal del canal trapezoidal"></canvas>
+  <canvas id="cPer" height="360" style="display:none" role="img" aria-label="Perfil longitudinal del canal"></canvas>
+
+  <div id="legend-per" class="legend" style="display:none">
+    <div class="legend-item"><div class="lswatch" style="border-color:#1c3a68"></div>Tirante de diseño (y)</div>
+    <div class="legend-item"><div class="lswatch" style="border-color:#3f6d4e"></div>Tirante normal (yn)</div>
+    <div class="legend-item"><div class="lswatch" style="border-top-style:dashed;border-color:#8a6516;border-top-width:2px"></div>Tirante crítico (yc)</div>
+    <div class="legend-item"><div class="lswatch" style="border-color:#3d6b7d"></div>Superficie del agua</div>
+  </div>
+
+  <div class="metrics">
+    <div class="metric"><div class="metric-label">Área hidráulica (A)</div><div class="metric-value" id="m-area">—</div><div class="metric-unit">m²</div></div>
+    <div class="metric"><div class="metric-label">Perímetro mojado (P)</div><div class="metric-value" id="m-pm">—</div><div class="metric-unit">m</div></div>
+    <div class="metric"><div class="metric-label">Radio hidráulico (R)</div><div class="metric-value" id="m-rh">—</div><div class="metric-unit">m</div></div>
+    <div class="metric"><div class="metric-label">Ancho superficie (T)</div><div class="metric-value" id="m-t">—</div><div class="metric-unit">m</div></div>
+    <div class="metric hi"><div class="metric-label">Velocidad media (V)</div><div class="metric-value" id="m-v">—</div><div class="metric-unit">m/s</div></div>
+    <div class="metric hi"><div class="metric-label">Gasto (Q)</div><div class="metric-value" id="m-q">—</div><div class="metric-unit">m³/s</div></div>
+    <div class="metric hi2"><div class="metric-label">Tirante normal (yn)</div><div class="metric-value" id="m-yn">—</div><div class="metric-unit">m</div></div>
+    <div class="metric hi2"><div class="metric-label">Tirante crítico (yc)</div><div class="metric-value" id="m-yc">—</div><div class="metric-unit">m</div></div>
+    <div class="metric"><div class="metric-label">Número de Froude (Fr)</div><div class="metric-value" id="m-fr">—</div><div class="metric-unit">adimensional</div></div>
+    <div class="metric"><div class="metric-label">Régimen</div><div class="metric-value regimen" id="m-reg">—</div><div class="metric-unit" id="m-regsub"></div></div>
+    <div class="metric"><div class="metric-label">Energía específica (E)</div><div class="metric-value" id="m-e">—</div><div class="metric-unit">m</div></div>
+    <div class="metric"><div class="metric-label">Longitud tramo (L)</div><div class="metric-value" id="m-l">—</div><div class="metric-unit">m</div></div>
+  </div>
+
+  <div class="footer">Versión beta · desarrollada por <b>Javier Chávez y Ricardo Medina</b> · proyectalatam.com</div>
+
+</div><!-- /wrap -->
+
+<script>
+/* Paleta del dibujo (misma de Proyecta) */
+const C = {
+  ink:'#0e1f33', soft:'#4a5b73', navy:'#0a1f3d', navy3:'#1c3a68', gold:'#c9a04a', goldInk:'#8a6516',
+  pine:'#3f6d4e', steel:'#3d6b7d', soil:'#e9dfca', soilLine:'#d3c5a4', wall:'#0a1f3d',
+  guide:'rgba(10,31,61,0.28)', axis:'rgba(10,31,61,0.45)'
+};
+const FONT = "'Archivo', system-ui, sans-serif";
+
+let activeTab = 'sec';
+function setTab(t) {
+  activeTab = t;
+  document.getElementById('cSec').style.display = t==='sec'?'block':'none';
+  document.getElementById('cPer').style.display = t==='per'?'block':'none';
+  document.getElementById('legend-per').style.display = t==='per'?'flex':'none';
+  document.getElementById('tab-sec').classList.toggle('active', t==='sec');
+  document.getElementById('tab-per').classList.toggle('active', t==='per');
+  render();
+}
+
+function getVals() {
+  return {
+    b:  +document.getElementById('base').value,
+    y:  +document.getElementById('tirante').value,
+    z:  +document.getElementById('talud').value,
+    S:  +document.getElementById('pendiente').value,
+    n:  +document.getElementById('manning').value,
+    bl: +document.getElementById('borde').value,
+  };
+}
+
+function hydraulics(b, y, z) {
+  const A  = (b + z*y)*y;
+  const P  = b + 2*y*Math.sqrt(1+z*z);
+  const R  = A/P;
+  const T  = b + 2*z*y;
+  const Dh = A/T;
+  return {A,P,R,T,Dh};
+}
+
+function velocity(b,y,z,S,n) {
+  const {R} = hydraulics(b,y,z);
+  return (1/n)*Math.pow(R,2/3)*Math.pow(S,0.5);
+}
+
+function discharge(b,y,z,S,n) {
+  const {A} = hydraulics(b,y,z);
+  return velocity(b,y,z,S,n)*A;
+}
+
+// tirante normal por bisección (Manning)
+function normalDepth(b,z,S,n,Q,tol=1e-6) {
+  let lo=0.001, hi=20;
+  for(let i=0;i<80;i++){
+    const mid=(lo+hi)/2;
+    if(discharge(b,mid,z,S,n)<Q) lo=mid; else hi=mid;
+    if(hi-lo<tol) break;
+  }
+  return (lo+hi)/2;
+}
+
+// tirante crítico por bisección (Froude=1)
+function criticalDepth(b,z,Q,tol=1e-6) {
+  let lo=0.001, hi=20;
+  for(let i=0;i<80;i++){
+    const mid=(lo+hi)/2;
+    const {A,T} = hydraulics(b,mid,z);
+    const Dh=A/T;
+    const V=Q/A;
+    const Fr=V/Math.sqrt(9.81*Dh);
+    if(Fr>1) lo=mid; else hi=mid;
+    if(hi-lo<tol) break;
+  }
+  return (lo+hi)/2;
+}
+
+// fricción slope
+function Sf(b,y,z,n,Q) {
+  const {A,R} = hydraulics(b,y,z);
+  const V=Q/A;
+  return (V*n)**2 / Math.pow(R,4/3);
+}
+
+// perfil flujo variado — dy/dx = (S0 - Sf) / (1 - Fr²)
+function buildProfile(b,z,S,n,Q,y0,L_steps,dx) {
+  const pts=[{x:0,y:y0}];
+  let y=y0, x=0;
+  for(let i=0;i<L_steps;i++){
+    const {A,T}=hydraulics(b,y,z);
+    const V=Q/A; const Dh=A/T;
+    const Fr2=(V*V)/(9.81*Dh);
+    const sf=Sf(b,y,z,n,Q);
+    const dydx=(S-sf)/(1-Fr2);
+    y = y + dydx*dx;
+    x = x + dx;
+    if(y<0.01||y>30||isNaN(y)) break;
+    pts.push({x,y});
+  }
+  return pts;
+}
+
+function render() {
+  updateLabels();
+  if(activeTab==='sec') drawSection(); else drawProfile();
+}
+
+function updateLabels() {
+  const {b,y,z,S,n,bl}=getVals();
+  document.getElementById('v-base').textContent      = b.toFixed(1);
+  document.getElementById('v-tirante').textContent   = y.toFixed(2);
+  document.getElementById('v-talud').textContent     = z.toFixed(2);
+  document.getElementById('v-pendiente').textContent = S.toFixed(4);
+  document.getElementById('v-manning').textContent   = n.toFixed(3);
+  document.getElementById('v-borde').textContent     = bl.toFixed(2);
+
+  const {A,P,R,T,Dh} = hydraulics(b,y,z);
+  const V  = velocity(b,y,z,S,n);
+  const Q  = V*A;
+  const Fr = V/Math.sqrt(9.81*Dh);
+  const E  = y + V*V/(2*9.81);
+  const yn = normalDepth(b,z,S,n,Q);
+  const yc = criticalDepth(b,z,Q);
+
+  document.getElementById('m-area').textContent = A.toFixed(3);
+  document.getElementById('m-pm').textContent   = P.toFixed(3);
+  document.getElementById('m-rh').textContent   = R.toFixed(3);
+  document.getElementById('m-t').textContent    = T.toFixed(3);
+  document.getElementById('m-v').textContent    = V.toFixed(3);
+  document.getElementById('m-q').textContent    = Q.toFixed(3);
+  document.getElementById('m-yn').textContent   = yn.toFixed(3);
+  document.getElementById('m-yc').textContent   = yc.toFixed(3);
+  document.getElementById('m-fr').textContent   = Fr.toFixed(3);
+  document.getElementById('m-e').textContent    = E.toFixed(3);
+
+  // longitud del tramo que se dibuja
+  const Ldx = 0.5, Lsteps = 200;
+  document.getElementById('m-l').textContent = (Lsteps*Ldx).toFixed(0);
+
+  const regEl=document.getElementById('m-reg');
+  const subEl=document.getElementById('m-regsub');
+  regEl.className='metric-value regimen';
+  if(Fr<0.95){regEl.textContent='Subcrítico';regEl.classList.add('sub');subEl.textContent='Fr < 1  ·  flujo lento';}
+  else if(Fr>1.05){regEl.textContent='Supercrítico';regEl.classList.add('super');subEl.textContent='Fr > 1  ·  flujo rápido';}
+  else{regEl.textContent='Crítico';regEl.classList.add('crit');subEl.textContent='Fr ≈ 1  ·  estado crítico';}
+}
+
+/* ── SECCIÓN TRANSVERSAL ── */
+function drawSection() {
+  const cv=document.getElementById('cSec');
+  const {b,y,z,S,n,bl}=getVals();
+  const W=cv.offsetWidth||700;
+  const dpr=window.devicePixelRatio||1;
+  const isMobile=W<480;
+  const cw=W, ch=isMobile?205:300;
+  cv.width=W*dpr; cv.height=ch*dpr;
+  const ctx=cv.getContext('2d');
+  ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,cw,ch);
+
+  const {A,P,R,T}=hydraulics(b,y,z);
+  const totalH=y+bl;
+
+  const ml=isMobile?80:96, mr=isMobile?48:90, mt=isMobile?16:20, mb=isMobile?12:20;
+  const dw=cw-ml-mr, dh=ch-mt-mb;
+  const totalW=b+2*z*totalH;
+  const sc=Math.min(dw/(totalW+0.8), dh/(totalH+0.9));
+  const ox=ml+dw/2;
+  // se centra el dibujo (con sus cotas) dentro del recuadro
+  const above=Math.max(totalH*sc, y*sc+38), below=0.18*sc+28;
+  const oy=mt+(dh-(above+below))/2+above;
+  function px(x){return ox+x*sc} function py(v){return oy-v*sc}
+
+  const hb=b/2, ht=hb+z*totalH, hw=hb+z*y;
+  const sex=0.3;
+
+  // terreno
+  ctx.beginPath();
+  ctx.moveTo(px(-ht-sex),py(totalH)); ctx.lineTo(px(-ht-sex),py(0));
+  ctx.lineTo(px(-hb),py(0)); ctx.lineTo(px(-ht),py(totalH));
+  ctx.lineTo(px(ht),py(totalH)); ctx.lineTo(px(hb),py(0));
+  ctx.lineTo(px(ht+sex),py(0)); ctx.lineTo(px(ht+sex),py(totalH));
+  ctx.closePath(); ctx.fillStyle=C.soil; ctx.fill();
+  ctx.strokeStyle=C.soilLine; ctx.lineWidth=0.8;
+  for(let i=0;i<=8;i++){
+    const xo=-ht-sex+(2*(ht+sex))*i/8;
+    ctx.beginPath(); ctx.moveTo(px(xo),py(0)); ctx.lineTo(px(xo),py(totalH)); ctx.stroke();
+  }
+
+  // agua
+  ctx.beginPath();
+  ctx.moveTo(px(-hb),py(0)); ctx.lineTo(px(-hw),py(y)); ctx.lineTo(px(hw),py(y)); ctx.lineTo(px(hb),py(0));
+  ctx.closePath();
+  const wg=ctx.createLinearGradient(0,py(y),0,py(0));
+  wg.addColorStop(0,'rgba(61,107,125,0.55)'); wg.addColorStop(1,'rgba(28,58,104,0.85)');
+  ctx.fillStyle=wg; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(px(-hw),py(y)); ctx.lineTo(px(hw),py(y));
+  ctx.strokeStyle=C.steel; ctx.lineWidth=2.4; ctx.stroke();
+
+  // borde libre
+  ctx.beginPath();
+  ctx.moveTo(px(-hw),py(y)); ctx.lineTo(px(-ht),py(totalH)); ctx.lineTo(px(ht),py(totalH)); ctx.lineTo(px(hw),py(y));
+  ctx.closePath(); ctx.fillStyle='rgba(10,31,61,0.04)'; ctx.fill();
+
+  // paredes y plantilla
+  ctx.strokeStyle=C.wall; ctx.lineWidth=2.2; ctx.lineJoin='round';
+  ctx.beginPath(); ctx.moveTo(px(-hb),py(0)); ctx.lineTo(px(-ht),py(totalH)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(px(hb),py(0));  ctx.lineTo(px(ht),py(totalH));  ctx.stroke();
+  ctx.lineWidth=2.6;
+  ctx.beginPath(); ctx.moveTo(px(-hb),py(0)); ctx.lineTo(px(hb),py(0)); ctx.stroke();
+  ctx.setLineDash([5,4]); ctx.strokeStyle=C.guide; ctx.lineWidth=1.2;
+  ctx.beginPath(); ctx.moveTo(px(-ht),py(totalH)); ctx.lineTo(px(ht),py(totalH)); ctx.stroke();
+  ctx.setLineDash([]);
+
+  function arrowLine(x1,y1,x2,y2,col){
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2);
+    ctx.strokeStyle=col||C.goldInk; ctx.lineWidth=1.3; ctx.stroke();
+    const a=Math.atan2(y2-y1,x2-x1);
+    [0,1].forEach(e=>{
+      const [ax,ay]=e?[x2,y2]:[x1,y1]; const ang=e?a:a+Math.PI;
+      ctx.beginPath(); ctx.moveTo(ax,ay);
+      ctx.lineTo(ax-7*Math.cos(ang-.35),ay-7*Math.sin(ang-.35));
+      ctx.lineTo(ax-7*Math.cos(ang+.35),ay-7*Math.sin(ang+.35));
+      ctx.closePath(); ctx.fillStyle=col||C.goldInk; ctx.fill();
+    });
+  }
+  function leader(x1,y1,x2,y2){
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2);
+    ctx.strokeStyle=C.guide; ctx.lineWidth=0.8;
+    ctx.setLineDash([3,3]); ctx.stroke(); ctx.setLineDash([]);
+  }
+  function lbl(x,y,t,sz,col,al,bold){
+    ctx.font=`${bold?'700 ':'600 '}${sz||12}px ${FONT}`; ctx.fillStyle=col||C.ink;
+    ctx.textAlign=al||'center'; ctx.textBaseline='middle'; ctx.fillText(t,x,y);
+  }
+
+  const bY=py(-0.18);
+  leader(px(-hb),py(0),px(-hb),bY+3); leader(px(hb),py(0),px(hb),bY+3);
+  arrowLine(px(-hb),bY,px(hb),bY);
+  lbl(px(0),bY+14,`b = ${b.toFixed(1)} m`,12,C.goldInk,'center',true);
+
+  const yX=px(-ht)-25;
+  leader(px(-hb),py(0),yX+4,py(0)); leader(px(-hw),py(y),yX+4,py(y));
+  arrowLine(yX,py(0),yX,py(y));
+  lbl(yX-6,py(y/2),`y  ${y.toFixed(2)} m`,11.5,C.goldInk,'right',true);
+
+  const blX=yX;
+  leader(px(-ht),py(totalH),blX+4,py(totalH));
+  arrowLine(blX,py(y),blX,py(totalH));
+  lbl(blX-6,py(y+bl/2),`Bl  ${bl.toFixed(2)} m`,11.5,C.soft,'right',true);
+
+  const tY=py(y)-16;
+  leader(px(-hw),py(y),px(-hw),tY+3); leader(px(hw),py(y),px(hw),tY+3);
+  arrowLine(px(-hw),tY,px(hw),tY,C.steel);
+  lbl(px(0),tY-12,`T = ${T.toFixed(2)} m`,12,C.steel,'center',true);
+
+  if(z>0) lbl(px(hb+z*y/2)+12,py(y/2),`z = ${z.toFixed(2)}`,11,C.soft,'left');
+}
+
+/* ── PERFIL LONGITUDINAL ── */
+function drawProfile() {
+  const cv=document.getElementById('cPer');
+  const {b,y,z,S,n,bl}=getVals();
+  const W=cv.offsetWidth||700;
+  const dpr=window.devicePixelRatio||1;
+  cv.width=W*dpr; cv.height=300*dpr;
+  const ctx=cv.getContext('2d');
+  ctx.scale(dpr,dpr);
+  const cw=W, ch=300;
+  ctx.clearRect(0,0,cw,ch);
+
+  const {A} = hydraulics(b,y,z);
+  const V=velocity(b,y,z,S,n);
+  const Q=V*A;
+  const yn=normalDepth(b,z,S,n,Q);
+  const yc=criticalDepth(b,z,Q);
+
+  const Lsteps=200, dx=0.5, Ltotal=Lsteps*dx;
+  const profile=buildProfile(b,z,S,n,Q,y,Lsteps,dx);
+
+  const isMob=cw<480;
+  const ml=isMob?52:62, mr=isMob?24:30, mt=isMob?26:30, mb=isMob?42:48;
+  const dw=cw-ml-mr, dh=ch-mt-mb;
+
+  const yAll=[yn,yc,y,...profile.map(p=>p.y)];
+  const yMax=Math.max(...yAll)*1.25 + bl;
+  const yMin=0;
+
+  function sx(x){return ml+x/Ltotal*dw}
+  function sy(v){return mt+dh*(1-(v-yMin)/(yMax-yMin))}
+
+  // suelo bajo el fondo
+  ctx.beginPath();
+  ctx.moveTo(sx(0), sy(0));
+  ctx.lineTo(sx(Ltotal), sy(0));
+  ctx.lineTo(sx(Ltotal), sy(yMin-(yMax-yMin)*0.15));
+  ctx.lineTo(sx(0), sy(yMin-(yMax-yMin)*0.15));
+  ctx.closePath();
+  ctx.fillStyle=C.soil; ctx.fill();
+
+  ctx.strokeStyle=C.soilLine; ctx.lineWidth=1;
+  for(let i=0;i<=16;i++){
+    const xi=Ltotal*i/16;
+    ctx.beginPath(); ctx.moveTo(sx(xi),sy(0)); ctx.lineTo(sx(xi+Ltotal*0.03),sy(yMin-(yMax-yMin)*0.1)); ctx.stroke();
+  }
+
+  // fondo
+  ctx.beginPath(); ctx.moveTo(sx(0),sy(0)); ctx.lineTo(sx(Ltotal),sy(0));
+  ctx.strokeStyle=C.wall; ctx.lineWidth=2.2; ctx.stroke();
+
+  // borde libre (yn + bl)
+  ctx.beginPath(); ctx.moveTo(sx(0),sy(yn+bl)); ctx.lineTo(sx(Ltotal),sy(yn+bl));
+  ctx.strokeStyle=C.guide; ctx.lineWidth=1;
+  ctx.setLineDash([3,4]); ctx.stroke(); ctx.setLineDash([]);
+
+  // perfil — relleno de agua
+  if(profile.length>1){
+    ctx.beginPath();
+    ctx.moveTo(sx(profile[0].x), sy(0));
+    ctx.lineTo(sx(profile[0].x), sy(profile[0].y));
+    profile.forEach(p=>ctx.lineTo(sx(p.x),sy(p.y)));
+    ctx.lineTo(sx(profile[profile.length-1].x), sy(0));
+    ctx.closePath();
+    const wg=ctx.createLinearGradient(0,sy(yMax),0,sy(0));
+    wg.addColorStop(0,'rgba(61,107,125,0.50)');
+    wg.addColorStop(1,'rgba(28,58,104,0.80)');
+    ctx.fillStyle=wg; ctx.fill();
+
+    // línea de superficie
+    ctx.beginPath();
+    ctx.moveTo(sx(profile[0].x),sy(profile[0].y));
+    profile.forEach(p=>ctx.lineTo(sx(p.x),sy(p.y)));
+    ctx.strokeStyle=C.steel; ctx.lineWidth=2.4; ctx.stroke();
+
+    // tirante de diseño
+    ctx.beginPath(); ctx.moveTo(sx(0),sy(y)); ctx.lineTo(sx(Ltotal),sy(y));
+    ctx.strokeStyle=C.navy3; ctx.lineWidth=1.2;
+    ctx.setLineDash([4,3]); ctx.stroke(); ctx.setLineDash([]);
+  }
+
+  // tirante normal yn — verde
+  ctx.beginPath(); ctx.moveTo(sx(0),sy(yn)); ctx.lineTo(sx(Ltotal),sy(yn));
+  ctx.strokeStyle=C.pine; ctx.lineWidth=1.8; ctx.stroke();
+
+  // tirante crítico yc — dorado discontinuo
+  ctx.beginPath(); ctx.moveTo(sx(0),sy(yc)); ctx.lineTo(sx(Ltotal),sy(yc));
+  ctx.strokeStyle=C.goldInk; ctx.lineWidth=1.8;
+  ctx.setLineDash([6,4]); ctx.stroke(); ctx.setLineDash([]);
+
+  // etiquetas yn / yc: a la derecha, sobre la línea, para no chocar con el eje
+  ctx.font=`700 11px ${FONT}`; ctx.textAlign='right'; ctx.textBaseline='bottom';
+  const gap=Math.abs(sy(yn)-sy(yc));
+  ctx.fillStyle=C.pine;   ctx.fillText(`yn = ${yn.toFixed(2)} m`, sx(Ltotal)-4, sy(yn)-3);
+  ctx.fillStyle=C.goldInk;
+  if(gap<14) ctx.textBaseline='top';
+  ctx.fillText(`yc = ${yc.toFixed(2)} m`, sx(Ltotal)-4, gap<14 ? sy(yc)+3 : sy(yc)-3);
+
+  // pendiente
+  ctx.fillStyle=C.soft; ctx.font=`600 11px ${FONT}`;
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.textAlign='left'; ctx.textBaseline='top';
+  ctx.fillText(`S₀ = ${S.toFixed(4)}`, sx(0)+8, mt+6);
+
+  // ejes
+  ctx.strokeStyle=C.axis; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(sx(0),mt); ctx.lineTo(sx(0),mt+dh+8); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(sx(0),mt+dh); ctx.lineTo(sx(Ltotal)+4,mt+dh); ctx.stroke();
+
+  // eje Y
+  ctx.fillStyle=C.soft; ctx.font=`600 10.5px ${FONT}`; ctx.textAlign='right'; ctx.textBaseline='middle';
+  for(let i=0;i<=4;i++){
+    const yv=yMin+(yMax-yMin)*i/4;
+    const yp=sy(yv);
+    ctx.beginPath(); ctx.moveTo(sx(0),yp); ctx.lineTo(sx(0)-4,yp);
+    ctx.strokeStyle=C.axis; ctx.lineWidth=1; ctx.stroke();
+    ctx.fillText(yv.toFixed(2), sx(0)-7, yp);
+  }
+  ctx.save(); ctx.translate(13, mt+dh/2); ctx.rotate(-Math.PI/2);
+  ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle=C.soft; ctx.font=`700 11px ${FONT}`;
+  ctx.fillText('Tirante y (m)', 0, 0); ctx.restore();
+
+  // eje X
+  ctx.fillStyle=C.soft; ctx.font=`600 10.5px ${FONT}`; ctx.textAlign='center'; ctx.textBaseline='top';
+  for(let i=0;i<=5;i++){
+    const xv=Ltotal*i/5;
+    ctx.beginPath(); ctx.moveTo(sx(xv),mt+dh); ctx.lineTo(sx(xv),mt+dh+4);
+    ctx.strokeStyle=C.axis; ctx.lineWidth=1; ctx.stroke();
+    ctx.fillText(`${xv.toFixed(0)} m`, sx(xv), mt+dh+7);
+  }
+  ctx.font=`700 11px ${FONT}`; ctx.textBaseline='bottom';
+  ctx.fillText('Distancia x (m)', sx(Ltotal/2), ch-2);
+}
+
+['base','tirante','talud','pendiente','manning','borde'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', render);
+});
+render();
+window.addEventListener('resize', render);
+/* cuando la fuente Archivo termina de cargar, se vuelve a dibujar para que los textos del canvas la usen */
+if(document.fonts && document.fonts.ready){ document.fonts.ready.then(render); }
+
+/* "Volver a Proyecta": si venimos de la app, regresa a donde estabas; si abrieron el simulador directo, va al inicio */
+document.getElementById("volver").addEventListener("click",function(e){
+  try{
+    if(history.length>1 && document.referrer && new URL(document.referrer).origin===location.origin){
+      e.preventDefault(); history.back();
+    }
+  }catch(_){}
+});
+</script>
+</body>
+</html>
