@@ -481,6 +481,14 @@
   .post-foot .post-act.pa svg{width:24px;height:24px;flex-shrink:0;}
   .post-foot .post-act.pa:active svg{transform:scale(.88);}
   .post-foot .foot-end .post-act{font-size:13px;}
+  /* encabezado y texto de la publicación: más grandes para equilibrar con los iconos (solo tarjetas del feed) */
+  .card[id^="post-"] .tag{font-size:12.5px;padding:6px 13px;gap:6px;margin-bottom:12px;}
+  .card[id^="post-"] .sala-chip{font-size:12.5px;padding:5px 12px;margin:0 0 12px 6px;}
+  .card[id^="post-"] .post-head{gap:12px;margin-bottom:12px;}
+  .card[id^="post-"] .avatar{width:46px;height:46px;font-size:16px;}
+  .card[id^="post-"] .post-name{font-size:16.5px;line-height:1.2;}
+  .card[id^="post-"] .post-meta{font-size:13px;margin-top:2px;}
+  .card[id^="post-"] .post-text{font-size:15.5px;line-height:1.55;margin-bottom:12px;}
   .foot-end{margin-left:auto;display:flex;gap:12px;}
   /* ---- editar publicación / comentario ---- */
   .edit-box{margin-bottom:10px;}
@@ -576,7 +584,7 @@
           </button>
           <div id="sala-bar" class="sala-bar"></div>
           <div class="feed-bar">
-            <div class="sectionlabel" id="feed-label">Publicaciones del gremio</div>
+            <div class="sectionlabel" id="feed-label">Publicaciones de la comunidad</div>
             <button class="post-act" type="button" onclick="feedLoad(true)">↻ Actualizar</button>
           </div>
           <div id="feed-list"><div class="feed-empty">Cargando publicaciones…</div></div>
@@ -2540,7 +2548,7 @@
     const bar = document.getElementById('sala-bar');
     const lab = document.getElementById('feed-label');
     const x = feedFilter ? salaOf(feedFilter) : null;
-    if(lab) lab.textContent = x ? 'Publicaciones de la sala' : 'Publicaciones del gremio';
+    if(lab) lab.textContent = x ? 'Publicaciones de la sala' : 'Publicaciones de la comunidad';
     if(!bar) return;
     if(!x){ bar.style.display = 'none'; bar.innerHTML = ''; return; }
     bar.style.display = 'block';
