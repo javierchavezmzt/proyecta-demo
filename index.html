@@ -474,6 +474,13 @@
   .post-foot .post-act{display:inline-flex;align-items:center;gap:5px;padding:4px 0;}
   .post-act.liked{color:var(--brick);}
   .post-act.on{color:var(--navy);}
+  /* iconos principales (me gusta, comentar, compartir): más grandes y fáciles de tocar */
+  .post-foot{gap:6px 22px;}
+  .post-foot .post-act.pa{font-size:15px;font-weight:700;gap:7px;padding:9px 2px;min-height:44px;
+    -webkit-tap-highlight-color:transparent;}
+  .post-foot .post-act.pa svg{width:24px;height:24px;flex-shrink:0;}
+  .post-foot .post-act.pa:active svg{transform:scale(.88);}
+  .post-foot .foot-end .post-act{font-size:13px;}
   .foot-end{margin-left:auto;display:flex;gap:12px;}
   /* ---- editar publicación / comentario ---- */
   .edit-box{margin-bottom:10px;}
@@ -546,7 +553,7 @@
 
       <div class="app-top">
         <div class="brandrow">
-          <div class="wordmark">PROYEC<span>TA</span></div>
+          <div class="wordmark">PROYECT<span>A</span></div>
           <div style="display:flex;gap:8px;">
             <div class="bell" role="button" tabindex="0" aria-label="Padrón de especialistas y proveedores" onclick="go('buscar', null)">🔎</div>
             <div class="bell" id="dmBtn" role="button" tabindex="0" aria-label="Mensajes" style="display:none" onclick="dmOpen()" onkeydown="if(event.key==='Enter')dmOpen()">✉️<span class="bell-badge" id="dmBadge"></span></div>
@@ -1920,9 +1927,16 @@
   }
 
   function heartSvg(on){
-    return '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="' + (on ? 'currentColor' : 'none') +
-      '" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 21s-7.5-4.6-9.5-9.2C1.2 8.6 3 5 6.5 5c2 0 3.4 1 5.5 3 2.1-2 3.5-3 5.5-3C21 5 22.8 8.6 21.5 11.8 19.5 16.4 12 21 12 21z"/></svg>';
+    return '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" fill="' + (on ? 'currentColor' : 'none') +
+      '" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M12 21s-7.5-4.6-9.5-9.2C1.2 8.6 3 5 6.5 5c2 0 3.4 1 5.5 3 2.1-2 3.5-3 5.5-3C21 5 22.8 8.6 21.5 11.8 19.5 16.4 12 21 12 21z"/></svg>';
   }
+  function commentSvg(){
+    return '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"><path d="M21 11.5a8.5 8.5 0 0 1-12.4 7.5L3 20.5l1.6-4.9A8.5 8.5 0 1 1 21 11.5z"/></svg>';
+  }
+  function shareSvg(){
+    return '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"><path d="M14 4.5l7 7-7 7v-4.2c-5.2 0-8.7 1.5-11 5 .7-5.8 4.1-9.2 11-9.9V4.5z"/></svg>';
+  }
+  function commentInner(p){ return commentSvg() + ' ' + (p.ncom || 0); }
   function likeInner(p){ return heartSvg(!!p.liked) + ' ' + (p.nlikes || 0); }
   function paintCounts(p){
     const id = Number(p.id);
@@ -1933,7 +1947,7 @@
       lk.setAttribute('aria-pressed', p.liked ? 'true' : 'false');
     }
     const cm = document.getElementById('cm-' + id);
-    if(cm) cm.textContent = '💬 ' + (p.ncom || 0);
+    if(cm) cm.innerHTML = commentInner(p);
   }
 
   function threadForm(id){
@@ -1968,9 +1982,9 @@
         ? editBoxHtml('p' + id, 500, 'postEditSave(' + id + ')', 'postEditCancel(' + id + ')')
         : '<div class="post-text">' + esc(p.contenido).replace(/\n/g, '<br>') + '</div>') +
       '<div class="post-foot">' +
-        '<button class="post-act' + (p.liked ? ' liked' : '') + '" id="lk-' + id + '" type="button" aria-pressed="' + (p.liked ? 'true' : 'false') + '" aria-label="Me gusta" onclick="likeToggle(' + id + ')">' + likeInner(p) + '</button>' +
-        '<button class="post-act' + (open ? ' on' : '') + '" id="cm-' + id + '" type="button" aria-label="Comentarios" onclick="threadToggle(' + id + ')">💬 ' + (p.ncom || 0) + '</button>' +
-        '<button class="post-act" type="button" onclick="feedShare(' + id + ')">↗ Compartir</button>' +
+        '<button class="post-act pa' + (p.liked ? ' liked' : '') + '" id="lk-' + id + '" type="button" aria-pressed="' + (p.liked ? 'true' : 'false') + '" aria-label="Me gusta" onclick="likeToggle(' + id + ')">' + likeInner(p) + '</button>' +
+        '<button class="post-act pa' + (open ? ' on' : '') + '" id="cm-' + id + '" type="button" aria-label="Comentarios" onclick="threadToggle(' + id + ')">' + commentInner(p) + '</button>' +
+        '<button class="post-act pa" type="button" aria-label="Compartir" onclick="feedShare(' + id + ')">' + shareSvg() + ' Compartir</button>' +
         (act ? '<span class="foot-end">' + act + '</span>' : '') +
       '</div>' +
       '<div class="thread" id="th-' + id + '"' + (open ? '' : ' style="display:none"') + '><div id="thl-' + id + '"></div>' + threadForm(id) + '</div>' +
