@@ -1091,13 +1091,25 @@
                 <option value="">¿Cuál es tu rol?</option>
                 <option>Ing. Civil</option>
                 <option>Arquitecto</option>
-                <option>Técnico o residente de obra</option>
+                <option>Profesor</option>
+                <option>Contratista</option>
+                <option>Proveedor</option>
                 <option>Oficios</option>
                 <option>Estudiante</option>
-                <option>Proveedor</option>
                 <option>Otro</option>
               </select>
-              <input class="auth-input" id="pf-esp" type="text" list="pf-esp-list" placeholder="Especialidad (ej. Estructuras)" maxlength="60">
+              <select class="auth-input" id="pf-espsel" onchange="pfRolChange()">
+                <option value="">¿Cuál es tu especialidad?</option>
+                <optgroup label="Las mismas de las salas">
+                  <option>Obra civil</option><option>Estructuras</option><option>Arquitectura</option>
+                  <option>Instalaciones</option><option>Presupuestos y costos</option><option>Urbanización</option>
+                </optgroup>
+                <optgroup label="Otras del Padrón">
+                  <option>Topografía</option><option>Hidráulica</option><option>Geotecnia</option><option>Valuación</option><option>Gestión y supervisión</option>
+                </optgroup>
+                <option value="__otro">Otra (escríbela)</option>
+              </select>
+              <input class="auth-input" id="pf-esp" type="text" placeholder="Escribe tu especialidad" maxlength="60" style="display:none">
               <select class="auth-input" id="pf-oficio" style="display:none" onchange="pfRolChange()">
                 <option value="">¿Cuál es tu oficio?</option>
                 <optgroup label="Obra negra">
@@ -1118,11 +1130,6 @@
                 <option value="__otro">Otro (escríbelo)</option>
               </select>
               <input class="auth-input" id="pf-oficio-otro" type="text" placeholder="Escribe tu oficio (ej. Estucador)" maxlength="60" style="display:none">
-              <datalist id="pf-esp-list">
-                <option value="Estructuras"><option value="Topografía"><option value="Hidráulica">
-                <option value="Arquitectura"><option value="Obra civil"><option value="Valuación">
-                <option value="Gestión y supervisión"><option value="Instalaciones"><option value="Presupuestos">
-              </datalist>
               <input class="auth-input" id="pf-ciudad" type="text" placeholder="Ciudad (ej. Mazatlán)" maxlength="60">
               <input class="auth-input" id="pf-anos" type="number" inputmode="numeric" min="0" max="70" placeholder="Años de experiencia">
               <textarea class="auth-input" id="pf-bio" rows="3" maxlength="280" placeholder="Sobre mí (máx. 280 caracteres)" style="resize:none"></textarea>
@@ -1753,11 +1760,25 @@
   function rolShow(rol, esp){ return (rol === 'Oficios' && esp) ? esp : (rol || ''); }
   function pfRolChange(){
     const rol = document.getElementById('pf-rol').value;
-    const esp = document.getElementById('pf-esp'), of = document.getElementById('pf-oficio'), ot = document.getElementById('pf-oficio-otro');
-    const ofi = rol === 'Oficios';
-    esp.style.display = ofi ? 'none' : '';
+    const esp = document.getElementById('pf-esp'), sel = document.getElementById('pf-espsel');
+    const of = document.getElementById('pf-oficio'), ot = document.getElementById('pf-oficio-otro');
+    const ofi = rol === 'Oficios', prov = rol === 'Proveedor';
+    // Oficios: lista de oficios. Proveedor: texto libre (lo que ofrece). Los demás: lista de especialidades + "Otra".
+    sel.style.display = (ofi || prov) ? 'none' : '';
+    const preg = { 'Estudiante': '¿Qué área te interesa?', 'Profesor': '¿Qué materia impartes?', 'Contratista': '¿En qué tipo de obra trabajas?' };
+    sel.options[0].textContent = preg[rol] || '¿Cuál es tu especialidad?';
+    esp.style.display = (prov || (!ofi && sel.value === '__otro')) ? '' : 'none';
+    esp.placeholder = prov ? '¿Qué ofreces? (ej. Concreto premezclado)' : 'Escribe tu especialidad';
     of.style.display = ofi ? '' : 'none';
     ot.style.display = (ofi && of.value === '__otro') ? '' : 'none';
+  }
+  // valor de especialidad que se guarda según el rol
+  function pfEspValue(){
+    const rol = document.getElementById('pf-rol').value;
+    if(rol === 'Oficios') return pfOficioValue();
+    const sel = document.getElementById('pf-espsel'), t = document.getElementById('pf-esp').value.trim();
+    if(rol === 'Proveedor') return t;
+    return sel.value === '__otro' ? t : sel.value;
   }
   function pfOficioValue(){
     const of = document.getElementById('pf-oficio');
@@ -1792,7 +1813,18 @@
     const p = meProfile || {};
     document.getElementById('pf-nombre').value = p.nombre_completo || '';
     document.getElementById('pf-rol').value = p.rol || '';
-    document.getElementById('pf-esp').value = (p.rol === 'Oficios') ? '' : (p.especialidad || '');
+    // especialidad: si coincide con la lista se selecciona; lo que ya tenían escrito a mano pasa a "Otra"
+    const sel = document.getElementById('pf-espsel'), et = document.getElementById('pf-esp');
+    sel.value = ''; et.value = '';
+    if(p.rol !== 'Oficios' && p.especialidad){
+      if(p.rol === 'Proveedor'){ et.value = p.especialidad; }
+      else {
+        const alias = { 'presupuestos': 'Presupuestos y costos', 'presupuesto': 'Presupuestos y costos' };
+        const v = alias[String(p.especialidad).trim().toLowerCase()] || p.especialidad;
+        sel.value = v;
+        if(sel.value !== v){ sel.value = '__otro'; et.value = p.especialidad; }
+      }
+    }
     // oficio: si está en la lista se selecciona; si no, va a "Otro (escríbelo)"
     const of = document.getElementById('pf-oficio'), ot = document.getElementById('pf-oficio-otro');
     of.value = ''; ot.value = '';
@@ -1834,7 +1866,7 @@
     const body = {
       nombre_completo: nombre,
       rol: document.getElementById('pf-rol').value || null,
-      especialidad: (document.getElementById('pf-rol').value === 'Oficios' ? pfOficioValue() : document.getElementById('pf-esp').value.trim()) || null,
+      especialidad: pfEspValue() || null,
       ciudad: document.getElementById('pf-ciudad').value.trim() || null,
       anos_experiencia: anos,
       bio: document.getElementById('pf-bio').value.trim().slice(0, 280) || null
