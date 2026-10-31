@@ -1101,11 +1101,11 @@
               <select class="auth-input" id="pf-espsel" onchange="pfRolChange()">
                 <option value="">¿Cuál es tu especialidad?</option>
                 <optgroup label="Las mismas de las salas">
-                  <option>Obra civil</option><option>Estructuras</option><option>Arquitectura</option>
-                  <option>Instalaciones</option><option>Presupuestos y costos</option><option>Urbanización</option>
+                  <option>Obra civil</option><option>Arquitectura</option><option>Geotecnia</option><option>Estructuras</option>
+                  <option>Instalaciones</option><option>Presupuestos y costos</option><option>Urbanización</option><option>Valuación</option>
                 </optgroup>
                 <optgroup label="Otras del Padrón">
-                  <option>Topografía</option><option>Hidráulica</option><option>Geotecnia</option><option>Valuación</option><option>Gestión y supervisión</option>
+                  <option>Topografía</option><option>Hidráulica</option><option>Gestión y supervisión</option>
                 </optgroup>
                 <option value="__otro">Otra (escríbela)</option>
               </select>
@@ -2536,17 +2536,19 @@
 
   // ===== SALAS (pestaña Comunidad) =====
   const SALAS = [
+    { k: 'proveedores',   n: 'Proveedores',          ic: '🤝', bg: 'var(--navy-2)', fg: 'var(--gold)', d: 'Materiales, equipos y servicios: novedades, productos y soluciones para obra',
+      r: 'Aquí sí puedes ofrecer lo tuyo. Da datos útiles (especificación, cobertura, tiempos) y evita repetir el mismo anuncio: lo que se vea como spam se reporta y se oculta.',
+      ph: 'Cuéntale a la comunidad qué ofreces: material, equipo o servicio, con datos que sirvan (especificación, cobertura, tiempos de entrega)…', cat: 'Proveedor' },
     { k: 'estudiantes',   n: 'Estudiantes',          ic: '🎓', bg: 'var(--navy)',   fg: '#fff',        d: 'Dudas, tareas, residencias y primeros pasos en la obra' },
-    { k: 'oficios',       n: 'Oficios',              ic: '🛠️', bg: 'var(--pine)',   fg: '#fff',        d: 'Albañiles, electricistas, plomeros, yeseros, carpinteros, fierreros y más. Aquí se habla de la obra desde el trabajo de manos.' },
     { k: 'obra-civil',    n: 'Obra civil',           ic: '🏗️', bg: 'var(--brick)',  fg: '#fff',        d: 'Procesos, colados, residencia y control de obra' },
-    { k: 'estructuras',   n: 'Estructuras',          ic: '🧱', bg: 'var(--gold)',   fg: 'var(--navy)', d: 'Cimentación, concreto, acero y cálculo estructural' },
     { k: 'arquitectura',  n: 'Arquitectura',         ic: '🏛️', bg: 'var(--navy)',   fg: '#fff',        d: 'Diseño, proyecto y detalles constructivos' },
+    { k: 'geotecnia',     n: 'Geotecnia',            ic: '⛏️', bg: 'var(--brick)',  fg: '#fff',        d: 'Mecánica de suelos, estudios, cimentaciones y excavaciones' },
+    { k: 'estructuras',   n: 'Estructuras',          ic: '🧱', bg: 'var(--gold)',   fg: 'var(--navy)', d: 'Cimentación, concreto, acero y cálculo estructural' },
     { k: 'instalaciones', n: 'Instalaciones',        ic: '🔧', bg: 'var(--pine)',   fg: '#fff',        d: 'Hidráulica, eléctrica, sanitaria y especiales' },
     { k: 'presupuestos',  n: 'Presupuestos y costos', ic: '📊', bg: 'var(--navy-3)', fg: '#fff',        d: 'Precios unitarios, volumetrías y licitaciones' },
     { k: 'urbanizacion',  n: 'Urbanización',         ic: '🌆', bg: 'var(--steel)',  fg: '#fff',        d: 'Calles, redes, terracerías y desarrollos' },
-    { k: 'proveedores',   n: 'Proveedores',          ic: '🤝', bg: 'var(--navy-2)', fg: 'var(--gold)', d: 'Materiales, equipos y servicios: novedades, productos y soluciones para obra',
-      r: 'Aquí sí puedes ofrecer lo tuyo. Da datos útiles (especificación, cobertura, tiempos) y evita repetir el mismo anuncio: lo que se vea como spam se reporta y se oculta.',
-      ph: 'Cuéntale a la comunidad qué ofreces: material, equipo o servicio, con datos que sirvan (especificación, cobertura, tiempos de entrega)…', cat: 'Proveedor' }
+    { k: 'valuacion',     n: 'Valuación',            ic: '🏷️', bg: 'var(--navy-3)', fg: '#fff',        d: 'Avalúos de inmuebles y terrenos, y valor de lo construido' },
+    { k: 'oficios',       n: 'Oficios',              ic: '🛠️', bg: 'var(--pine)',   fg: '#fff',        d: 'Albañiles, electricistas, plomeros, yeseros, carpinteros, fierreros y más. Aquí se habla de la obra desde el trabajo de manos.' }
   ];
   function salaOf(k){ return SALAS.find(x => x.k === k) || null; }
   function salaChip(p){
