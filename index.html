@@ -263,6 +263,17 @@
     background:var(--paper);border:1px solid var(--line);border-radius:100px;padding:7px 13px;
   }
   .chip.on{background:var(--navy);color:#fff;border-color:var(--navy);}
+  /* buscar personas (lupa) */
+  .pe-row{display:flex;align-items:center;gap:11px;background:var(--paper);border:1px solid var(--line);border-radius:14px;
+    padding:10px 12px;margin-bottom:9px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  .pe-row:active{background:#fbf9f3;}
+  .pe-av{width:40px;height:40px;border-radius:50%;background:linear-gradient(145deg,var(--navy),var(--navy-3));color:var(--gold-2);
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0;border:2px solid var(--gold);}
+  .pe-main{min-width:0;flex:1;}
+  .pe-name{font-size:14px;font-weight:800;color:var(--navy);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .pe-meta{font-size:12px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .pe-gate{border-left:4px solid var(--gold);}
+  .pe-gate .btn-gold,.pe-gate .btn-ghost{margin-top:8px;}
 
   .dir-card{
     background:var(--paper);border:1px solid var(--line);border-radius:14px;
@@ -563,7 +574,7 @@
         <div class="brandrow">
           <div class="wordmark">PROYECT<span>A</span></div>
           <div style="display:flex;gap:8px;">
-            <div class="bell" role="button" tabindex="0" aria-label="Padrón de especialistas y proveedores" onclick="go('buscar', null)">🔎</div>
+            <div class="bell" role="button" tabindex="0" aria-label="Buscar personas" onclick="go('personas', null)">🔎</div>
             <div class="bell" id="dmBtn" role="button" tabindex="0" aria-label="Mensajes" style="display:none" onclick="dmOpen()" onkeydown="if(event.key==='Enter')dmOpen()">✉️<span class="bell-badge" id="dmBadge"></span></div>
             <div class="bell" id="bellBtn" role="button" tabindex="0" aria-label="Avisos" onclick="notifOpen()" onkeydown="if(event.key==='Enter')notifOpen()">🔔<span class="bell-badge" id="bellBadge"></span></div>
           </div>
@@ -929,6 +940,12 @@
           <div id="dir-empty" class="dir-empty"><b>Sin resultados</b>Prueba con otra palabra: una ciudad, una especialidad o el nombre.</div>
         </section>
 
+        <!-- BUSCAR PERSONAS (la lupa) -->
+        <section class="screen" id="s-personas">
+          <div class="search-bar">🔎 <input id="pe-q" type="search" placeholder="Nombre, oficio, especialidad o ciudad…" autocomplete="off" oninput="peRender()" aria-label="Buscar personas en Proyecta"></div>
+          <div id="pe-out"></div>
+        </section>
+
         <!-- HERRAMIENTAS -->
         <section class="screen" id="s-herramientas">
           <div class="tools-banner">
@@ -1065,7 +1082,7 @@
               <div class="sum-row" id="row-ciudad"><b>Ciudad:</b> <span id="sum-ciudad"></span></div>
               <div class="sum-row" id="row-anos"><b>Experiencia:</b> <span id="sum-anos"></span></div>
               <div class="sum-row" id="row-bio"><b>Sobre mí:</b> <span id="sum-bio"></span></div>
-              <div class="sum-empty" id="sum-empty">Aún no has completado tu perfil. Cuéntale a la comunidad quién eres.</div>
+              <div class="sum-empty" id="sum-empty">Aún no has completado tu perfil. Cuéntale a la comunidad quién eres. Complétalo para que te encuentren cuando busquen por oficio, especialidad o ciudad.</div>
             </div>
             <!-- ladrillos recibidos + libreta (solo se muestra si ya corrió el SQL de Ladrillos) -->
             <div class="auth-card" id="me-lad" style="display:none">
@@ -1085,7 +1102,7 @@
             <!-- formulario de edición -->
             <div class="auth-card" id="me-edit" style="display:none">
               <div class="auth-title">Editar perfil</div>
-              <div class="auth-sub">Esto es lo que verá la comunidad. Tu correo y tu contraseña no se muestran.</div>
+              <div class="auth-sub">Esto es lo que verá la comunidad, y así te encuentran cuando buscan por oficio, especialidad o ciudad. Tu correo y tu contraseña no se muestran.</div>
               <input class="auth-input" id="pf-nombre" type="text" placeholder="Nombre completo" autocomplete="name" maxlength="80">
               <select class="auth-input" id="pf-rol" onchange="pfRolChange()">
                 <option value="">¿Cuál es tu rol?</option>
@@ -1161,7 +1178,7 @@
           <div class="demo-label">Empieza en 3 pasos</div>
           <div class="auth-card">
             <div class="sum-row"><b>1. Crea tu cuenta.</b> Solo necesitas un correo y una contraseña. Te llega un correo para confirmarla: ábrelo y listo.</div>
-            <div class="sum-row"><b>2. Completa tu perfil.</b> Tu rol, tu especialidad u oficio, tu ciudad y unas líneas sobre ti. Que la gente sepa con quién habla.</div>
+            <div class="sum-row"><b>2. Completa tu perfil.</b> Tu rol, tu especialidad u oficio, tu ciudad y unas líneas sobre ti. Así te encuentran cuando buscan por oficio, especialidad o ciudad.</div>
             <div class="sum-row" style="margin-bottom:0"><b>3. Entra a la conversación.</b> Pregunta, responde o comparte lo que viste en obra.</div>
           </div>
 
@@ -1247,6 +1264,7 @@
   const titles = {
     inicio:      ["Inicio","Lo que se está construyendo hoy en LATAM"],
     buscar:      ["Padrón Proyecta","Especialistas y proveedores seleccionados por Proyecta"],
+    personas:    ["Buscar","La gente de la construcción en Proyecta"],
     herramientas:["Herramientas","Gratis, para resolver tu obra hoy"],
     publicar:    ["Publicar","Compártele algo real a la comunidad"],
     comunidad:   ["Comunidad","Conversaciones por especialidad"],
@@ -1264,6 +1282,7 @@
     document.querySelector('.app-body').scrollTop = 0;
     if(name === 'inicio' && window.feedRefreshIfStale) window.feedRefreshIfStale();
     if(name === 'comunidad' && window.comLoad) window.comLoad();
+    if(name === 'personas' && window.peOpen) window.peOpen();
     if(name === 'perfil' && window.ladRefresh) window.ladRefresh();
   }
 
@@ -1650,6 +1669,7 @@
     if(window.dmSync) window.dmSync();
     if(window.ladSync) window.ladSync();
     if(window.passHide) window.passHide();
+    if(window.peReset) window.peReset();
     if(window.feedRender) window.feedRender();
     document.getElementById('auth-out').style.display = logged ? 'none' : '';
     document.getElementById('auth-in').style.display = logged ? '' : 'none';
@@ -1752,6 +1772,137 @@
         '<div style="margin-top:12px"><button class="btn-ghost" type="button" onclick="perfilLoad(\'' + esc(uid) + '\')">Reintentar</button></div></div>';
     }
   }
+
+  // ===== BUSCAR PERSONAS (la lupa) =====
+  // Con sesión: busca miembros por nombre, rol, oficio, especialidad o ciudad (sin importar acentos).
+  // Sin sesión: solo se ve cuántos resultados hay en el Padrón y una invitación a entrar o registrarse.
+  const PE_SYN = {
+    'Ing. Civil': 'ingeniero ingeniera ingenieria civil',
+    'Arquitecto': 'arquitecta arquitectura',
+    'Profesor': 'profesora docente catedratico catedratica',
+    'Contratista': 'constructor constructora',
+    'Estudiante': 'alumno alumna',
+    'Proveedor': 'proveedora proveedores',
+    'Oficios': 'oficio oficios'
+  };
+  const PE_ROLES = ['Ing. Civil', 'Arquitecto', 'Profesor', 'Contratista', 'Proveedor', 'Oficios', 'Estudiante'];
+  let peMembers = null, peLoading = false, peErr = '';
+
+  function peReset(){
+    peMembers = null; peErr = '';
+    const sc = document.getElementById('s-personas');
+    if(sc && sc.classList.contains('active')) peOpen();
+  }
+  function peOpen(){
+    const qi = document.getElementById('pe-q');
+    if(myId() && !peMembers && !peLoading) peLoad(); else peRender();
+    if(qi) setTimeout(() => { try{ qi.focus(); }catch(_){} }, 60);
+  }
+  async function peLoad(){
+    peLoading = true; peErr = ''; peRender();
+    try{
+      const tok = await freshToken();
+      if(!tok) throw new Error('Tu sesión venció. Vuelve a entrar.');
+      const get = (cols) => fetchTimeout(SUPABASE_URL + '/rest/v1/profiles?select=' + cols + '&order=nombre_completo.asc&limit=2000',
+        { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + tok } }, 12000);
+      let res = await get('id,nombre_completo,rol,especialidad,ciudad');
+      if(!res.ok) res = await get('id,nombre_completo,rol,ciudad');   // si el SQL de Oficios aún no corre
+      if(!res.ok) throw new Error('No se pudo cargar la lista (' + res.status + ').');
+      const rows = await res.json();
+      const me = myId();
+      peMembers = rows.filter(r => r.id !== me && String(r.nombre_completo || '').trim()).map(r => ({
+        id: r.id, nombre: String(r.nombre_completo).trim(), rol: r.rol || '', esp: r.especialidad || '', ciudad: r.ciudad || '',
+        nom: norm(r.nombre_completo),
+        hay: norm([r.nombre_completo, r.rol, PE_SYN[r.rol] || '', r.especialidad, r.ciudad].join(' '))
+      }));
+    }catch(e){ peErr = errText(e, 'No se pudo cargar la lista.'); }
+    peLoading = false; peRender();
+  }
+  // todas las palabras escritas deben aparecer (singular o plural: "electricistas" encuentra "electricista")
+  function peTokens(q){ return norm(q).split(/[\s.,]+/).filter(Boolean); }
+  function peHas(hay, t){ return hay.includes(t) || (t.length > 3 && t.endsWith('s') && hay.includes(t.slice(0, -1))); }
+  function peCountPad(q){
+    const nq = norm(q).trim(); if(!nq) return 0;
+    let n = 0;
+    document.querySelectorAll('#s-buscar .dir-card').forEach(c => {
+      const txt = norm(Array.from(c.querySelectorAll('.dir-name,.dir-meta,.dir-detail-row')).map(x => x.textContent).join(' '));
+      if(txt.includes(nq)) n++;
+    });
+    return n;
+  }
+  function peGoPad(){
+    const q = (document.getElementById('pe-q').value || '').trim();
+    const qi = document.getElementById('dir-q'); if(qi) qi.value = q;
+    go('buscar', null);
+    if(q) dirSearch(q);
+  }
+  function peAuth(mode){
+    go('perfil', document.querySelector('.navbtn[data-screen="perfil"]'));
+    authSetMode(mode);
+  }
+  function peChip(v){
+    const qi = document.getElementById('pe-q'); if(qi){ qi.value = v; }
+    peRender();
+  }
+  function peInvite(){
+    const msg = 'Te invito a Proyecta: la comunidad de la construcción en LATAM. Herramientas gratis, gente de obra y proveedores en un solo lugar. Entra aquí: https://app.proyectalatam.com';
+    window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank', 'noopener');
+  }
+  function peMetaOf(m){
+    const parts = m.rol === 'Oficios' ? [m.esp || 'Oficios'] : [m.rol, m.esp];
+    return parts.concat([m.ciudad]).filter(Boolean).join(' · ');
+  }
+  function peRender(){
+    const box = document.getElementById('pe-out'); if(!box) return;
+    const q = (document.getElementById('pe-q').value || '').trim();
+    const logged = !!myId();
+    const nPad = q.length >= 2 ? peCountPad(q) : 0;
+    let h = '';
+    const padBlock = nPad ? '<button class="pad-banner" type="button" onclick="peGoPad()"><span class="pad-ico">👷</span>' +
+      '<span><span class="pad-name">Padrón Proyecta · ' + nPad + (nPad === 1 ? ' resultado' : ' resultados') + '</span><br>' +
+      '<span class="pad-meta">Especialistas y proveedores seleccionados por Proyecta</span></span><span class="pad-go">›</span></button>' : '';
+
+    if(!logged){
+      h += padBlock;
+      h += '<div class="auth-card pe-gate"><div class="auth-title">🔒 ¿Quieres ver más?</div>' +
+        '<div class="auth-sub" style="margin-bottom:6px">Para encontrar a profesionistas y gente de la construcción que ya está en Proyecta (ingenieros, arquitectos, profesores, contratistas, oficios y proveedores), necesitas iniciar sesión o registrarte. Es gratis.</div>' +
+        '<button class="btn-gold" type="button" onclick="peAuth(\'registro\')">Crear mi cuenta</button>' +
+        '<button class="btn-ghost" type="button" onclick="peAuth(\'entrar\')">Ya tengo cuenta · Entrar</button></div>';
+      box.innerHTML = h; return;
+    }
+    if(peLoading && !peMembers){ box.innerHTML = '<div class="feed-empty">Cargando…</div>'; return; }
+    if(!peMembers){
+      box.innerHTML = '<div class="feed-empty"><b>No se pudo cargar la lista</b>' + esc(peErr || 'Intenta de nuevo.') +
+        '<div style="margin-top:12px"><button class="btn-ghost" type="button" onclick="peLoad()">Reintentar</button></div></div>';
+      return;
+    }
+    h += '<div class="chiprow">' + PE_ROLES.map(r => '<div class="chip' + (norm(q) === norm(r) ? ' on' : '') + '" role="button" onclick="peChip(this.dataset.v)" data-v="' + esc(r) + '">' + esc(r) + '</div>').join('') + '</div>';
+    if(!q){
+      h += '<div class="feed-empty"><b>' + peMembers.length + (peMembers.length === 1 ? ' persona más' : ' personas más') + ' en Proyecta</b>' +
+        'Escribe un nombre, un oficio (yesero, plomero…), una especialidad (estructuras…) o una ciudad. También puedes tocar un rol.</div>';
+      box.innerHTML = h; return;
+    }
+    const toks = peTokens(q);
+    let hits = peMembers.filter(m => toks.every(t => peHas(m.hay, t)));
+    hits.sort((a, b) => (toks.every(t => peHas(a.nom, t)) ? 0 : 1) - (toks.every(t => peHas(b.nom, t)) ? 0 : 1) || a.nombre.localeCompare(b.nombre, 'es'));
+    if(hits.length){
+      h += '<div class="sectionlabel">Personas en Proyecta · ' + hits.length + '</div>';
+      hits.slice(0, 30).forEach(m => {
+        h += '<div class="pe-row" role="button" onclick="perfilOpen(\'' + esc(m.id) + '\')"><div class="pe-av">' + esc(initialsOf(m.nombre)) + '</div>' +
+          '<div class="pe-main"><div class="pe-name">' + esc(m.nombre) + '</div><div class="pe-meta">' + esc(peMetaOf(m) || 'Aún sin rol') + '</div></div><span class="pad-go">›</span></div>';
+      });
+      if(hits.length > 30) h += '<div class="post-meta" style="text-align:center;margin:2px 0 12px">Mostrando 30 de ' + hits.length + '. Escribe más para afinar.</div>';
+      h += padBlock;
+      h += '<button class="btn-ghost" type="button" onclick="peInvite()">¿No está quien buscas? Invítalo por WhatsApp</button>';
+    } else {
+      h += padBlock;
+      h += '<div class="auth-card"><div class="auth-title">No encontramos «' + esc(q) + '» en Proyecta</div>' +
+        '<div class="auth-sub">Revisa cómo está escrito. Si todavía no se registra, invítalo para que se una a la comunidad.</div>' +
+        '<button class="btn-gold" type="button" onclick="peInvite()">Invitarlo por WhatsApp</button></div>';
+    }
+    box.innerHTML = h;
+  }
+  window.peOpen = peOpen; window.peReset = peReset;
 
   // ===== EDITAR PERFIL =====
   let meProfile = null;
