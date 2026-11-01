@@ -325,6 +325,9 @@
   .btn-gold:disabled{opacity:.6;cursor:default;}
   .btn-ghost{display:block;width:100%;text-align:center;padding:12px;border-radius:100px;background:transparent;
     border:1.5px solid var(--line);color:var(--navy);font-family:'Archivo';font-weight:700;font-size:13px;cursor:pointer;margin-top:10px;}
+  .auth-link{display:block;margin:-2px 0 10px auto;padding:6px 2px;background:none;border:none;font-family:'Archivo';
+    font-size:12.5px;font-weight:700;color:var(--navy);text-decoration:underline;cursor:pointer;}
+  .auth-link:disabled{opacity:.55;cursor:default;text-decoration:none;}
   .sum-row{font-size:13px;color:#374151;margin-bottom:8px;line-height:1.45;}
   .sum-row b{color:var(--navy);}
   .sum-empty{font-size:12.5px;color:var(--muted);line-height:1.4;}
@@ -1048,6 +1051,23 @@
         <!-- PERFIL -->
         <section class="screen" id="s-perfil">
 
+          <!-- nueva contraseña: al volver del link de recuperación o desde "Cambiar contraseña" -->
+          <div id="pw-card" class="auth-card" style="display:none">
+            <div class="auth-title" id="pw-title">Elige tu nueva contraseña</div>
+            <div class="auth-sub" id="pw-sub">Escríbela dos veces. Mínimo 6 caracteres.</div>
+            <div id="pw-form">
+              <div class="pass-wrap">
+                <input class="auth-input" id="pw-new" type="password" placeholder="Nueva contraseña" autocomplete="new-password">
+                <button type="button" class="pass-toggle" id="pw-toggle" onclick="pwToggle()" aria-label="Mostrar contraseña" aria-pressed="false">Mostrar</button>
+              </div>
+              <input class="auth-input" id="pw-new2" type="password" placeholder="Repite la nueva contraseña" autocomplete="new-password">
+              <div class="auth-msg" id="pw-msg"></div>
+              <button type="button" class="btn-gold" id="pw-save" onclick="pwSave()">Guardar contraseña</button>
+              <button type="button" class="btn-ghost" id="pw-cancel" onclick="pwClose()">Ahora no</button>
+            </div>
+            <div class="auth-msg" id="pw-done"></div>
+          </div>
+
           <!-- cuenta: sin sesión -->
           <div id="auth-out" class="auth-card">
             <div class="auth-title">Únete a Proyecta</div>
@@ -1062,6 +1082,7 @@
               <input class="auth-input" id="auth-pass" type="password" placeholder="Contraseña (mínimo 6 caracteres)" autocomplete="current-password">
               <button type="button" class="pass-toggle" id="pass-toggle" onclick="passToggle()" aria-label="Mostrar contraseña" aria-pressed="false">Mostrar</button>
             </div>
+            <button type="button" class="auth-link" id="auth-forgot" onclick="authForgot()">¿Olvidaste tu contraseña?</button>
             <div class="auth-msg" id="auth-msg"></div>
             <div id="auth-resend" style="display:none;margin:0 0 12px">
               <button type="button" class="btn-ghost" id="auth-resend-btn" onclick="authResend()">Reenviar correo de confirmación</button>
@@ -1164,6 +1185,7 @@
               <button type="button" class="btn-ghost" onclick="profileEditClose()">Cancelar</button>
             </div>
 
+            <button type="button" class="btn-ghost" id="me-pw" onclick="pwOpen('change')">Cambiar contraseña</button>
             <button type="button" class="btn-ghost" id="me-logout" onclick="authLogout()">Cerrar sesión</button>
           </div>
 
@@ -1545,7 +1567,9 @@
   function authErrorMsg(e){
     const c = String(e.code || '');
     const m = String(e.message || '').toLowerCase();
-    if(c === 'invalid_credentials' || m.includes('invalid login')) return 'Correo o contraseña incorrectos.';
+    if(c === 'invalid_credentials' || m.includes('invalid login')) return 'Correo o contraseña incorrectos. Si no la recuerdas, toca “¿Olvidaste tu contraseña?”.';
+    if(c === 'same_password') return 'La nueva contraseña debe ser distinta a la que ya tienes.';
+    if(c === 'reauthentication_needed' || c === 'reauthentication_not_valid') return 'Por seguridad, cierra sesión, entra de nuevo y vuelve a intentar.';
     if(c === 'email_not_confirmed') return 'Falta confirmar tu correo. Revisa tu bandeja y la carpeta de spam (en Hotmail u Outlook: "Correo no deseado" y "Otros"), o pide que te lo reenviemos.';
     if(c === 'user_already_exists' || c === 'email_exists' || m.includes('already registered')) return 'Ese correo ya tiene cuenta. Prueba en "Entrar".';
     if(c === 'weak_password') return 'La contraseña es muy débil. Usa al menos 6 caracteres.';
@@ -1611,6 +1635,7 @@
     document.getElementById('tab-registro').classList.toggle('on', reg);
     document.getElementById('auth-nombre').style.display = reg ? '' : 'none';
     document.getElementById('auth-pass').autocomplete = reg ? 'new-password' : 'current-password';
+    document.getElementById('auth-forgot').style.display = reg ? 'none' : '';
     if(window.passHide) window.passHide();
     document.getElementById('auth-btn').textContent = reg ? 'Crear mi cuenta' : 'Entrar';
     authMsg('');
@@ -1653,6 +1678,124 @@
       btn.textContent = (authMode === 'registro') ? 'Crear mi cuenta' : 'Entrar';
     }
   }
+  // ===== ¿OLVIDASTE TU CONTRASEÑA? =====
+  let forgotLeft = 0, forgotTimer = null;
+  function forgotPaint(){
+    const b = document.getElementById('auth-forgot');
+    if(!b) return;
+    b.disabled = forgotLeft > 0;
+    b.textContent = forgotLeft > 0 ? ('Puedes pedirlo otra vez en ' + forgotLeft + ' s') : '¿Olvidaste tu contraseña?';
+  }
+  function forgotCooldown(sec){
+    forgotLeft = sec;
+    forgotPaint();
+    if(forgotTimer) clearInterval(forgotTimer);
+    forgotTimer = setInterval(() => {
+      forgotLeft = Math.max(0, forgotLeft - 1);
+      forgotPaint();
+      if(forgotLeft <= 0){ clearInterval(forgotTimer); forgotTimer = null; }
+    }, 1000);
+  }
+  async function authForgot(){
+    if(forgotLeft > 0) return;
+    const inp = document.getElementById('auth-correo');
+    const correo = inp.value.trim();
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)){
+      authMsg('Escribe tu correo en el primer campo y toca otra vez “¿Olvidaste tu contraseña?”.', 'err');
+      inp.focus();
+      return;
+    }
+    authMsg('');
+    const b = document.getElementById('auth-forgot');
+    b.disabled = true;
+    b.textContent = 'Enviando…';
+    try{
+      await authCall('/auth/v1/recover?redirect_to=' + encodeURIComponent(APP_URL), { email: correo });
+      authMsg('Listo. Si ' + correo + ' tiene cuenta en Proyecta, te mandamos un link para elegir una contraseña nueva. Puede tardar unos minutos: revisa Spam y Promociones; si es Hotmail u Outlook, revisa “Correo no deseado” y “Otros”. El link sirve una sola vez.', 'ok');
+      forgotCooldown(60);
+    }catch(e){
+      authMsg(authErrorMsg(e), 'err');
+      forgotCooldown(e && e.status === 429 ? 60 : 0);
+    }
+  }
+
+  // ===== ELEGIR / CAMBIAR CONTRASEÑA (ya con sesión) =====
+  function pwMsg(text, kind){
+    const el = document.getElementById('pw-msg');
+    el.textContent = text || '';
+    el.className = 'auth-msg' + (kind ? ' ' + kind : '');
+  }
+  function pwToggle(){
+    const a = document.getElementById('pw-new'), b = document.getElementById('pw-new2'), t = document.getElementById('pw-toggle');
+    const show = a.type === 'password';
+    a.type = b.type = show ? 'text' : 'password';
+    t.textContent = show ? 'Ocultar' : 'Mostrar';
+    t.setAttribute('aria-label', show ? 'Ocultar contraseña' : 'Mostrar contraseña');
+    t.setAttribute('aria-pressed', show ? 'true' : 'false');
+  }
+  function pwOpen(mode){
+    const rec = mode === 'recovery';
+    document.getElementById('pw-title').textContent = rec ? 'Elige tu nueva contraseña' : 'Cambiar contraseña';
+    document.getElementById('pw-sub').textContent = rec ? 'Entraste con el link del correo. Escribe tu contraseña nueva dos veces (mínimo 6 caracteres).' : 'Escribe tu contraseña nueva dos veces. Mínimo 6 caracteres.';
+    document.getElementById('pw-cancel').textContent = rec ? 'Ahora no' : 'Cancelar';
+    document.getElementById('pw-new').value = '';
+    document.getElementById('pw-new2').value = '';
+    document.getElementById('pw-form').style.display = '';
+    document.getElementById('pw-done').textContent = '';
+    document.getElementById('pw-done').className = 'auth-msg';
+    pwMsg('');
+    const a = document.getElementById('pw-new'), b = document.getElementById('pw-new2');
+    a.type = b.type = 'password';
+    document.getElementById('pw-toggle').textContent = 'Mostrar';
+    document.getElementById('pw-card').style.display = '';
+    try{ document.getElementById('pw-card').scrollIntoView({ block: 'start' }); }catch(e){}
+    a.focus();
+  }
+  function pwClose(){
+    const c = document.getElementById('pw-card');
+    if(c) c.style.display = 'none';
+    ['pw-new', 'pw-new2'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+  }
+  async function pwSave(){
+    const p1 = document.getElementById('pw-new').value;
+    const p2 = document.getElementById('pw-new2').value;
+    if(p1.length < 6){ pwMsg('La contraseña debe tener al menos 6 caracteres.', 'err'); return; }
+    if(p1 !== p2){ pwMsg('Las dos contraseñas no son iguales. Revísalas.', 'err'); return; }
+    const btn = document.getElementById('pw-save');
+    btn.disabled = true; btn.textContent = 'Guardando…';
+    pwMsg('');
+    try{
+      const tok = await freshToken();
+      if(!tok){ pwMsg('Tu sesión venció. Entra de nuevo y vuelve a intentar.', 'err'); return; }
+      const res = await fetchTimeout(SUPABASE_URL + '/auth/v1/user', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', apikey: SUPABASE_KEY, Authorization: 'Bearer ' + tok },
+        body: JSON.stringify({ password: p1 })
+      }, 12000);
+      let data = {};
+      try{ data = await res.json(); }catch(e){}
+      if(!res.ok){
+        const err = new Error(data.msg || data.message || ('Error ' + res.status));
+        err.code = data.error_code || data.code || '';
+        err.status = res.status;
+        if(res.status === 401) pwMsg('Tu sesión venció. Entra de nuevo y vuelve a intentar.', 'err');
+        else pwMsg(authErrorMsg(err), 'err');
+        return;
+      }
+      document.getElementById('pw-new').value = '';
+      document.getElementById('pw-new2').value = '';
+      document.getElementById('pw-form').style.display = 'none';
+      const d = document.getElementById('pw-done');
+      d.textContent = '✅ Listo. Tu contraseña quedó cambiada. Úsala la próxima vez que entres.';
+      d.className = 'auth-msg ok';
+      setTimeout(() => { const c = document.getElementById('pw-card'); if(c && document.getElementById('pw-form').style.display === 'none') c.style.display = 'none'; }, 5000);
+    }catch(e){
+      pwMsg(authErrorMsg(e), 'err');
+    }finally{
+      btn.disabled = false; btn.textContent = 'Guardar contraseña';
+    }
+  }
+
   async function authLogout(){
     const tok = authSession && authSession.access_token;
     authSession = null;
@@ -1681,6 +1824,7 @@
     if(window.passHide) window.passHide();
     if(window.peReset) window.peReset();
     if(window.feedRender) window.feedRender();
+    if(!logged && window.pwClose) window.pwClose();
     document.getElementById('auth-out').style.display = logged ? 'none' : '';
     document.getElementById('auth-in').style.display = logged ? '' : 'none';
     document.getElementById('perfil-demo').style.display = logged ? 'none' : '';
@@ -3057,7 +3201,7 @@
             user: user
           });
           authStore(authSession);
-          return 'ok';
+          return q.get('type') === 'recovery' ? 'recovery' : 'ok';
         }
       }catch(e){}
     }
@@ -3847,12 +3991,14 @@
       }
     }
     await authRender();
+    // link de "olvidé mi contraseña": ya entró con el link, ahora elige la nueva
+    if(linkResult === 'recovery' && authSession) pwOpen('recovery');
     // 3) Si la sesión se renovó, se vuelve a pedir el feed para marcar tus me gusta.
     if(renewed && authSession){
       if(feedBusy) feedPending = true; else feedLoad();
     }
     if(linkResult === 'error' && !authSession){
-      authMsg('El link del correo venció o ya se usó. Entra con tu correo y contraseña; si no puedes, crea la cuenta de nuevo.', 'err');
+      authMsg('El link del correo venció o ya se usó. Si era para recuperar tu contraseña, escribe tu correo y toca “¿Olvidaste tu contraseña?” para pedir uno nuevo.', 'err');
     }
   }
   authInit();
