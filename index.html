@@ -490,7 +490,8 @@
   .bb{font-size:9.5px;font-weight:800;letter-spacing:.05em;padding:3px 8px;border-radius:100px;text-transform:uppercase;}
   .bb.fed{background:#f5e3da;color:var(--brick);} .bb.est{background:#e3efe6;color:var(--pine);} .bb.mun{background:#f6ecd3;color:#8a6a1f;} .bb.fp{background:var(--navy);color:var(--gold-2);}
   .bempty{text-align:center;padding:22px 16px;color:var(--muted);font-size:13px;line-height:1.5;}
-  .bback{display:block;text-align:left;border:none;background:none;font-family:'Archivo';font-size:13px;font-weight:800;color:var(--gold);cursor:pointer;padding:2px 0 10px;}
+  .bback{display:flex;align-items:center;gap:6px;width:100%;text-align:left;border:none;background:none;font-family:'Archivo';font-size:16px;font-weight:800;color:var(--navy);cursor:pointer;padding:10px 0 12px;min-height:44px;line-height:1.2;-webkit-tap-highlight-color:transparent;}
+  .bback b{display:inline-flex;align-items:center;justify-content:center;flex:none;width:30px;height:30px;border-radius:50%;background:linear-gradient(155deg,var(--gold-2),var(--gold));color:var(--navy);font-size:20px;line-height:1;padding-bottom:2px;}
   .bhero{position:relative;color:#fff;border-radius:16px;padding:15px 18px 15px 15px;margin-bottom:12px;overflow:hidden;background:linear-gradient(155deg,var(--navy),var(--navy-3));}
   .bhero::after{content:"";position:absolute;right:0;top:0;bottom:0;width:6px;background:repeating-linear-gradient(var(--gold) 0 2px,transparent 2px 8px);}
   .bhero h3{margin:0;font-size:16px;line-height:1.25;font-weight:800;}
@@ -4256,7 +4257,7 @@
       h += '<div class="bnote">Enlazamos a las fuentes oficiales para que siempre leas la versión vigente. Las fichas son resúmenes de apoyo; consulta el documento oficial.</div>';
     } else if(st.view==='doc'){
       var d = docById(st.doc);
-      h += '<button type="button" class="bback" onclick="bibBack()">‹ Biblioteca</button>';
+      h += '<button type="button" class="bback" onclick="bibBack()"><b>‹</b>Biblioteca</button>';
       h += '<div class="bhero"><h3>'+esc(d.n)+'</h3><p>'+esc(d.lead)+'</p></div>';
       d.links.forEach(function(l){ h += '<a class="blink '+(l.gold?'gold':'line')+'" href="'+l.u+'" target="_blank" rel="noopener noreferrer">'+esc(l.t)+'</a>'; });
       if(d.fichas){
@@ -4268,7 +4269,7 @@
       h += '<div class="bnote">Resumen de apoyo. Consulta siempre el documento oficial vigente.</div>';
     } else {
       var f = FICHAS[st.ficha], dd = docById(f.doc);
-      h += '<button type="button" class="bback" onclick="bibBack()">‹ '+esc(dd.n)+'</button>';
+      h += '<button type="button" class="bback" onclick="bibBack()"><b>‹</b>'+esc(dd.n)+'</button>';
       h += '<div class="bart">'+esc(f.arts)+'</div><h3 class="bh2">'+esc(f.q)+'</h3>'+f.html;
       h += '<div class="bnote"><b>Resumen de apoyo.</b> Consulta siempre el documento oficial vigente.</div>';
       h += '<div class="bsrc">Fuente: Decreto Municipal 17, P.O. 6-feb-2023. Estos artículos no aparecen entre los que modificó la reforma de nov-2024. Revisión: '+BIB_REV+'.</div>';
