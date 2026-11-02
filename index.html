@@ -474,6 +474,45 @@
   .tools-banner p{margin:5px 0 0;font-size:12px;color:rgba(255,255,255,.75);line-height:1.5;}
 
 
+
+  /* biblioteca (Herramientas) */
+  .bseg{display:flex;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:4px;margin-bottom:12px;}
+  .bseg button{flex:1;border:none;background:transparent;font-family:'Archivo';font-size:13px;font-weight:700;color:var(--muted);padding:10px 0;border-radius:11px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  .bseg button.on{background:var(--navy);color:var(--gold-2);}
+  .bchips{display:flex;gap:8px;overflow-x:auto;margin-bottom:12px;padding-bottom:2px;}
+  .bchips .chip{border:1px solid var(--line);font-family:'Archivo';cursor:pointer;}
+  .bsec{font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:800;color:var(--navy);opacity:.6;margin:14px 2px 8px;}
+  .bdoc{display:block;width:100%;text-align:left;background:var(--paper);border:1px solid var(--line);border-left:4px solid var(--steel);border-radius:14px;padding:12px 13px;margin-bottom:9px;font-family:'Archivo';cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  .bdoc:active{background:#fbf9f3;}
+  .bdoc.f{border-left-color:var(--brick);} .bdoc.e{border-left-color:var(--pine);} .bdoc.m{border-left-color:var(--gold);}
+  .bdoc-n{font-size:13.5px;font-weight:800;color:var(--navy);line-height:1.25;}
+  .bdoc-m{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px;font-size:11.5px;color:var(--muted);}
+  .bb{font-size:9.5px;font-weight:800;letter-spacing:.05em;padding:3px 8px;border-radius:100px;text-transform:uppercase;}
+  .bb.fed{background:#f5e3da;color:var(--brick);} .bb.est{background:#e3efe6;color:var(--pine);} .bb.mun{background:#f6ecd3;color:#8a6a1f;} .bb.fp{background:var(--navy);color:var(--gold-2);}
+  .bempty{text-align:center;padding:22px 16px;color:var(--muted);font-size:13px;line-height:1.5;}
+  .bback{display:block;text-align:left;border:none;background:none;font-family:'Archivo';font-size:13px;font-weight:800;color:var(--gold);cursor:pointer;padding:2px 0 10px;}
+  .bhero{position:relative;color:#fff;border-radius:16px;padding:15px 18px 15px 15px;margin-bottom:12px;overflow:hidden;background:linear-gradient(155deg,var(--navy),var(--navy-3));}
+  .bhero::after{content:"";position:absolute;right:0;top:0;bottom:0;width:6px;background:repeating-linear-gradient(var(--gold) 0 2px,transparent 2px 8px);}
+  .bhero h3{margin:0;font-size:16px;line-height:1.25;font-weight:800;}
+  .bhero p{margin:6px 0 0;font-size:12px;color:rgba(255,255,255,.75);line-height:1.45;}
+  .blink{display:block;text-align:center;text-decoration:none;font-family:'Archivo';font-weight:800;font-size:13.5px;padding:12px;border-radius:100px;margin-bottom:9px;}
+  .blink.gold{background:linear-gradient(155deg,var(--gold-2),var(--gold));color:var(--navy);}
+  .blink.line{background:var(--paper);border:1px solid var(--line);color:var(--navy);}
+  .bq{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:12px 13px;margin-bottom:8px;font-family:'Archivo';font-size:13px;font-weight:700;color:var(--navy);cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  .bq span{color:var(--gold);font-size:18px;line-height:1;flex-shrink:0;}
+  .bnote{background:#fbf6e8;border:1px solid #ecdcae;border-radius:12px;padding:10px 12px;font-size:11.5px;line-height:1.45;color:#6b5a26;margin-top:10px;}
+  .bojo{background:#fdf0ea;border:1px solid #f0c9b8;border-radius:12px;padding:10px 12px;font-size:12px;line-height:1.45;color:#7a2d12;margin-top:10px;}
+  .bart{display:inline-block;font-size:10.5px;font-weight:800;color:#8a6a1f;background:#f6ecd3;border-radius:8px;padding:3px 8px;margin-bottom:8px;}
+  .bh2{font-size:15px;font-weight:800;line-height:1.25;color:var(--navy);margin:0 0 10px;}
+  .btipo{display:flex;gap:10px;align-items:flex-start;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:8px;font-size:12.5px;line-height:1.4;}
+  .btk{flex:none;min-width:50px;text-align:center;font-weight:800;font-size:12px;background:var(--navy);color:var(--gold-2);border-radius:9px;padding:6px 6px;}
+  .btk.n{background:#e9e5d8;color:var(--navy);}
+  .bdro{display:inline-block;margin-top:5px;font-size:9.5px;font-weight:800;padding:3px 8px;border-radius:100px;}
+  .bdro.y{background:#f5e3da;color:var(--brick);} .bdro.n{background:#e3efe6;color:var(--pine);}
+  .bbox{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:11px 13px;margin-bottom:9px;font-size:12.5px;line-height:1.45;}
+  .bbox ul{margin:6px 0 0;padding-left:18px;} .bbox li{margin-bottom:5px;} .bbox i{color:var(--muted);font-style:normal;font-size:11.5px;}
+  .bsrc{font-size:11px;color:var(--muted);margin-top:10px;line-height:1.45;}
+
   /* ---- feed real, publicar, instalar, QR ---- */
   button,textarea,select,input{font-family:'Archivo',sans-serif;}
   .pass-wrap{position:relative;margin-bottom:10px;}
@@ -989,6 +1028,11 @@
 
         <!-- HERRAMIENTAS -->
         <section class="screen" id="s-herramientas">
+          <div class="bseg" role="tablist">
+            <button type="button" id="bt-calc" class="on" role="tab" onclick="bibTab('calc')">🧮 Calculadoras</button>
+            <button type="button" id="bt-bib" role="tab" onclick="bibTab('bib')">📚 Biblioteca</button>
+          </div>
+          <div id="tools-calc">
           <div class="tools-banner">
             <b>Gratis, sin registro.</b>
             <p>Herramientas técnicas validadas con ingenieros en campo. Úsalas hoy, sin membresía.</p>
@@ -1031,6 +1075,8 @@
             </div>
             <div class="tool-pill soon">Pronto</div>
           </div>
+          </div>
+          <div id="tools-bib" style="display:none;"></div>
         </section>
 
         <!-- PUBLICAR -->
@@ -1342,6 +1388,7 @@
     document.getElementById('screenTitle').textContent = titles[name][0];
     document.getElementById('screenSub').textContent = titles[name][1];
     document.querySelector('.app-body').scrollTop = 0;
+    if(name === 'herramientas' && window.bibSync) window.bibSync();
     if(name === 'inicio' && window.feedRefreshIfStale) window.feedRefreshIfStale();
     if(name === 'comunidad' && window.comLoad) window.comLoad();
     if(name === 'personas' && window.peOpen) window.peOpen();
@@ -4066,6 +4113,171 @@
       navigator.serviceWorker.register('sw.js').catch(() => {});
     });
   }
+</script>
+
+
+<script>
+// ===== BIBLIOTECA (Herramientas) =====
+(function(){
+  var BIB_REV = '1-nov-2026';
+  var DOCS = [
+    { id:'reg-mazatlan', amb:'m', fp:true, n:'Reglamento de Construcción · Mazatlán',
+      sub:'Decreto Municipal 17 · P.O. 6-feb-2023 · reforma nov-2024',
+      kw:'reglamento construccion mazatlan dro director responsable obra licencia tipo de obra decreto municipal',
+      lead:'Municipal · Sinaloa · Texto base 2023 con reforma de noviembre de 2024',
+      links:[
+        {t:'Abrir texto base 2023 ↗', u:'https://rmtysmazatlan.sinaloa.gob.mx/Content/Archivos/101612062025Reglamento%20de%20Construcci%C3%B3n%20Mazatl%C3%A1n%202023%20POE(sai).pdf', gold:true},
+        {t:'Abrir reforma nov-2024 (Decreto 66) ↗', u:'https://iip.congresosinaloa.gob.mx/docs/ref_reg_mun/012/006/002.pdf'}
+      ],
+      estado:'<b>Estado del texto.</b> Texto base: Decreto Municipal 17 (P.O. No. 016, 6-feb-2023). Reforma: Decreto Municipal 66 (P.O. No. 133, 1-nov-2024), que modifica los arts. 35, 100, 101 y 108, agrega los 9 Bis y 9 Ter y suma los arts. 238 a 243. El Cabildo aprobó otra reforma en mayo de 2025; aún no confirmamos su publicación. Revisión: '+BIB_REV+'.',
+      fichas:[
+        {k:'tipos', q:'¿Qué tipo de obra es la mía y necesito DRO?', arts:'Arts. 10 y 12'},
+        {k:'dro',   q:'¿Qué hace el DRO en mi obra?', arts:'Arts. 11 a 14'}
+      ] },
+    { id:'lotdu-sinaloa', amb:'e', off:true, n:'Ley de Ordenamiento Territorial y Desarrollo Urbano · Sinaloa',
+      sub:'P.O. 28-feb-2018 · última reforma que aparece: P.O. 6-nov-2024',
+      kw:'ley ordenamiento territorial desarrollo urbano sinaloa estatal uso de suelo',
+      lead:'Estatal · Sinaloa · Sustituye a la antigua Ley de Desarrollo Urbano',
+      links:[{t:'Abrir documento oficial ↗', u:'https://retys.sinaloa.gob.mx/Content/Archivos/020917022025Ley%20de%20ordenamiento%20territorial%20y%20desarrollo%20urbano%20del%20estado%20de%20Sinaloa.pdf', gold:true}] },
+    { id:'lopsrm', amb:'f', off:true, n:'Ley de Obras Públicas y Servicios Relacionados con las Mismas',
+      sub:'Federal · licitaciones y contratos de obra pública',
+      kw:'ley obras publicas servicios relacionados licitacion contrato federal lopsrm',
+      lead:'Federal · Obra pública, licitaciones y contratos',
+      links:[{t:'Abrir en la Cámara de Diputados ↗', u:'https://www.diputados.gob.mx/LeyesBiblio/ref/lopsrm.htm', gold:true}] },
+    { id:'lgahotdu', amb:'f', off:true, n:'Ley General de Asentamientos Humanos, Ordenamiento Territorial y Desarrollo Urbano',
+      sub:'Federal · marco general del desarrollo urbano',
+      kw:'ley general asentamientos humanos ordenamiento territorial desarrollo urbano federal lgahotdu',
+      lead:'Federal · Marco general de ordenamiento territorial y desarrollo urbano',
+      links:[{t:'Abrir en la Cámara de Diputados ↗', u:'https://www.diputados.gob.mx/LeyesBiblio/pdf/LGAHOTDU.pdf', gold:true}] }
+  ];
+  DOCS = DOCS.filter(function(d){ return !d.off; }); // por ahora solo se muestra el Reglamento de Mazatlán
+  var AMB = {m:['mun','Municipal'], e:['est','Estatal'], f:['fed','Federal']};
+  var FICHAS = {
+    tipos: {
+      doc:'reg-mazatlan', arts:'Arts. 10 y 12', q:'¿Qué tipo de obra es la mía y necesito DRO?',
+      html:
+        '<div class="btipo"><div class="btk n">Tipo 1</div><div><b>Obras menores:</b> bardas hasta 3.00 m de altura, remodelación de fachadas, excavaciones y movimientos de tierra.<br><span class="bdro n">No está en la lista del Art. 12</span></div></div>'+
+        '<div class="btipo"><div class="btk n">Tipo 2</div><div><b>Autoconstrucción progresiva:</b> hasta 40 m² por etapa.<br><span class="bdro n">No está en la lista del Art. 12</span></div></div>'+
+        '<div class="btipo"><div class="btk">Tipo 3a</div><div><b>Vivienda unifamiliar en terreno plano</b> (hasta 30% de pendiente): máximo 3 niveles, claros hasta 6.00 m, muros de contención hasta 3.50 m.<br><span class="bdro y">Requiere DRO</span></div></div>'+
+        '<div class="btipo"><div class="btk">Tipo 3b</div><div><b>Vivienda unifamiliar con pendiente mayor a 30%.</b> Bardas mayores a 3.00 m; muros de contención hasta 3.50 m.<br><span class="bdro y">Requiere DRO</span></div></div>'+
+        '<div class="btipo"><div class="btk">Tipo 4a</div><div><b>Multifamiliar, comercio, servicios o industria</b> hasta 300 m².<br><span class="bdro y">Requiere DRO</span></div></div>'+
+        '<div class="btipo"><div class="btk">4b · 4c</div><div><b>4b:</b> de 300 a 1,500 m². <b>4c:</b> más de 1,500 m².<br><span class="bdro y">Requieren DRO</span></div></div>'+
+        '<div class="bojo"><b>Ojo con el texto:</b> el Art. 11 lista 3a, 3b, 4a y 4c, y el Art. 12 incluye también el 4b. Para el 4b, confirma con la Dirección antes de decidir.</div>'
+    },
+    dro: {
+      doc:'reg-mazatlan', arts:'Arts. 11 a 14', q:'¿Qué hace el DRO en mi obra?',
+      html:
+        '<div class="bbox"><b>Lo que debe hacer</b><ul>'+
+          '<li>Vigilar que la obra siga el proyecto y las licencias aprobadas <i>(Art. 14, I)</i></li>'+
+          '<li>Llevar la <b>bitácora electrónica</b> <i>(Art. 14, IV)</i></li>'+
+          '<li>Poner un letrero visible a 20 m con nombre y registro del DRO, constructor y número de licencia <i>(Art. 14, XII)</i></li>'+
+          '<li>Trabajar con un contrato de servicios profesionales por escrito <i>(Art. 14, XI)</i></li>'+
+          '<li>Al terminar, entregarte planos actualizados y la bitácora <i>(Art. 14, XV)</i></li></ul></div>'+
+        '<div class="bbox"><b>Cuánto dura su responsabilidad</b><br>2 años desde la fecha de la manifestación de terminación <i>(Art. 14, VI)</i>.</div>'+
+        '<div class="bbox"><b>Quién puede ser DRO</b><ul>'+
+          '<li>Arquitecto o ingeniero civil con título y cédula <i>(Arts. 12 y 13)</i></li>'+
+          '<li>Práctica no menor de 3 años en Mazatlán <i>(Art. 13, III)</i></li>'+
+          '<li>Miembro activo de un Colegio local, mínimo 3 años <i>(Art. 13, IV)</i></li></ul></div>'+
+        '<div class="bojo"><b>Ojo:</b> el Art. 12 pide 3 años de título y cédula, y el Art. 13 pide 5. Como propietario, lo práctico es verificar que el DRO esté registrado en la Dirección.</div>'
+    }
+  };
+  var st = {tab:'calc', amb:'all', q:'', view:'list', doc:null, ficha:null};
+
+  function esc(t){ return String(t).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+  function norm(t){ return String(t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
+  function docById(id){ return DOCS.filter(function(d){return d.id===id;})[0]; }
+  function box(){ return document.getElementById('tools-bib'); }
+  function setSub(){
+    var el = document.getElementById('screenSub');
+    if(!el) return;
+    el.textContent = st.tab==='bib' ? 'Leyes y reglamentos, con fuente oficial' : 'Gratis, para resolver tu obra hoy';
+  }
+
+  window.bibTab = function(t){
+    st.tab = t;
+    document.getElementById('bt-calc').classList.toggle('on', t==='calc');
+    document.getElementById('bt-bib').classList.toggle('on', t==='bib');
+    document.getElementById('tools-calc').style.display = t==='calc' ? '' : 'none';
+    box().style.display = t==='bib' ? '' : 'none';
+    setSub();
+    if(t==='bib') render();
+    document.querySelector('.app-body').scrollTop = 0;
+  };
+  window.bibSync = setSub;
+  window.bibAmb = function(a){ st.amb = a; render(); };
+  window.bibSearch = function(v){ st.q = v; renderList(true); };
+  window.bibOpen = function(id){ st.view='doc'; st.doc=id; render(); document.querySelector('.app-body').scrollTop=0; };
+  window.bibFicha = function(k){ st.view='ficha'; st.ficha=k; render(); document.querySelector('.app-body').scrollTop=0; };
+  window.bibBack = function(){
+    if(st.view==='ficha'){ st.view='doc'; } else { st.view='list'; st.doc=null; }
+    render(); document.querySelector('.app-body').scrollTop=0;
+  };
+  window.bibAsk = function(){
+    go('comunidad', document.querySelector('.navbtn[data-screen="comunidad"]'));
+  };
+
+  function docRow(d){
+    var a = AMB[d.amb];
+    return '<button type="button" class="bdoc '+d.amb+'" onclick="bibOpen(\''+d.id+'\')">'+
+      '<div class="bdoc-n">'+esc(d.n)+'</div>'+
+      '<div class="bdoc-m"><span class="bb '+a[0]+'">'+a[1]+'</span>'+(d.fp?'<span class="bb fp">Ficha Proyecta</span>':'')+'<span>'+esc(d.sub)+'</span></div></button>';
+  }
+  function matches(d){
+    if(st.amb!=='all' && d.amb!==st.amb) return false;
+    var q = norm(st.q).trim();
+    if(!q) return true;
+    var hay = norm(d.n+' '+d.sub+' '+d.kw+' '+(d.fichas||[]).map(function(f){return f.q;}).join(' '));
+    return q.split(/\s+/).every(function(w){ return hay.indexOf(w)>-1; });
+  }
+  function listHTML(){
+    var withF = DOCS.filter(function(d){return matches(d) && d.fp;});
+    var only  = DOCS.filter(function(d){return matches(d) && !d.fp;});
+    var h = '';
+    if(withF.length) h += '<div class="bsec">Con ficha Proyecta</div>' + withF.map(docRow).join('');
+    if(only.length)  h += '<div class="bsec">Solo fuente oficial</div>' + only.map(docRow).join('');
+    if(!withF.length && !only.length){
+      if(!st.q.trim() && st.amb!=='all') h = '<div class="bempty"><b style="display:block;color:var(--navy);font-size:15px;margin-bottom:4px;">Aún no hay documentos aquí</b>Estamos sumando la Biblioteca poco a poco, empezando por Mazatlán.</div>';
+      else h = '<div class="bempty"><b style="display:block;color:var(--navy);font-size:15px;margin-bottom:4px;">No encontramos ese documento</b>Prueba con otra palabra, o pregunta en la comunidad.</div>';
+    }
+    return h;
+  }
+  function renderList(keepFocus){
+    var out = document.getElementById('bib-out');
+    if(out) out.innerHTML = listHTML(); else render();
+  }
+  function chip(k,l){ return '<div class="chip'+(st.amb===k?' on':'')+'" role="button" tabindex="0" onclick="bibAmb(\''+k+'\')">'+l+'</div>'; }
+
+  function render(){
+    var h = '';
+    if(st.view==='list'){
+      h += '<div class="search-bar">🔎 <input id="bib-q" type="search" value="'+esc(st.q)+'" placeholder="Busca: reglamento, DRO, ley…" autocomplete="off" oninput="bibSearch(this.value)" aria-label="Buscar en la Biblioteca"></div>';
+      h += '<div class="bchips">'+chip('all','Todo')+chip('f','Federal')+chip('e','Estatal')+chip('m','Municipal')+'</div>';
+      h += '<div id="bib-out">'+listHTML()+'</div>';
+      h += '<div class="bnote">Enlazamos a las fuentes oficiales para que siempre leas la versión vigente. Las fichas son resúmenes de apoyo; consulta el documento oficial.</div>';
+    } else if(st.view==='doc'){
+      var d = docById(st.doc);
+      h += '<button type="button" class="bback" onclick="bibBack()">‹ Biblioteca</button>';
+      h += '<div class="bhero"><h3>'+esc(d.n)+'</h3><p>'+esc(d.lead)+'</p></div>';
+      d.links.forEach(function(l){ h += '<a class="blink '+(l.gold?'gold':'line')+'" href="'+l.u+'" target="_blank" rel="noopener noreferrer">'+esc(l.t)+'</a>'; });
+      if(d.fichas){
+        h += '<div class="bsec">Ficha Proyecta · lo que se usa en obra</div>';
+        d.fichas.forEach(function(f){ h += '<button type="button" class="bq" onclick="bibFicha(\''+f.k+'\')">'+esc(f.q)+'<span>›</span></button>'; });
+        h += '<button type="button" class="bq" onclick="bibAsk()">💬 Preguntar a la comunidad sobre esto<span>›</span></button>';
+      }
+      if(d.estado) h += '<div class="bnote">'+d.estado+'</div>';
+      h += '<div class="bnote">Resumen de apoyo. Consulta siempre el documento oficial vigente.</div>';
+    } else {
+      var f = FICHAS[st.ficha], dd = docById(f.doc);
+      h += '<button type="button" class="bback" onclick="bibBack()">‹ '+esc(dd.n)+'</button>';
+      h += '<div class="bart">'+esc(f.arts)+'</div><h3 class="bh2">'+esc(f.q)+'</h3>'+f.html;
+      h += '<div class="bnote"><b>Resumen de apoyo.</b> Consulta siempre el documento oficial vigente.</div>';
+      h += '<div class="bsrc">Fuente: Decreto Municipal 17, P.O. 6-feb-2023. Estos artículos no aparecen entre los que modificó la reforma de nov-2024. Revisión: '+BIB_REV+'.</div>';
+      h += '<button type="button" class="bq" style="margin-top:12px" onclick="bibAsk()">💬 ¿Dudas? Pregunta en la comunidad<span>›</span></button>';
+    }
+    box().innerHTML = h;
+  }
+  // al salir y volver a Herramientas se queda donde estaba
+})();
 </script>
 
 </body>
