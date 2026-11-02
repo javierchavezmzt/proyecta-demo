@@ -604,8 +604,12 @@
   .post-act.lad-own{cursor:default;color:var(--brick);}
   .th-hint{font-size:11.5px;line-height:1.5;color:#6b5a2a;background:#fff9ec;border:1px dashed var(--gold);border-radius:10px;padding:8px 10px;margin-bottom:8px;}
   .lib-act{display:flex;gap:16px;margin-top:6px;}
-  .th-form{display:flex;gap:8px;margin-top:4px;}
+  .th-form{display:flex;gap:8px;margin-top:4px;align-items:flex-end;}
   .th-input{flex:1;min-width:0;padding:10px 14px;border-radius:100px;border:1.5px solid var(--line);font-size:16px;outline:none;background:#fff;}
+  textarea.th-input{display:block;resize:none;overflow-y:auto;font-family:'Archivo';line-height:1.4;border-radius:20px;min-height:44px;max-height:190px;}
+  .th-send{align-self:flex-end;min-height:44px;}
+  .th-count{font-size:11.5px;color:var(--muted);text-align:right;margin:3px 4px 0;min-height:14px;}
+  .th-count.warn{color:var(--brick);font-weight:700;}
   .th-input:focus{border-color:var(--navy);}
   .th-send{padding:0 16px;border:none;border-radius:100px;cursor:pointer;font-weight:800;font-size:13px;
     background:linear-gradient(155deg,var(--gold-2),var(--gold));color:var(--navy);}
@@ -1107,10 +1111,10 @@
             <select id="pub-sala" class="pub-select" aria-label="Sala de la publicación"></select>
 
             <div class="composer">
-              <textarea id="pub-text" maxlength="500" oninput="pubCount()" placeholder="Cuéntale a la comunidad qué estás construyendo, qué duda tienes o a quién buscas…"></textarea>
+              <textarea id="pub-text" maxlength="1000" oninput="pubCount()" placeholder="Cuéntale a la comunidad qué estás construyendo, qué duda tienes o a quién buscas…"></textarea>
               <div class="composer-tools">
                 <div style="font-size:11px;color:var(--muted);font-weight:600;">📷 Fotos: pronto</div>
-                <span id="pub-count" style="font-size:11px;color:var(--muted);font-weight:600;">0/500</span>
+                <span id="pub-count" style="font-size:11px;color:var(--muted);font-weight:600;">0/1000</span>
               </div>
             </div>
 
@@ -2472,12 +2476,26 @@
     if(cm) cm.innerHTML = commentInner(p);
   }
 
+  const COMMENT_MAX = 1000;   // comentarios: hasta 1000 caracteres (el servidor también lo exige: Proyecta_SQL_Comentarios_Largos.sql)
+  function thGrow(el, id){
+    if(!el) return;
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 190) + 'px';
+    const c = document.getElementById('thc-' + id);
+    if(c){
+      const n = el.value.length;
+      c.textContent = n ? (n + '/' + COMMENT_MAX) : '';
+      c.classList.toggle('warn', n > COMMENT_MAX * 0.9);
+    }
+  }
   function threadForm(id){
     if(!myId()){
       return '<button class="btn-ghost" type="button" onclick="needLogin(\'Entra a tu cuenta para comentar\')">Entra para comentar</button>';
     }
-    return '<div class="th-form"><input class="th-input" id="thi-' + id + '" type="text" maxlength="300" placeholder="Escribe un comentario…" ' +
-      'onkeydown="if(event.key===\'Enter\')threadSend(' + id + ')"><button class="th-send" id="ths-' + id + '" type="button" onclick="threadSend(' + id + ')">Enviar</button></div>' +
+    return '<div class="th-form"><textarea class="th-input" id="thi-' + id + '" rows="1" maxlength="' + COMMENT_MAX + '" placeholder="Escribe un comentario…" ' +
+      'oninput="thGrow(this,' + id + ')" onkeydown="if((event.ctrlKey||event.metaKey)&&event.key===\'Enter\')threadSend(' + id + ')"></textarea>' +
+      '<button class="th-send" id="ths-' + id + '" type="button" onclick="threadSend(' + id + ')">Enviar</button></div>' +
+      '<div class="th-count" id="thc-' + id + '"></div>' +
       '<div class="auth-msg" id="thm-' + id + '"></div>';
   }
   function feedCard(p){
@@ -2501,7 +2519,7 @@
       '<div class="post-head"><div class="avatar' + (p.autor_id ? ' who' : '') + '"' + whoAttr(p.autor_id) + '>' + esc(initialsOf(name)) + '</div><div>' +
         '<div class="post-name' + (p.autor_id ? ' who' : '') + '"' + whoAttr(p.autor_id) + '>' + esc(name) + '</div><div class="post-meta">' + esc(meta) + edTag + '</div></div></div>' +
       (editing['p' + id] !== undefined
-        ? editBoxHtml('p' + id, 500, 'postEditSave(' + id + ')', 'postEditCancel(' + id + ')')
+        ? editBoxHtml('p' + id, 1000, 'postEditSave(' + id + ')', 'postEditCancel(' + id + ')')
         : '<div class="post-text">' + esc(p.contenido).replace(/\n/g, '<br>') + '</div>') +
       '<div class="post-foot">' +
         '<button class="post-act pa' + (p.liked ? ' liked' : '') + '" id="lk-' + id + '" type="button" aria-pressed="' + (p.liked ? 'true' : 'false') + '" aria-label="Me gusta" onclick="likeToggle(' + id + ')">' + likeInner(p) + '</button>' +
@@ -2551,7 +2569,7 @@
     const cards = feedRows.map(feedCard);
     if(FEED_AD.enabled && !feedFilter) cards.splice(1, 0, adCard());
     box.innerHTML = cards.join('');
-    Object.keys(keep).forEach(k => { const el = document.getElementById(k); if(el) el.value = keep[k]; });
+    Object.keys(keep).forEach(k => { const el = document.getElementById(k); if(el){ el.value = keep[k]; if(/^thi-/.test(k)) thGrow(el, k.slice(4)); } });
     openThreads.forEach(id => threadPaint(id));
   }
   window.feedRender = feedRender;
@@ -2764,7 +2782,7 @@
     }
     const ed = own && editing['c' + cid] !== undefined;
     return '<div class="th-c"><div class="th-meta"><b' + (c.autor_id ? ' class="who"' : '') + whoAttr(c.autor_id) + '>' + esc(name) + '</b> · ' + meta + '</div>' +
-      (ed ? editBoxHtml('c' + cid, 300, 'commentEditSave(' + cid + ',' + Number(pid) + ')', 'commentEditCancel(' + cid + ',' + Number(pid) + ')')
+      (ed ? editBoxHtml('c' + cid, COMMENT_MAX, 'commentEditSave(' + cid + ',' + Number(pid) + ')', 'commentEditCancel(' + cid + ',' + Number(pid) + ')')
           : '<div class="th-text">' + esc(c.contenido).replace(/\n/g, '<br>') + '</div>') +
       (act && !ed ? '<div class="th-act">' + act + '</div>' : '') + '</div>';
   }
@@ -2844,7 +2862,7 @@
         throw new Error('No se pudo comentar (' + res.status + '). Intenta de nuevo.');
       }
       const cur = document.getElementById('thi-' + id);
-      if(cur) cur.value = '';
+      if(cur){ cur.value = ''; thGrow(cur, id); }
       await threadLoad(id);
     }catch(e){
       thMsg(id, errText(e), 'err');
@@ -3160,7 +3178,7 @@
     el.className = 'auth-msg' + (kind ? ' ' + kind : '');
   }
   function pubCount(){
-    document.getElementById('pub-count').textContent = document.getElementById('pub-text').value.length + '/500';
+    document.getElementById('pub-count').textContent = document.getElementById('pub-text').value.length + '/1000';
   }
   // ¿Esta cuenta es del equipo de Proyecta? Solo ellos ven la categoría 📣 Novedades
   // (el servidor también lo exige: Proyecta_SQL_Novedades.sql).
@@ -3203,7 +3221,7 @@
     if(!myId()){ pubMsg('Entra a tu cuenta para publicar.', 'err'); return; }
     const txt = ta.value.trim();
     if(txt.length < 3){ pubMsg('Escribe un poco más para poder publicar.', 'err'); return; }
-    if(txt.length > 500){ pubMsg('Máximo 500 caracteres.', 'err'); return; }
+    if(txt.length > 1000){ pubMsg('Máximo 1000 caracteres.', 'err'); return; }
     const picked = document.querySelector('.catpick.on');
     const cat = picked && picked.dataset.cat ? picked.dataset.cat : 'Mi obra';
     const salaSel = document.getElementById('pub-sala');
