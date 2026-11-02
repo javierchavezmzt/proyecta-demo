@@ -386,14 +386,15 @@
   .forum-row{
     display:flex;align-items:center;gap:12px;
     background:var(--paper);border:1px solid var(--line);border-radius:14px;
-    padding:13px;margin-bottom:9px;
+    padding:14px 13px;margin-bottom:9px;
   }
+  .forum-row > div:nth-child(2){min-width:0;flex:1;}
   .forum-ico{
-    width:42px;height:42px;border-radius:12px;flex-shrink:0;
-    display:flex;align-items:center;justify-content:center;font-size:19px;color:#fff;
+    width:44px;height:44px;border-radius:12px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;
   }
-  .forum-name{font-size:13.5px;font-weight:700;}
-  .forum-meta{font-size:11px;color:var(--muted);margin-top:2px;}
+  .forum-name{font-size:15.5px;font-weight:800;line-height:1.2;}
+  .forum-meta{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.35;}
   .forum-dot{width:8px;height:8px;border-radius:50%;background:var(--gold);margin-left:auto;flex-shrink:0;}
 
   .sala-row{cursor:pointer;-webkit-tap-highlight-color:transparent;}
@@ -405,9 +406,9 @@
     display:none;background:var(--paper);border:1px solid var(--gold);border-radius:14px;padding:12px 13px;margin-bottom:12px;
   }
   .sala-bar-main{display:flex;align-items:center;gap:11px;}
-  .sala-bar-main .forum-ico{width:38px;height:38px;font-size:17px;}
-  .sala-bar-name{font-size:14px;font-weight:800;}
-  .sala-bar-desc{font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.35;}
+  .sala-bar-main .forum-ico{width:42px;height:42px;font-size:19px;}
+  .sala-bar-name{font-size:15.5px;font-weight:800;}
+  .sala-bar-desc{font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.35;}
   .sala-bar-rule{font-size:11px;color:var(--muted);line-height:1.45;margin-top:10px;padding-top:9px;border-top:1px dashed var(--line);}
   .sala-bar-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:11px;}
   .sala-bar-actions .btn-gold{width:auto;padding:9px 16px;font-size:12.5px;}
