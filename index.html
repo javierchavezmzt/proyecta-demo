@@ -453,6 +453,7 @@
     background:var(--paper);border:1px solid var(--line);border-radius:16px;
     padding:14px;margin-bottom:10px;
   }
+  a.tool-card{color:var(--ink);}
   .tool-card.disabled{opacity:.55;}
   .tool-ico{
     width:46px;height:46px;border-radius:13px;flex-shrink:0;
@@ -467,6 +468,12 @@
   }
   .tool-pill.live{background:var(--pine);color:#fff;}
   .tool-pill.soon{background:var(--cream);color:var(--muted);border:1px solid var(--line);}
+  .gate-card{display:none;background:linear-gradient(155deg,#fff9ec,#fdf3d9);border:1px solid var(--gold);border-radius:16px;padding:13px 14px;margin-bottom:12px;}
+  .gate-card b{display:block;font-size:13.5px;color:var(--navy);margin-bottom:3px;}
+  .gate-card p{margin:0 0 10px;font-size:12.5px;line-height:1.5;color:#5b4a1f;}
+  .gate-card .btn-gold{width:auto;display:inline-block;padding:10px 18px;font-size:13px;}
+  .tool-card.locked{opacity:.78;}
+  .tool-pill.lock{background:var(--cream);color:var(--navy);border:1px solid var(--gold);}
   .tools-banner{
     background:linear-gradient(155deg,var(--navy),var(--navy-3));
     color:#fff;border-radius:16px;padding:15px;margin-bottom:14px;
@@ -1040,8 +1047,14 @@
           </div>
           <div id="tools-calc">
           <div class="tools-banner">
-            <b>Gratis, sin registro.</b>
-            <p>Herramientas técnicas validadas con ingenieros en campo. Úsalas hoy, sin membresía.</p>
+            <b>Gratis.</b>
+            <p>Herramientas técnicas validadas con ingenieros en campo. Sin membresía ni costo.</p>
+          </div>
+
+          <div class="gate-card" id="tools-gate">
+            <b>🔓 Estás como visitante</b>
+            <p>Puedes usar la <b style="display:inline;font-size:inherit;">Calculadora de Ladrillos y Blocks</b> completa. Si quieres usar las demás herramientas, regístrate gratis.</p>
+            <button class="btn-gold" type="button" onclick="needLogin('Crea tu cuenta gratis para usar todas las herramientas')">Crear mi cuenta</button>
           </div>
 
           <div class="sectionlabel">Disponibles</div>
@@ -1054,7 +1067,7 @@
             <div class="tool-pill live">Live</div>
           </a>
 
-          <a class="tool-card" href="/calculadora-concreto/" style="text-decoration:none;cursor:pointer;">
+          <a class="tool-card" data-gate="1" href="/calculadora-concreto/" style="text-decoration:none;cursor:pointer;">
             <div class="tool-ico">🪣</div>
             <div>
               <div class="tool-name">Calculadora de Concreto</div>
@@ -1063,7 +1076,7 @@
             <div class="tool-pill live">Live</div>
           </a>
 
-          <a class="tool-card" href="/simulador-hidraulico/" style="text-decoration:none;cursor:pointer;">
+          <a class="tool-card" data-gate="1" href="/simulador-hidraulico/" style="text-decoration:none;cursor:pointer;">
             <div class="tool-ico">🚰</div>
             <div>
               <div class="tool-name">Simulador Hidráulico</div>
@@ -1126,6 +1139,11 @@
 
         <!-- COMUNIDAD -->
         <section class="screen" id="s-comunidad">
+          <div class="gate-card" id="com-gate">
+            <b>🔒 Las salas son para la comunidad</b>
+            <p>Aquí ves de qué se habla. Para entrar a una sala, leer y participar, regístrate gratis.</p>
+            <button class="btn-gold" type="button" onclick="needLogin('Crea tu cuenta gratis para entrar a las salas')">Crear mi cuenta</button>
+          </div>
           <div class="sectionlabel">Salas por especialidad</div>
           <div id="sala-list"></div>
           <div class="post-meta" style="margin-top:6px;font-size:11px;line-height:1.5;">Elige una sala para ver solo lo de ese tema. Al publicar escoges en cuál va, y todo lo que publiques también aparece en Inicio.</div>
@@ -1904,6 +1922,7 @@
   }
   async function authRender(){
     const logged = !!(authSession && authSession.user);
+    toolsGate();
     if(window.pubRender) window.pubRender(logged);
     if(window.notifSync) window.notifSync();
     if(window.dmSync) window.dmSync();
@@ -2447,6 +2466,27 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
   }
+  // visitantes: una sola calculadora (la primera) y las salas cerradas; con cuenta se abre todo
+  function toolsGate(){
+    const logged = !!myId();
+    const g1 = document.getElementById('tools-gate'); if(g1) g1.style.display = logged ? 'none' : 'block';
+    const g2 = document.getElementById('com-gate');   if(g2) g2.style.display = logged ? 'none' : 'block';
+    document.querySelectorAll('.tool-card[data-gate]').forEach(c => {
+      const pill = c.querySelector('.tool-pill');
+      if(pill && !pill.dataset.orig) pill.dataset.orig = pill.textContent;
+      c.classList.toggle('locked', !logged);
+      if(pill){
+        pill.textContent = logged ? pill.dataset.orig : '🔒 Regístrate';
+        pill.classList.toggle('lock', !logged);
+        pill.classList.toggle('live', logged);
+      }
+    });
+  }
+  document.querySelectorAll('.tool-card[data-gate]').forEach(c => {
+    c.addEventListener('click', function(e){
+      if(!myId()){ e.preventDefault(); needLogin('Regístrate gratis para usar todas las herramientas'); }
+    });
+  });
   function needLogin(msg){
     showToast(msg);
     go('perfil', document.querySelector('.navbtn[data-screen="perfil"]'));
@@ -3132,6 +3172,7 @@
   function openSala(k){
     const x = salaOf(k);
     if(!x) return;
+    if(!myId()){ needLogin('Regístrate gratis para entrar a las salas'); return; }
     feedFilter = x.k; feedRows = null; feedStamp = 0;
     salaBarRender();
     const box = document.getElementById('feed-list');
