@@ -2051,6 +2051,7 @@
           rows2 = row('Empresa', r.nombre_empresa) + row('Categoría', r.categoria) + row('Contacto', r.contacto) + row('Notas', r.notas) + row('Sobre mí', p.bio);
         }
       }
+      const shownName = (lk && lk.tipo === 'esp' && lk.r.nombre_completo) ? String(lk.r.nombre_completo).trim() : name;
       let act = '';
       if(dmAvail === true){
         act = p.acepta_mensajes === false
@@ -2059,8 +2060,8 @@
       }
       let nLad = 0;
       try{ nLad = (await ladFetch([uid]))[uid] || 0; }catch(e){}
-      body.innerHTML = '<div class="pf-card"><div class="p-avatar">' + esc(initialsOf(name)) + '</div>' +
-        '<div class="pf-name">' + esc(name) + '</div>' + (sub ? '<div class="pf-sub">' + esc(sub) + '</div>' : '') + sealRow +
+      body.innerHTML = '<div class="pf-card"><div class="p-avatar">' + esc(initialsOf(shownName)) + '</div>' +
+        '<div class="pf-name">' + esc(shownName) + '</div>' + (sub ? '<div class="pf-sub">' + esc(sub) + '</div>' : '') + sealRow +
         (nLad > 0 ? '<div class="pf-lad">🧱 <b>' + nLad + '</b> ' + (nLad === 1 ? 'ladrillo recibido' : 'ladrillos recibidos') + '</div>' : '') +
         (rows2 ? '<div class="pf-rows">' + rows2 + '</div>' : '<div class="th-note" style="margin-bottom:14px">Aún no ha completado su perfil.</div>') +
         (waBtn ? '<div style="margin-bottom:10px">' + waBtn + '</div>' : '') + act + '</div>';
@@ -2170,7 +2171,7 @@
                       : [r.nombre_empresa, r.categoria, r.contacto, r.notas, r.ciudad_zona, r.resumen, 'proveedor proveedora proveedores'];
       return {
         tipo: tipo, r: r, uid: uid, m: m,
-        name: String((m ? m.nombre : name) || '').trim(),
+        name: String(name || '').trim(),          // el nombre curado por el equipo (la cuenta puede venir escrita en MAYÚSCULAS)
         meta: m ? peMetaOf(m) : (esp ? [r.especialidad || r.profesion, r.ciudad] : [r.categoria, r.ciudad_zona]).filter(Boolean).join(' · '),
         nom: norm([name, m ? m.nombre : ''].join(' ')),
         hay: norm(raw.join(' ') + ' ' + (m ? m.hay : ''))
