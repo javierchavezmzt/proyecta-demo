@@ -125,6 +125,8 @@
   .pf-card .p-avatar{margin:0 auto 10px;}
   .pf-name{font-size:19px;font-weight:800;color:var(--navy);margin-bottom:2px;}
   .pf-sub{font-size:13px;color:var(--muted);margin-bottom:14px;}
+  .pf-lad{display:inline-block;margin:0 0 14px;padding:6px 12px;border-radius:12px;background:rgba(201,160,74,.16);color:#7a5a16;font-size:13.5px;font-weight:600;}
+  .pf-lad b{font-weight:800;}
   .pf-rows{text-align:left;background:#fff;border:1px solid var(--line);border-radius:14px;padding:6px 14px;margin-bottom:14px;}
   .pf-row{padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px;line-height:1.45;}
   .pf-row:last-child{border-bottom:none;}
@@ -2024,8 +2026,11 @@
           ? '<div class="th-note">Esta persona tiene los mensajes apagados.</div>'
           : '<button class="btn-gold" type="button" onclick="perfilClose();dmOpen(\'' + esc(uid) + '\')">✉ Escribirle</button>';
       }
+      let nLad = 0;
+      try{ nLad = (await ladFetch([uid]))[uid] || 0; }catch(e){}
       body.innerHTML = '<div class="pf-card"><div class="p-avatar">' + esc(initialsOf(name)) + '</div>' +
         '<div class="pf-name">' + esc(name) + '</div>' + (sub ? '<div class="pf-sub">' + esc(sub) + '</div>' : '') +
+        (nLad > 0 ? '<div class="pf-lad">🧱 <b>' + nLad + '</b> ' + (nLad === 1 ? 'ladrillo recibido' : 'ladrillos recibidos') + '</div>' : '') +
         (rows2 ? '<div class="pf-rows">' + rows2 + '</div>' : '<div class="th-note" style="margin-bottom:14px">Aún no ha completado su perfil.</div>') +
         act + '</div>';
     }catch(e){
@@ -3518,6 +3523,35 @@
     }
   }
 
+  // 🧱 total de ladrillos de OTRAS personas (solo en su perfil, no en el feed). Solo con sesión; en 0 no se muestra nada.
+  const ladUsers = {};          // uid -> { n, t }
+  let ladAggOk = true;          // false si falta correr Proyecta_SQL_Ladrillos_Perfil.sql
+  const LAD_TTL = 120000;
+  async function ladFetch(uids){
+    const out = {};
+    if(!myId() || !ladAggOk) return out;
+    const now = Date.now();
+    const need = [];
+    uids.forEach(u => {
+      const e = ladUsers[u];
+      if(e && now - e.t < LAD_TTL) out[u] = e.n; else if(need.indexOf(u) < 0) need.push(u);
+    });
+    for(let i = 0; i < need.length; i += 100){
+      const chunk = need.slice(i, i + 100);
+      const tok = await freshToken();
+      if(!tok) break;
+      const res = await fetchTimeout(SUPABASE_URL + '/rest/v1/rpc/ladrillos_por_autor', {
+        method: 'POST', headers: authHeaders(tok), body: JSON.stringify({ uids: chunk })
+      });
+      if(res.status === 404){ ladAggOk = false; break; }
+      if(!res.ok) continue;
+      const rows = await res.json();
+      const got = {};
+      (Array.isArray(rows) ? rows : []).forEach(r => { got[r.uid] = Number(r.total) || 0; });
+      chunk.forEach(u => { ladUsers[u] = { n: got[u] || 0, t: Date.now() }; out[u] = ladUsers[u].n; });
+    }
+    return out;
+  }
   // contador de ladrillos recibidos (tarjeta en Perfil)
   function ladPaintCard(){
     const card = document.getElementById('me-lad');
@@ -3561,6 +3595,7 @@
     if(me !== ladOwner){
       ladOwner = me;
       ladMine.clear(); libSaved.clear(); ladCount = 0; ladGiven = 0;
+      Object.keys(ladUsers).forEach(k => { delete ladUsers[k]; });
       openThreads.forEach(id => { threadLoad(id); });   // para marcar lo mío tras entrar/salir
     }
     libClose();
