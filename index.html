@@ -1561,7 +1561,9 @@
   }
   function espCard(r){
     const tags = espTags(r);
-    const icon = ESP_ICONS[tags.find(k => ESP_ICONS[k])] || '👷';
+    // el icono sale de la profesión y la especialidad (lo principal); las notas solo suman etiquetas de búsqueda
+    const mainTags = espTags({ profesion: r.profesion, especialidad: r.especialidad });
+    const icon = ESP_ICONS[mainTags.find(k => ESP_ICONS[k]) || tags.find(k => ESP_ICONS[k])] || '👷';
     const meta = [r.ciudad, r.resumen || shortText(r.especialidad_especifica || r.especialidad, 58)].filter(Boolean).join(' · ');
     const star = r.anos_experiencia ? '<div class="dir-star">' + esc(r.anos_experiencia) + ' años exp.</div>' : '';
     return '<div class="dir-card" data-tags="' + esc(tags.join(' ')) + '">' +
