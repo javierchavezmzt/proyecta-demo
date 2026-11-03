@@ -300,6 +300,15 @@
   .pe-name{font-size:14px;font-weight:800;color:var(--navy);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .pe-meta{font-size:12px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .pe-gate{border-left:4px solid var(--gold);}
+  .pe-seal{display:inline-flex;align-items:center;gap:4px;margin-bottom:3px;padding:1px 8px 1px 6px;border-radius:9px;background:rgba(201,160,74,.2);color:#7a5a16;
+    font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;line-height:1.5;}
+  .pe-seal svg{flex-shrink:0;}
+  .pf-seal{margin:2px 0 12px;}
+  .pf-seal .pe-seal{font-size:11px;padding:2px 10px 2px 8px;margin:0;}
+  .pe-padcard{padding:10px 12px;}
+  .pe-padcard .dir-row .pe-main{flex:1;min-width:0;}
+  .pe-padcard .dir-detail-inner{margin-top:9px;}
+  .pad-ico svg{display:block;}
   /* panel del equipo (solo Javier y Ricardo) */
   .eq-bars{display:flex;align-items:flex-end;gap:6px;height:84px;margin:8px 0 12px;}
   .eq-col{flex:1;text-align:center;font-size:10px;color:var(--muted);font-weight:600;}
@@ -1596,6 +1605,7 @@
   }
   function renderDirectorio(esp, prov){
     if(!Array.isArray(esp) || !Array.isArray(prov) || (!esp.length && !prov.length)) return false;
+    window.dirRows = { esp: esp, prov: prov };            // la búsqueda de personas y los perfiles leen de aquí
     const gE = document.getElementById('group-especialistas');
     const gP = document.getElementById('group-proveedores');
     gE.innerHTML = '<div class="sectionlabel">Especialistas · ' + esp.length + '</div>' + esp.map(espCard).join('');
@@ -1603,6 +1613,10 @@
     padCount();
     const qi = document.getElementById('dir-q');
     if(qi && qi.value) dirSearch(qi.value);
+    try{
+      const sp = document.getElementById('s-personas');
+      if(sp && sp.classList.contains('active') && typeof peRender === 'function') peRender();
+    }catch(e){}
     return true;
   }
   async function sbGet(tabla, orden){
@@ -2021,7 +2035,22 @@
       const sub = [rolShow(p.rol, p.especialidad), p.ciudad].filter(Boolean).join(' · ');
       const row = (k, v) => v ? '<div class="pf-row"><b>' + k + '</b>' + esc(v).replace(/\n/g, '<br>') + '</div>' : '';
       const anos = (p.anos_experiencia || p.anos_experiencia === 0) ? p.anos_experiencia + (Number(p.anos_experiencia) === 1 ? ' año' : ' años') : '';
-      const rows2 = row(p.rol === 'Oficios' ? 'Oficio' : 'Especialidad', p.especialidad) + row('Experiencia', anos) + row('Sobre mí', p.bio);
+      let rows2 = row(p.rol === 'Oficios' ? 'Oficio' : 'Especialidad', p.especialidad) + row('Experiencia', anos) + row('Sobre mí', p.bio);
+      // Si la cuenta está vinculada a una ficha del Padrón: gana lo que curó el equipo, y sale su WhatsApp
+      const lk = padLinkOf(uid);
+      let sealRow = '', waBtn = '';
+      if(lk){
+        const r = lk.r;
+        sealRow = '<div class="pf-seal">' + sealChip('Seleccionado por Proyecta') + '</div>';
+        waBtn = waButton(r.whatsapp);
+        if(lk.tipo === 'esp'){
+          const aE = r.anos_experiencia ? r.anos_experiencia + ' años' : anos;
+          rows2 = row('Profesión', r.profesion) + row('Especialidad', r.especialidad || p.especialidad) + row('Experiencia', aE) +
+            row('A qué se dedica', r.especialidad_especifica) + row('Sobre mí', p.bio);
+        } else {
+          rows2 = row('Empresa', r.nombre_empresa) + row('Categoría', r.categoria) + row('Contacto', r.contacto) + row('Notas', r.notas) + row('Sobre mí', p.bio);
+        }
+      }
       let act = '';
       if(dmAvail === true){
         act = p.acepta_mensajes === false
@@ -2031,10 +2060,10 @@
       let nLad = 0;
       try{ nLad = (await ladFetch([uid]))[uid] || 0; }catch(e){}
       body.innerHTML = '<div class="pf-card"><div class="p-avatar">' + esc(initialsOf(name)) + '</div>' +
-        '<div class="pf-name">' + esc(name) + '</div>' + (sub ? '<div class="pf-sub">' + esc(sub) + '</div>' : '') +
+        '<div class="pf-name">' + esc(name) + '</div>' + (sub ? '<div class="pf-sub">' + esc(sub) + '</div>' : '') + sealRow +
         (nLad > 0 ? '<div class="pf-lad">🧱 <b>' + nLad + '</b> ' + (nLad === 1 ? 'ladrillo recibido' : 'ladrillos recibidos') + '</div>' : '') +
         (rows2 ? '<div class="pf-rows">' + rows2 + '</div>' : '<div class="th-note" style="margin-bottom:14px">Aún no ha completado su perfil.</div>') +
-        act + '</div>';
+        (waBtn ? '<div style="margin-bottom:10px">' + waBtn + '</div>' : '') + act + '</div>';
     }catch(e){
       body.innerHTML = '<div class="feed-empty"><b>No se pudo cargar el perfil</b>Revisa tu conexión e inténtalo de nuevo.' +
         '<div style="margin-top:12px"><button class="btn-ghost" type="button" onclick="perfilLoad(\'' + esc(uid) + '\')">Reintentar</button></div></div>';
@@ -2116,6 +2145,59 @@
     const msg = 'Te invito a Proyecta: la comunidad de la construcción en LATAM. Herramientas gratis, gente de obra y proveedores en un solo lugar. Entra aquí: https://app.proyectalatam.com';
     window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank', 'noopener');
   }
+  // ===== PADRÓN dentro de la búsqueda de personas =====
+  // Las fichas del Padrón salen en la misma lista con el sello "Seleccionado".
+  // Si una ficha está vinculada a una cuenta (usuario_id, lo pone el equipo), sale UNA sola vez y abre el perfil.
+  const SEAL_SVG = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg>';
+  function sealChip(txt){ return '<span class="pe-seal">' + SEAL_SVG + esc(txt || 'Seleccionado') + '</span>'; }
+  function padLinkOf(uid){
+    const d = window.dirRows || { esp: [], prov: [] };
+    let r = d.esp.find(x => x.usuario_id && x.usuario_id === uid);
+    if(r) return { tipo: 'esp', r: r };
+    r = d.prov.find(x => x.usuario_id && x.usuario_id === uid);
+    return r ? { tipo: 'prov', r: r } : null;
+  }
+  function padEntries(){
+    const d = window.dirRows || { esp: [], prov: [] };
+    const byId = {};
+    (peMembers || []).forEach(m => { byId[m.id] = m; });
+    const mk = (tipo, r) => {
+      const esp = tipo === 'esp';
+      const uid = r.usuario_id || null;
+      const m = uid ? (byId[uid] || null) : null;
+      const name = esp ? r.nombre_completo : r.nombre_empresa;
+      const raw = esp ? [r.nombre_completo, r.profesion, r.especialidad, r.especialidad_especifica, r.ciudad, r.resumen, 'especialista']
+                      : [r.nombre_empresa, r.categoria, r.contacto, r.notas, r.ciudad_zona, r.resumen, 'proveedor proveedora proveedores'];
+      return {
+        tipo: tipo, r: r, uid: uid, m: m,
+        name: String((m ? m.nombre : name) || '').trim(),
+        meta: m ? peMetaOf(m) : (esp ? [r.especialidad || r.profesion, r.ciudad] : [r.categoria, r.ciudad_zona]).filter(Boolean).join(' · '),
+        nom: norm([name, m ? m.nombre : ''].join(' ')),
+        hay: norm(raw.join(' ') + ' ' + (m ? m.hay : ''))
+      };
+    };
+    return d.esp.map(r => mk('esp', r)).concat(d.prov.map(r => mk('prov', r))).filter(e => e.name);
+  }
+  function padRowHtml(e){
+    const main = '<div class="pe-main">' + sealChip() + '<div class="pe-name">' + esc(e.name) + '</div>' +
+      '<div class="pe-meta">' + esc(e.meta || 'Padrón Proyecta') + '</div></div>';
+    const av = '<div class="pe-av">' + esc(initialsOf(e.name)) + '</div>';
+    if(e.uid){          // vinculada a una cuenta: una sola fila, abre el perfil
+      return '<div class="pe-row" role="button" onclick="perfilOpen(\'' + esc(e.uid) + '\')">' + av + main + '<span class="pad-go">›</span></div>';
+    }
+    const r = e.r;      // sin cuenta: se abre en la misma tarjeta, con su WhatsApp
+    const rows = e.tipo === 'esp'
+      ? (r.profesion ? '<div class="dir-detail-row"><b>Profesión:</b> ' + esc(r.profesion) + '</div>' : '') +
+        (r.especialidad ? '<div class="dir-detail-row"><b>Especialidad:</b> ' + esc(r.especialidad) + '</div>' : '') +
+        (r.anos_experiencia ? '<div class="dir-detail-row"><b>Experiencia:</b> ' + esc(r.anos_experiencia) + ' años</div>' : '') +
+        (r.especialidad_especifica ? '<div class="dir-detail-row"><b>Notas:</b> ' + esc(r.especialidad_especifica) + '</div>' : '')
+      : (r.categoria ? '<div class="dir-detail-row"><b>Categoría:</b> ' + esc(r.categoria) + '</div>' : '') +
+        (r.contacto ? '<div class="dir-detail-row"><b>Contacto:</b> ' + esc(r.contacto) + '</div>' : '') +
+        (r.notas ? '<div class="dir-detail-row"><b>Notas:</b> ' + esc(r.notas) + '</div>' : '');
+    return '<div class="dir-card pe-padcard"><div class="dir-row" role="button" onclick="toggleDir(this)">' + av + main +
+      '<div class="dir-chevron">⌄</div></div>' +
+      '<div class="dir-detail"><div class="dir-detail-inner">' + rows + waButton(r.whatsapp) + '</div></div></div>';
+  }
   function peMetaOf(m){
     const parts = m.rol === 'Oficios' ? [m.esp || 'Oficios'] : [m.rol, m.esp];
     return parts.concat([m.ciudad]).filter(Boolean).join(' · ');
@@ -2126,7 +2208,7 @@
     const logged = !!myId();
     const nPad = q.length >= 2 ? peCountPad(q) : 0;
     let h = '';
-    const padBlock = nPad ? '<button class="pad-banner" type="button" onclick="peGoPad()"><span class="pad-ico">👷</span>' +
+    const padBlock = nPad ? '<button class="pad-banner" type="button" onclick="peGoPad()"><span class="pad-ico">' + SEAL_SVG.replace('width="12" height="12"', 'width="26" height="26"').replace('stroke="currentColor"', 'stroke="#c9a04a"') + '</span>' +
       '<span><span class="pad-name">Padrón Proyecta · ' + nPad + (nPad === 1 ? ' resultado' : ' resultados') + '</span><br>' +
       '<span class="pad-meta">Especialistas y proveedores seleccionados por Proyecta</span></span><span class="pad-go">›</span></button>' : '';
 
@@ -2151,19 +2233,24 @@
       box.innerHTML = h; return;
     }
     const toks = peTokens(q);
-    let hits = peMembers.filter(m => toks.every(t => peHas(m.hay, t)));
-    hits.sort((a, b) => (toks.every(t => peHas(a.nom, t)) ? 0 : 1) - (toks.every(t => peHas(b.nom, t)) ? 0 : 1) || a.nombre.localeCompare(b.nombre, 'es'));
-    if(hits.length){
+    const byName = (a, b) => (toks.every(t => peHas(a.nom, t)) ? 0 : 1) - (toks.every(t => peHas(b.nom, t)) ? 0 : 1) || a.name.localeCompare(b.name, 'es');
+    // Padrón (seleccionados) primero; las cuentas ya vinculadas no salen dos veces
+    const ents = padEntries();
+    const linked = new Set(ents.filter(e => e.uid).map(e => e.uid));
+    const sel = ents.filter(e => toks.every(t => peHas(e.hay, t))).sort(byName);
+    const hits = peMembers.filter(m => !linked.has(m.id) && toks.every(t => peHas(m.hay, t)))
+      .map(m => ({ m: m, name: m.nombre, nom: m.nom })).sort(byName);
+    const rowsAll = sel.map(e => ({ html: padRowHtml(e) })).concat(hits.map(x => {
+      const m = x.m;
+      return { html: '<div class="pe-row" role="button" onclick="perfilOpen(\'' + esc(m.id) + '\')"><div class="pe-av">' + esc(initialsOf(m.nombre)) + '</div>' +
+        '<div class="pe-main"><div class="pe-name">' + esc(m.nombre) + '</div><div class="pe-meta">' + esc(peMetaOf(m) || 'Aún sin rol') + '</div></div><span class="pad-go">›</span></div>' };
+    }));
+    if(rowsAll.length){
       h += '<div class="sectionlabel">Personas en Proyecta</div>';
-      hits.slice(0, 30).forEach(m => {
-        h += '<div class="pe-row" role="button" onclick="perfilOpen(\'' + esc(m.id) + '\')"><div class="pe-av">' + esc(initialsOf(m.nombre)) + '</div>' +
-          '<div class="pe-main"><div class="pe-name">' + esc(m.nombre) + '</div><div class="pe-meta">' + esc(peMetaOf(m) || 'Aún sin rol') + '</div></div><span class="pad-go">›</span></div>';
-      });
-      if(hits.length > 30) h += '<div class="post-meta" style="text-align:center;margin:2px 0 12px">Mostrando las primeras 30. Escribe más para afinar.</div>';
-      h += padBlock;
+      rowsAll.slice(0, 30).forEach(x => { h += x.html; });
+      if(rowsAll.length > 30) h += '<div class="post-meta" style="text-align:center;margin:2px 0 12px">Mostrando las primeras 30. Escribe más para afinar.</div>';
       h += '<button class="btn-ghost" type="button" onclick="peInvite()">¿No está quien buscas? Invítalo por WhatsApp</button>';
     } else {
-      h += padBlock;
       h += '<div class="auth-card"><div class="auth-title">No encontramos «' + esc(q) + '» en Proyecta</div>' +
         '<div class="auth-sub">Revisa cómo está escrito. Si todavía no se registra, invítalo para que se una a la comunidad.</div>' +
         '<button class="btn-gold" type="button" onclick="peInvite()">Invitarlo por WhatsApp</button></div>';
