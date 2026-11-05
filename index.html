@@ -1563,10 +1563,25 @@
     if(/arquitect/.test(t)) tags.push('arquitectura');
     if(/valua/.test(t)) tags.push('valuacion');
     if(/obra civil/.test(t)) tags.push('obracivil');
-    if(/gesti|supervis/.test(t)) tags.push('gestion');
+    if(/(^|[^a-z])bim([^a-z]|$)|modelad|revit/.test(t)) tags.push('bim');
+    if(/instalac/.test(t)) tags.push('instalaciones');
+    if(/gesti|gesto|supervis/.test(t)) tags.push('gestion');
     return tags;
   }
-  const ESP_ICONS = {hidraulica:'🚰', maritima:'⚓', topografia:'🗺️', estructuras:'🧱', arquitectura:'📐', valuacion:'📊', obracivil:'👷', gestion:'📋'};
+  const ESP_ICONS = {hidraulica:'🚰', maritima:'⚓', topografia:'🗺️', estructuras:'🧱', arquitectura:'📐', valuacion:'📊', obracivil:'👷', instalaciones:'🔧', bim:'💻', gestion:'📋'};
+  // pestañas del Padrón: salen solas según las especialidades que de verdad hay (las más numerosas primero)
+  const DIR_FILTROS = [['hidraulica','Hidráulica'],['maritima','Marítima'],['topografia','Topografía'],['estructuras','Estructuras'],['arquitectura','Arquitectura'],['valuacion','Valuación'],['obracivil','Obra civil'],['instalaciones','Instalaciones'],['bim','BIM y modelado'],['gestion','Gestión y supervisión'],['otras','Otras']];
+  function dirChips(esp){
+    const row = document.querySelector('#s-buscar .chiprow');
+    if(!row) return;
+    const n = {};
+    esp.forEach(r => { const tg = espTags(r); (tg.length ? tg : ['otras']).forEach(t => { n[t] = (n[t] || 0) + 1; }); });
+    const orden = DIR_FILTROS.map(f => f[0]);
+    const hay = DIR_FILTROS.filter(f => n[f[0]]).sort((a, b) => (n[b[0]] - n[a[0]]) || (orden.indexOf(a[0]) - orden.indexOf(b[0])));
+    const items = [['todos','Todos']].concat(hay, [['proveedores','Proveedores']]);
+    row.innerHTML = items.map((f, i) => '<div class="chip' + (i === 0 ? ' on' : '') + '" onclick="filterDir(\'' + f[0] + '\', this)">' + f[1] + '</div>').join('');
+    row.scrollLeft = 0;
+  }
   function provIcon(cat){
     const t = norm(cat);
     if(/solar/.test(t)) return '☀️';
@@ -1579,12 +1594,13 @@
   }
   function espCard(r){
     const tags = espTags(r);
+    const tagsFiltro = tags.length ? tags : ['otras'];   // quien no cae en ninguna pestaña sale en "Otras", no solo en Todos
     // el icono sale de la profesión y la especialidad (lo principal); las notas solo suman etiquetas de búsqueda
     const mainTags = espTags({ profesion: r.profesion, especialidad: r.especialidad });
     const icon = ESP_ICONS[mainTags.find(k => ESP_ICONS[k]) || tags.find(k => ESP_ICONS[k])] || '👷';
     const meta = [r.ciudad, r.resumen || shortText(r.especialidad_especifica || r.especialidad, 58)].filter(Boolean).join(' · ');
     const star = r.anos_experiencia ? '<div class="dir-star">' + esc(r.anos_experiencia) + ' años exp.</div>' : '';
-    return '<div class="dir-card" data-tags="' + esc(tags.join(' ')) + '">' +
+    return '<div class="dir-card" data-tags="' + esc(tagsFiltro.join(' ')) + '">' +
       '<div class="dir-row" onclick="toggleDir(this)">' +
         '<div class="dir-ico">' + icon + '</div>' +
         '<div><div class="dir-name">' + esc(r.nombre_completo) + '</div><div class="dir-meta">' + esc(meta) + '</div></div>' +
@@ -1620,6 +1636,8 @@
     gE.innerHTML = '<div class="sectionlabel">Especialistas · ' + esp.length + '</div>' + esp.map(espCard).join('');
     gP.innerHTML = '<div class="sectionlabel">Proveedores · ' + prov.length + '</div>' + prov.map(provCard).join('');
     padCount();
+    gE.style.display = ''; gP.style.display = '';
+    dirChips(esp);
     const qi = document.getElementById('dir-q');
     if(qi && qi.value) dirSearch(qi.value);
     try{
