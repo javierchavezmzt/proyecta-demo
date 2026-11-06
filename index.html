@@ -372,9 +372,9 @@
   .demo-label{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:800;color:var(--navy);opacity:.55;margin:8px 0 10px;}
 
   /* publicar */
-  .cat-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;}
+  .cat-grid{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
   .catpick{
-    font-size:12px;font-weight:700;border-radius:100px;padding:8px 13px;
+    font-size:11.5px;font-weight:700;border-radius:100px;padding:6px 11px;
     border:1.5px solid var(--line);background:var(--paper);color:var(--ink);cursor:pointer;
   }
   .catpick.on{border-color:var(--navy);background:var(--navy);color:#fff;}
@@ -434,6 +434,29 @@
     font-family:'Archivo';font-size:16px;color:var(--ink);margin-bottom:14px;outline:none;
   }
   .pub-select:focus{border-color:var(--navy);}
+  /* selector de sala propio (el de lista del celular sale enorme y no se puede achicar) */
+  select.pub-select{display:none;}
+  .sp{margin-bottom:12px;}
+  .sp-btn{
+    width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;
+    padding:9px 13px;border-radius:12px;border:1.5px solid var(--line);background:var(--paper);
+    font-family:'Archivo';font-size:13.5px;font-weight:600;color:var(--ink);cursor:pointer;
+  }
+  .sp.open .sp-btn,.sp-btn:focus-visible{border-color:var(--navy);outline:none;}
+  .sp-chev{color:var(--muted);font-size:16px;line-height:1;transition:transform .15s;}
+  .sp.open .sp-chev{transform:rotate(180deg);}
+  .sp-panel{display:none;grid-template-columns:1fr 1fr;gap:5px;margin-top:6px;padding:7px;
+    background:var(--paper);border:1px solid var(--line);border-radius:12px;}
+  .sp.open .sp-panel{display:grid;}
+  .sp-opt{
+    display:flex;align-items:center;gap:7px;min-height:34px;padding:6px 10px;text-align:left;
+    border-radius:9px;border:1px solid var(--line);background:#fff;
+    font-family:'Archivo';font-size:12.5px;font-weight:600;line-height:1.2;color:var(--ink);cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .sp-opt:active{background:#fbf9f3;}
+  .sp-opt.on{border-color:var(--navy);background:var(--navy);color:#fff;}
+  .sp-opt.all{grid-column:1 / -1;}
 
   /* perfil */
   .profile-head{text-align:center;padding:6px 0 16px;}
@@ -1142,6 +1165,10 @@
 
             <div class="sectionlabel">¿En qué sala? (opcional)</div>
             <select id="pub-sala" class="pub-select" aria-label="Sala de la publicación"></select>
+            <div class="sp" id="sala-picker">
+              <button type="button" class="sp-btn" id="sp-btn" aria-haspopup="listbox" aria-expanded="false" onclick="spToggle()"><span id="sp-label">General (sin sala)</span><span class="sp-chev" aria-hidden="true">⌄</span></button>
+              <div class="sp-panel" id="sp-panel" role="listbox" aria-label="Sala de la publicación"></div>
+            </div>
 
             <div class="composer">
               <textarea id="pub-text" maxlength="1000" oninput="pubCount()" placeholder="Cuéntale a la comunidad qué estás construyendo, qué duda tienes o a quién buscas…"></textarea>
@@ -3306,9 +3333,48 @@
   }
   const PUB_PH = 'Cuéntale a la comunidad qué estás construyendo, qué duda tienes o a quién buscas…';
   // al elegir una sala con ajustes propios (Proveedores): categoría sugerida y texto de ayuda
+  function spClose(){
+    const w = document.getElementById('sala-picker'); if(!w) return;
+    w.classList.remove('open');
+    const b = document.getElementById('sp-btn'); if(b) b.setAttribute('aria-expanded', 'false');
+  }
+  function spToggle(){
+    const w = document.getElementById('sala-picker'); if(!w) return;
+    const open = w.classList.toggle('open');
+    const b = document.getElementById('sp-btn'); if(b) b.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  function spSync(){
+    const sel = document.getElementById('pub-sala');
+    const lab = document.getElementById('sp-label');
+    if(!sel || !lab) return;
+    const x = salaOf(sel.value);
+    lab.textContent = x ? x.ic + ' ' + x.n : 'General (sin sala)';
+    document.querySelectorAll('#sp-panel .sp-opt').forEach(o => {
+      const on = (o.dataset.k || '') === (x ? x.k : '');
+      o.classList.toggle('on', on);
+      o.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+  }
+  function spPick(k){
+    const sel = document.getElementById('pub-sala');
+    if(sel){ sel.value = k; salaApply(); }
+    spClose();
+  }
+  function spBuild(){
+    const p = document.getElementById('sp-panel'); if(!p) return;
+    p.innerHTML = '<button type="button" class="sp-opt all" role="option" data-k="" onclick="spPick(\'\')">General (sin sala)</button>' +
+      SALAS.map(x => '<button type="button" class="sp-opt" role="option" data-k="' + x.k + '" onclick="spPick(\'' + x.k + '\')"><span aria-hidden="true">' + x.ic + '</span><span>' + esc(x.n) + '</span></button>').join('');
+    spSync();
+  }
+  document.addEventListener('click', ev => {
+    const w = document.getElementById('sala-picker');
+    if(w && w.classList.contains('open') && !w.contains(ev.target)) spClose();
+  });
+  document.addEventListener('keydown', ev => { if(ev.key === 'Escape') spClose(); });
   function salaApply(){
     const sel = document.getElementById('pub-sala');
     const ta = document.getElementById('pub-text');
+    spSync();
     const x = sel ? salaOf(sel.value) : null;
     if(ta) ta.placeholder = x && x.ph ? x.ph : PUB_PH;
     if(x && x.cat){
@@ -3331,6 +3397,7 @@
       sel.innerHTML = '<option value="">General (sin sala)</option>' + SALAS.map(x => '<option value="' + x.k + '">' + x.ic + ' ' + esc(x.n) + '</option>').join('');
       sel.addEventListener('change', salaApply);
     }
+    spBuild();
     comPaint();
   })();
 
@@ -4518,4 +4585,3 @@
 
 </body>
 </html>
-
