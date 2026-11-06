@@ -1,7 +1,7 @@
 {
   "name": "Proyecta — La comunidad de los que construyen",
   "short_name": "Proyecta",
-  "description": "Herramientas gratis, directorio de especialistas y proveedores, y comunidad técnica para el gremio de la construcción en LATAM.",
+  "description": "Herramientas gratis, directorio de especialistas y proveedores, y comunidad técnica para quienes construyen en LATAM.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
