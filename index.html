@@ -12,11 +12,12 @@
 <meta property="og:title" content="Proyecta — La comunidad de los que construyen">
 <meta property="og:description" content="Herramientas gratis, especialistas y comunidad de la construcción en LATAM. Entra, regístrate y platica con quienes construyen.">
 <meta property="og:url" content="https://app.proyectalatam.com/">
-<meta property="og:image" content="https://app.proyectalatam.com/og-image.png">
+<meta property="og:image" content="https://app.proyectalatam.com/og-image-v2.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Proyecta, la comunidad de los que construyen">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://app.proyectalatam.com/og-image.png">
+<meta name="twitter:image" content="https://app.proyectalatam.com/og-image-v2.png">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2970,11 +2971,12 @@
     let ext = String(p.contenido || '').replace(/\s+/g, ' ').trim();
     if(ext.length > 140) ext = ext.slice(0, 137).trimEnd() + '…';
     const text = '“' + ext + '” — ' + nombre + ' en Proyecta, la comunidad de los que construyen.';
+    // El link va primero y solo: así WhatsApp arma la tarjeta con la imagen de Proyecta
+    const full = APP_URL + '\n\n' + text;
     if(navigator.share){
-      try{ await navigator.share({ title: 'Proyecta', text: text, url: APP_URL }); }catch(e){ /* canceló */ }
+      try{ await navigator.share({ text: full }); }catch(e){ /* canceló */ }
       return;
     }
-    const full = text + '\n' + APP_URL;
     try{
       await navigator.clipboard.writeText(full);
       showToast('Copiado. Pégalo donde quieras compartirlo.');
