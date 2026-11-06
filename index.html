@@ -1183,7 +1183,7 @@
 
             <div id="pub-msg" class="auth-msg"></div>
             <button id="pub-btn" class="btn-gold" type="button" onclick="pubSend()">Publicar</button>
-            <div class="post-meta" style="margin-top:12px;font-size:11px;line-height:1.5;">Escribe con respeto y sobre temas de construcción. Las publicaciones que no cumplan se ocultan. Máximo 5 publicaciones por hora. Los links se activan cuando completas tu perfil (rol y ciudad).</div>
+            <div class="post-meta" style="margin-top:12px;font-size:11px;line-height:1.5;">Escribe con respeto y sobre temas de construcción. Las publicaciones que no cumplan se ocultan. Máximo 5 publicaciones por hora. Los links se activan cuando completas tu perfil (rol y ciudad) y tu cuenta tiene más de 48 horas.</div>
           </div>
         </section>
 
@@ -2634,7 +2634,18 @@
     const t = setTimeout(() => ctrl.abort(), ms || 8000);
     return fetch(url, Object.assign({}, opts || {}, { signal: ctrl.signal })).finally(() => clearTimeout(t));
   }
-  const LINK_NEEDS_PROFILE = 'Para compartir links primero completa tu perfil (rol y ciudad): Perfil → Completar mi perfil.';
+  const LINK_ERRS = [
+    ['link_requiere_perfil', 'Para compartir links primero completa tu perfil (rol y ciudad): Perfil → Completar mi perfil.'],
+    ['link_cuenta_nueva', 'Los links se activan 48 horas después de registrarte. Mientras tanto puedes publicar y comentar sin links.'],
+    ['link_demasiados', 'Máximo 2 links por publicación o comentario.'],
+    ['link_acortador', 'No se permiten links acortados (bit.ly, tinyurl…). Pega el link completo.'],
+    ['link_limite_diario', 'Llegaste al límite de links por hoy. Mañana puedes compartir más.'],
+    ['link_repetido', 'Ya compartiste ese link hoy. Evita repetirlo.']
+  ];
+  function linkErr(detail){
+    for(let i = 0; i < LINK_ERRS.length; i++){ if(detail.indexOf(LINK_ERRS[i][0]) !== -1) return LINK_ERRS[i][1]; }
+    return null;
+  }
   function errText(e, fallback){
     if(e && e.name === 'AbortError') return 'Tardó demasiado. Intenta de nuevo.';
     if(e instanceof TypeError) return 'Sin conexión. Intenta de nuevo.';
@@ -3082,7 +3093,7 @@
         let detail = '';
         try{ detail = await res.text(); }catch(e){}
         if(/limite_comentarios/.test(detail)) throw new Error('Llegaste al límite: máximo 20 comentarios por hora.');
-        if(/link_requiere_perfil/.test(detail)) throw new Error(LINK_NEEDS_PROFILE);
+        { const le = linkErr(detail); if(le) throw new Error(le); }
         if(res.status === 401 || res.status === 403) throw new Error('Tu sesión venció. Vuelve a entrar desde Perfil.');
         throw new Error('No se pudo comentar (' + res.status + '). Intenta de nuevo.');
       }
@@ -3158,7 +3169,7 @@
     let detail = '';
     if(!res.ok){ try{ detail = await res.text(); }catch(e){} }
     if(/cuenta_suspendida/.test(detail)) throw new Error('Tu cuenta está suspendida y no puede editar.');
-    if(/link_requiere_perfil/.test(detail)) throw new Error(LINK_NEEDS_PROFILE);
+    { const le = linkErr(detail); if(le) throw new Error(le); }
     if(/edicion_expirada/.test(detail)) throw new Error('Ya pasaron 24 horas: solo puedes borrarlo y volver a publicar.');
     if(!res.ok) throw new Error('No se pudo guardar (' + res.status + '). Intenta de nuevo.');
     const rows = await res.json();
@@ -3508,7 +3519,7 @@
         try{ detail = await res.text(); }catch(e){}
         if(/limite_posts/.test(detail)) throw new Error('Llegaste al límite: máximo 5 publicaciones por hora. Intenta más tarde.');
         if(/categoria_reservada/.test(detail)) throw new Error('La categoría Novedades es solo para el equipo de Proyecta.');
-        if(/link_requiere_perfil/.test(detail)) throw new Error(LINK_NEEDS_PROFILE);
+        { const le = linkErr(detail); if(le) throw new Error(le); }
         if(/posts_sala_valida/.test(detail)) throw new Error('Esa sala aún no está activa. Elige otra o publica en General.');
         if(res.status === 401 || res.status === 403) throw new Error('Tu sesión venció. Vuelve a entrar desde Perfil.');
         throw new Error('No se pudo publicar (' + res.status + '). Intenta de nuevo.');
