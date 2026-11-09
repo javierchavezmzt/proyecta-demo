@@ -240,6 +240,36 @@
   .post-photo-real{
     width:100%;height:150px;object-fit:cover;border-radius:12px;margin-bottom:10px;display:block;
   }
+
+  /* ---- fotos en publicaciones ---- */
+  .photo-add{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--cream);color:var(--navy);
+    font-family:inherit;font-size:12px;font-weight:700;padding:7px 12px;border-radius:100px;cursor:pointer;}
+  .photo-add svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+  .photo-add:disabled{opacity:.5;cursor:default;}
+  .pub-thumbs{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 2px;}
+  .pub-thumbs:empty{display:none;}
+  .pthumb{position:relative;width:68px;height:68px;border-radius:10px;overflow:hidden;background:#e6e1d3;flex-shrink:0;}
+  .pthumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .pthumb button{position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;border:none;background:rgba(10,31,61,.82);
+    color:#fff;font-size:13px;line-height:1;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;}
+  .pthumb.busy::after{content:"";position:absolute;inset:0;background:rgba(255,255,255,.55);}
+  .post-fotos{display:grid;gap:3px;border-radius:12px;overflow:hidden;margin-bottom:12px;}
+  .post-fotos .pf{display:block;padding:0;border:0;background:#e6e1d3;cursor:zoom-in;overflow:hidden;min-width:0;min-height:0;}
+  .post-fotos .pf img{width:100%;height:100%;object-fit:cover;display:block;}
+  .post-fotos.n1{grid-template-columns:1fr;aspect-ratio:4/3;max-height:380px;}
+  .post-fotos.n2{grid-template-columns:1fr 1fr;aspect-ratio:2/1;}
+  .post-fotos.n3{grid-template-columns:2fr 1fr;grid-template-rows:1fr 1fr;aspect-ratio:3/2;}
+  .post-fotos.n3 .pf:first-child{grid-row:1 / 3;}
+  .post-fotos.n4{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;aspect-ratio:1/1;}
+  .lb{position:absolute;inset:0;z-index:60;background:rgba(5,12,25,.985);display:none;align-items:center;justify-content:center;touch-action:pan-y;}
+  .lb.open{display:flex;}
+  .lb img{max-width:100%;max-height:100%;object-fit:contain;display:block;}
+  .lb-x,.lb-nav{position:absolute;border:none;background:rgba(255,255,255,.14);color:#fff;font-family:inherit;cursor:pointer;
+    width:44px;height:44px;border-radius:50%;font-size:20px;line-height:1;display:flex;align-items:center;justify-content:center;}
+  .lb-x{top:14px;right:14px;}
+  .lb-nav.prev{left:10px;top:50%;margin-top:-22px;}
+  .lb-nav.next{right:10px;top:50%;margin-top:-22px;}
+  .lb-n{position:absolute;bottom:18px;left:0;right:0;text-align:center;color:rgba(255,255,255,.8);font-size:12px;font-weight:700;letter-spacing:.06em;}
   .post-foot{display:flex;gap:16px;font-size:12px;color:var(--muted);font-weight:600;}
 
   .sectionlabel{
@@ -1177,14 +1207,18 @@
             <div class="composer">
               <textarea id="pub-text" maxlength="1000" oninput="pubCount()" placeholder="Cuéntale a la comunidad qué estás construyendo, qué duda tienes o a quién buscas…"></textarea>
               <div class="composer-tools">
-                <div style="font-size:11px;color:var(--muted);font-weight:600;">📷 Fotos: pronto</div>
+                <div>
+                  <button type="button" class="photo-add" id="pub-photo-btn" onclick="pubFotoPick()" aria-label="Agregar fotos"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l1.6-2.2h6.8L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.6"/></svg>Fotos <span id="pub-photo-n">0/4</span></button>
+                  <input type="file" id="pub-photo-input" accept="image/*" multiple hidden onchange="pubFotoChange(this)">
+                </div>
                 <span id="pub-count" style="font-size:11px;color:var(--muted);font-weight:600;">0/1000</span>
               </div>
+              <div class="pub-thumbs" id="pub-thumbs"></div>
             </div>
 
             <div id="pub-msg" class="auth-msg"></div>
             <button id="pub-btn" class="btn-gold" type="button" onclick="pubSend()">Publicar</button>
-            <div class="post-meta" style="margin-top:12px;font-size:11px;line-height:1.5;">Escribe con respeto y sobre temas de construcción. Las publicaciones que no cumplan se ocultan. Máximo 5 publicaciones por hora. Los links se activan cuando completas tu perfil (rol y ciudad) y tu cuenta tiene más de 48 horas.</div>
+            <div class="post-meta" style="margin-top:12px;font-size:11px;line-height:1.5;">Escribe con respeto y sobre temas de construcción. Las publicaciones que no cumplan se ocultan. Máximo 5 publicaciones por hora. Los links y las fotos se activan cuando completas tu perfil (rol y ciudad); los links, además, cuando tu cuenta tiene más de 48 horas. Hasta 4 fotos por publicación.</div>
           </div>
         </section>
 
@@ -1419,6 +1453,14 @@
           <button class="notif-close" type="button" aria-label="Cerrar perfil" onclick="perfilClose()">✕</button>
         </div>
         <div class="notif-body" id="pf-body"></div>
+      </div>
+
+      <div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="Fotos de la publicación" onclick="lbBg(event)">
+        <button type="button" class="lb-x" aria-label="Cerrar" onclick="lbClose()">✕</button>
+        <button type="button" class="lb-nav prev" id="lb-prev" aria-label="Foto anterior" onclick="lbStep(-1)">‹</button>
+        <img id="lb-img" alt="">
+        <button type="button" class="lb-nav next" id="lb-next" aria-label="Foto siguiente" onclick="lbStep(1)">›</button>
+        <div class="lb-n" id="lb-n"></div>
       </div>
 
       <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -2596,6 +2638,8 @@
   const SEL_BASIC = 'id,categoria,contenido,creado_en,autor_id';
   const SEL_SALA = SEL_BASIC + ',sala';
   const SEL_COUNTS = ',n_likes:likes(count),n_com:comentarios(count)';
+  const SEL_FOTOS = ',fotos';           // columna nueva (Proyecta_SQL_Fotos_Publicaciones.sql); si falta, el feed cae a lo de antes
+  let fotosAvail = null;
   const SEL_ED = ',editado_en';          // columna nueva (Proyecta_SQL_Editar.sql); si falta, el feed cae a lo de antes
   let edAvail = null;                    // null = aún no sé; false = la columna no existe todavía
   const CATS = {
@@ -2757,6 +2801,7 @@
       (editing['p' + id] !== undefined
         ? editBoxHtml('p' + id, 1000, 'postEditSave(' + id + ')', 'postEditCancel(' + id + ')')
         : '<div class="post-text">' + linkify(p.contenido) + '</div>') +
+      fotosHtml(p) +
       '<div class="post-foot">' +
         '<button class="post-act pa' + (p.liked ? ' liked' : '') + '" id="lk-' + id + '" type="button" aria-pressed="' + (p.liked ? 'true' : 'false') + '" aria-label="Me gusta" onclick="likeToggle(' + id + ')">' + likeInner(p) + '</button>' +
         '<button class="post-act pa' + (open ? ' on' : '') + '" id="cm-' + id + '" type="button" aria-label="Comentarios" onclick="threadToggle(' + id + ')">' + commentInner(p) + '</button>' +
@@ -2864,15 +2909,24 @@
       const tail = '&order=creado_en.desc&limit=30' + (myFilter ? '&sala=eq.' + encodeURIComponent(myFilter) : '');
       // Si faltan las tablas de me gusta/comentarios o la columna "sala", cae a versiones
       // más simples del feed en vez de romperse.
-      const triesOld = myFilter ? [SEL_SALA + SEL_COUNTS, SEL_SALA] : [SEL_SALA + SEL_COUNTS, SEL_BASIC + SEL_COUNTS, SEL_SALA, SEL_BASIC];
-      const tries = edAvail === false ? triesOld : [SEL_SALA + SEL_ED + SEL_COUNTS].concat(triesOld);
-      let res = null;
-      for(const sel of tries){
-        res = await fetchTimeout(base + sel + tail, { headers: headers }, 15000);
-        if(res.ok) break;
+      // Se intenta primero con todo (editado + fotos); si falta una columna, cae a versiones más simples.
+      const useEd = edAvail !== false, useFo = fotosAvail !== false;
+      const mk = (b, ed, cnt, fo) => ({ sel: b + (ed ? SEL_ED : '') + (cnt ? SEL_COUNTS : '') + (fo ? SEL_FOTOS : ''), ed: ed, fo: fo });
+      const tries = [];
+      if(useEd && useFo) tries.push(mk(SEL_SALA, 1, 1, 1));
+      if(useEd) tries.push(mk(SEL_SALA, 1, 1, 0));
+      if(useFo) tries.push(mk(SEL_SALA, 0, 1, 1));
+      tries.push(mk(SEL_SALA, 0, 1, 0));
+      if(myFilter){ tries.push(mk(SEL_SALA, 0, 0, 0)); }
+      else { tries.push(mk(SEL_BASIC, 0, 1, 0), mk(SEL_SALA, 0, 0, 0), mk(SEL_BASIC, 0, 0, 0)); }
+      let res = null, won = null;
+      for(const t of tries){
+        res = await fetchTimeout(base + t.sel + tail, { headers: headers }, 15000);
+        if(res.ok){ won = t; break; }
       }
       if(!res || !res.ok) throw new Error('posts ' + (res ? res.status : ''));
-      edAvail = /editado_en/.test(res.url || '') ? true : false;
+      edAvail = won.ed ? true : false;
+      fotosAvail = won.fo ? true : false;
       const rows = await res.json();
       if(!Array.isArray(rows)) throw new Error('posts formato');
       if(myFilter !== feedFilter) return; // cambiaron de sala mientras cargaba
@@ -3244,6 +3298,7 @@
       if(!res.ok) throw new Error('delete ' + res.status);
       const rows = await res.json();
       if(!rows.length) throw new Error('sin permiso');
+      fotoBorrar(tok, fotoList(rows[0]));   // sus fotos también se borran del almacenamiento
       openThreads.delete(Number(id));
       feedRows = (feedRows || []).filter(p => Number(p.id) !== Number(id));
       feedSaveCache();
@@ -3451,6 +3506,205 @@
     comPaint();
   })();
 
+
+  // ===== FOTOS EN PUBLICACIONES =====
+  const FOTOS_MAX = 4;
+  const FOTO_BUCKET = 'post-fotos';
+  const FOTO_RE = /^[A-Za-z0-9-]{36}\/[A-Za-z0-9._-]+\.(jpe?g|webp)$/i;
+  const FOTO_ERRS = [
+    ['foto_requiere_perfil', 'Para subir fotos primero completa tu perfil (rol y ciudad): Perfil → Completar mi perfil.'],
+    ['row-level security', 'Para subir fotos primero completa tu perfil (rol y ciudad): Perfil → Completar mi perfil.'],
+    ['fotos_demasiadas', 'Máximo 4 fotos por publicación.'],
+    ['foto_invalida', 'Una de las fotos no es válida. Quítala y vuelve a elegirla.'],
+    ['maximum allowed size', 'Una de las fotos pesa demasiado. Elige otra.'],
+    ['mime type', 'Solo se aceptan fotos (JPG o WEBP).']
+  ];
+  function fotoErr(detail){
+    for(let i = 0; i < FOTO_ERRS.length; i++){ if(String(detail).indexOf(FOTO_ERRS[i][0]) !== -1) return FOTO_ERRS[i][1]; }
+    return null;
+  }
+  function fotoUrl(path){ return SUPABASE_URL + '/storage/v1/object/public/' + FOTO_BUCKET + '/' + path; }
+  function fotoList(p){
+    return (Array.isArray(p && p.fotos) ? p.fotos : []).filter(x => typeof x === 'string' && FOTO_RE.test(x)).slice(0, FOTOS_MAX);
+  }
+  function fotosHtml(p){
+    const f = fotoList(p);
+    if(!f.length) return '';
+    const id = Number(p.id);
+    return '<div class="post-fotos n' + f.length + '">' + f.map((x, i) =>
+      '<button type="button" class="pf" aria-label="Ver foto ' + (i + 1) + ' de ' + f.length + '" onclick="lbOpen(' + id + ',' + i + ')">' +
+      '<img loading="lazy" decoding="async" alt="Foto ' + (i + 1) + ' de la publicación" src="' + esc(fotoUrl(x)) + '"></button>').join('') + '</div>';
+  }
+
+  // ----- visor de fotos -----
+  let lbList = [], lbIdx = 0, lbX0 = null;
+  function lbPaint(){
+    const img = document.getElementById('lb-img');
+    img.src = fotoUrl(lbList[lbIdx]);
+    document.getElementById('lb-n').textContent = lbList.length > 1 ? (lbIdx + 1) + ' / ' + lbList.length : '';
+    document.getElementById('lb-prev').style.display = lbList.length > 1 ? '' : 'none';
+    document.getElementById('lb-next').style.display = lbList.length > 1 ? '' : 'none';
+  }
+  function lbOpen(id, i){
+    const p = findPost(id);
+    lbList = fotoList(p);
+    if(!lbList.length) return;
+    lbIdx = Math.max(0, Math.min(Number(i) || 0, lbList.length - 1));
+    lbPaint();
+    document.getElementById('lb').classList.add('open');
+  }
+  function lbClose(){
+    const el = document.getElementById('lb');
+    if(!el) return;
+    el.classList.remove('open');
+    document.getElementById('lb-img').removeAttribute('src');
+  }
+  function lbStep(d){
+    if(lbList.length < 2) return;
+    lbIdx = (lbIdx + d + lbList.length) % lbList.length;
+    lbPaint();
+  }
+  function lbBg(ev){ if(ev.target && ev.target.id === 'lb') lbClose(); }
+  document.addEventListener('keydown', ev => {
+    const el = document.getElementById('lb');
+    if(!el || !el.classList.contains('open')) return;
+    if(ev.key === 'Escape') lbClose();
+    else if(ev.key === 'ArrowLeft') lbStep(-1);
+    else if(ev.key === 'ArrowRight') lbStep(1);
+  });
+  (function lbSwipe(){
+    const el = document.getElementById('lb');
+    if(!el) return;
+    el.addEventListener('touchstart', e => { lbX0 = e.touches && e.touches[0] ? e.touches[0].clientX : null; }, { passive: true });
+    el.addEventListener('touchend', e => {
+      if(lbX0 === null) return;
+      const x1 = e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientX : lbX0;
+      const dx = x1 - lbX0; lbX0 = null;
+      if(Math.abs(dx) > 50) lbStep(dx < 0 ? 1 : -1);
+    }, { passive: true });
+  })();
+  window.lbOpen = lbOpen; window.lbClose = lbClose; window.lbStep = lbStep; window.lbBg = lbBg;
+
+  // ----- elegir y comprimir (todo en el celular, antes de subir) -----
+  let pubFotos = [];          // [{ blob, url }]
+  let pubFotoBusy = 0;        // cuántas fotos se están preparando
+  const FOTO_LADO = 1280, FOTO_OBJ = 700 * 1024;
+  function fotoBitmap(file){
+    if(window.createImageBitmap){
+      return createImageBitmap(file, { imageOrientation: 'from-image' })
+        .catch(() => createImageBitmap(file));
+    }
+    return new Promise((ok, no) => {
+      const u = URL.createObjectURL(file), im = new Image();
+      im.onload = () => { URL.revokeObjectURL(u); ok(im); };
+      im.onerror = () => { URL.revokeObjectURL(u); no(new Error('imagen')); };
+      im.src = u;
+    });
+  }
+  function canvasBlob(cv, q){
+    return new Promise((ok, no) => cv.toBlob(b => b ? ok(b) : no(new Error('blob')), 'image/jpeg', q));
+  }
+  // Reduce a 1280 px de lado largo y JPG ~200 KB. Al redibujar se pierden los datos ocultos
+  // de la foto (como la ubicación GPS), así que no se publica dónde fue tomada.
+  async function fotoComprimir(file){
+    const bm = await fotoBitmap(file);
+    const w0 = bm.width || bm.naturalWidth, h0 = bm.height || bm.naturalHeight;
+    if(!w0 || !h0) throw new Error('imagen');
+    let lado = FOTO_LADO, blob = null;
+    for(let intento = 0; intento < 4; intento++){
+      const k = Math.min(1, lado / Math.max(w0, h0));
+      const cv = document.createElement('canvas');
+      cv.width = Math.max(1, Math.round(w0 * k)); cv.height = Math.max(1, Math.round(h0 * k));
+      const cx = cv.getContext('2d');
+      cx.fillStyle = '#ffffff'; cx.fillRect(0, 0, cv.width, cv.height);
+      cx.drawImage(bm, 0, 0, cv.width, cv.height);
+      for(const q of [0.82, 0.7, 0.6]){
+        blob = await canvasBlob(cv, q);
+        if(blob.size <= FOTO_OBJ) break;
+      }
+      if(blob.size <= FOTO_OBJ) break;
+      lado = Math.round(lado * 0.8);
+    }
+    if(bm.close) try{ bm.close(); }catch(e){}
+    if(!blob || blob.size > 1400 * 1024) throw new Error('pesa');
+    return blob;
+  }
+  function pubFotoPaint(){
+    const box = document.getElementById('pub-thumbs');
+    if(box) box.innerHTML = pubFotos.map((f, i) =>
+      '<div class="pthumb"><img alt="Foto ' + (i + 1) + '" src="' + f.url + '"><button type="button" aria-label="Quitar foto ' + (i + 1) + '" onclick="pubFotoDel(' + i + ')">✕</button></div>').join('') +
+      (pubFotoBusy ? '<div class="pthumb busy" aria-label="Preparando foto"></div>'.repeat(pubFotoBusy) : '');
+    const n = document.getElementById('pub-photo-n'); if(n) n.textContent = pubFotos.length + '/' + FOTOS_MAX;
+    const b = document.getElementById('pub-photo-btn'); if(b) b.disabled = (pubFotos.length + pubFotoBusy) >= FOTOS_MAX;
+  }
+  function pubFotoReset(){
+    pubFotos.forEach(f => { try{ URL.revokeObjectURL(f.url); }catch(e){} });
+    pubFotos = []; pubFotoBusy = 0; pubFotoPaint();
+  }
+  function pubFotoDel(i){
+    const f = pubFotos[i]; if(!f) return;
+    try{ URL.revokeObjectURL(f.url); }catch(e){}
+    pubFotos.splice(i, 1); pubFotoPaint();
+  }
+  function pubFotoPick(){
+    if(!myId()){ pubMsg('Entra a tu cuenta para publicar.', 'err'); return; }
+    // si ya sabemos que el perfil está incompleto, se avisa antes de elegir fotos
+    if(meProfile && !teamIs && !(String(meProfile.rol || '').trim() && String(meProfile.ciudad || '').trim())){
+      pubMsg('Para subir fotos primero completa tu perfil (rol y ciudad): Perfil → Completar mi perfil.', 'err'); return;
+    }
+    const inp = document.getElementById('pub-photo-input'); if(inp) inp.click();
+  }
+  async function pubFotoChange(inp){
+    const files = Array.from(inp.files || []);
+    inp.value = '';
+    if(!files.length) return;
+    pubMsg('');
+    const room = FOTOS_MAX - pubFotos.length - pubFotoBusy;
+    if(files.length > room) pubMsg('Máximo ' + FOTOS_MAX + ' fotos por publicación.', 'err');
+    const take = files.slice(0, Math.max(0, room));
+    pubFotoBusy += take.length; pubFotoPaint();
+    for(const f of take){
+      try{
+        if(!/^image\//i.test(f.type || '') && !/\.(jpe?g|png|webp|heic|heif)$/i.test(f.name || '')) throw new Error('tipo');
+        const blob = await fotoComprimir(f);
+        pubFotos.push({ blob: blob, url: URL.createObjectURL(blob) });
+      }catch(e){
+        pubMsg('No se pudo preparar una de las fotos. Prueba con otra.', 'err');
+      }
+      pubFotoBusy = Math.max(0, pubFotoBusy - 1); pubFotoPaint();
+    }
+  }
+  function fotoUuid(){
+    if(window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    const b = new Uint8Array(16); crypto.getRandomValues(b);
+    b[6] = (b[6] & 0x0f) | 0x40; b[8] = (b[8] & 0x3f) | 0x80;
+    const h = Array.from(b, x => x.toString(16).padStart(2, '0')).join('');
+    return h.slice(0, 8) + '-' + h.slice(8, 12) + '-' + h.slice(12, 16) + '-' + h.slice(16, 20) + '-' + h.slice(20);
+  }
+  async function fotoSubir(tok, blob){
+    const path = myId() + '/' + fotoUuid() + '.jpg';
+    const res = await fetchTimeout(SUPABASE_URL + '/storage/v1/object/' + FOTO_BUCKET + '/' + path, {
+      method: 'POST',
+      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + tok, 'Content-Type': 'image/jpeg', 'cache-control': 'max-age=31536000', 'x-upsert': 'false' },
+      body: blob
+    }, 45000);
+    if(!res.ok){
+      let detail = ''; try{ detail = await res.text(); }catch(e){}
+      const fe = fotoErr(detail) || (res.status === 401 || res.status === 403 ? fotoErr('row-level security') : null);
+      throw new Error(fe || 'No se pudo subir una foto (' + res.status + '). Intenta de nuevo.');
+    }
+    return path;
+  }
+  // borra archivos de fotos (al fallar la publicación o al borrarla); si falla, no pasa nada grave
+  async function fotoBorrar(tok, paths){
+    if(!paths || !paths.length) return;
+    try{
+      await fetchTimeout(SUPABASE_URL + '/storage/v1/object/' + FOTO_BUCKET, {
+        method: 'DELETE', headers: authHeaders(tok), body: JSON.stringify({ prefixes: paths })
+      }, 15000);
+    }catch(e){}
+  }
+
   // ===== PUBLICAR =====
   function pubMsg(text, kind){
     const el = document.getElementById('pub-msg');
@@ -3490,15 +3744,18 @@
     if(!gate || !form) return;
     gate.style.display = logged ? 'none' : '';
     form.style.display = logged ? '' : 'none';
+    if(!logged) pubFotoReset();
     teamLoad();
   }
   window.pubRender = pubRender;
+  window.pubFotoPick = pubFotoPick; window.pubFotoChange = pubFotoChange; window.pubFotoDel = pubFotoDel;
   window.passHide = passHide;
 
   async function pubSend(){
     const ta = document.getElementById('pub-text');
     const btn = document.getElementById('pub-btn');
     if(!myId()){ pubMsg('Entra a tu cuenta para publicar.', 'err'); return; }
+    if(pubFotoBusy){ pubMsg('Espera un momento: las fotos se están preparando.', 'err'); return; }
     const txt = ta.value.trim();
     if(txt.length < 3){ pubMsg('Escribe un poco más para poder publicar.', 'err'); return; }
     if(txt.length > 1000){ pubMsg('Máximo 1000 caracteres.', 'err'); return; }
@@ -3508,17 +3765,29 @@
     const sala = salaSel && salaOf(salaSel.value) ? salaSel.value : '';
     btn.disabled = true; btn.textContent = 'Publicando…';
     pubMsg('');
+    let subidas = [], tokUp = null;
     try{
       const tok = await freshToken();
+      tokUp = tok;
       if(!tok) throw new Error('Tu sesión venció. Vuelve a entrar desde Perfil.');
+      // 1) se suben las fotos (si hay); 2) se crea la publicación con sus rutas
+      for(let i = 0; i < pubFotos.length; i++){
+        btn.textContent = 'Subiendo foto ' + (i + 1) + '/' + pubFotos.length + '…';
+        subidas.push(await fotoSubir(tok, pubFotos[i].blob));
+      }
+      btn.textContent = 'Publicando…';
+      const body = { autor_id: myId(), categoria: cat, contenido: txt };
+      if(sala) body.sala = sala;
+      if(subidas.length) body.fotos = subidas;
       const res = await fetch(SUPABASE_URL + '/rest/v1/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', apikey: SUPABASE_KEY, Authorization: 'Bearer ' + tok, Prefer: 'return=minimal' },
-        body: JSON.stringify(sala ? { autor_id: myId(), categoria: cat, contenido: txt, sala: sala } : { autor_id: myId(), categoria: cat, contenido: txt })
+        body: JSON.stringify(body)
       });
       if(!res.ok){
         let detail = '';
         try{ detail = await res.text(); }catch(e){}
+        { const fe = fotoErr(detail); if(fe) throw new Error(fe); }
         if(/limite_posts/.test(detail)) throw new Error('Llegaste al límite: máximo 5 publicaciones por hora. Intenta más tarde.');
         if(/categoria_reservada/.test(detail)) throw new Error('La categoría Novedades es solo para el equipo de Proyecta.');
         { const le = linkErr(detail); if(le) throw new Error(le); }
@@ -3526,7 +3795,7 @@
         if(res.status === 401 || res.status === 403) throw new Error('Tu sesión venció. Vuelve a entrar desde Perfil.');
         throw new Error('No se pudo publicar (' + res.status + '). Intenta de nuevo.');
       }
-      ta.value = ''; pubCount();
+      ta.value = ''; pubCount(); pubFotoReset(); subidas = [];
       if(salaSel){ salaSel.value = ''; salaApply(); }
       comStamp = 0;
       if(sala){
@@ -3536,7 +3805,9 @@
       }
       await feedLoad(true);
     }catch(e){
-      pubMsg(e instanceof TypeError ? 'Sin conexión. Intenta de nuevo.' : e.message, 'err');
+      // si la publicación no se creó, las fotos ya subidas se quitan para no dejar archivos sueltos
+      if(subidas.length && tokUp) fotoBorrar(tokUp, subidas);
+      pubMsg(e instanceof TypeError ? 'Sin conexión. Intenta de nuevo.' : (e && e.name === 'AbortError' ? 'Tardó demasiado. Intenta de nuevo.' : e.message), 'err');
     }finally{
       btn.disabled = false; btn.textContent = 'Publicar';
     }
