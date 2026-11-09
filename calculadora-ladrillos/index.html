@@ -82,6 +82,34 @@
     width:100%;font-family:var(--body);font-size:15px;color:var(--ink);background:#fff;
     border:1px solid var(--line);border-radius:8px;padding:10px 11px;outline:none;-webkit-appearance:none}
   select:focus,input:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(52,88,107,.14)}
+
+  /* ---- selector compacto (en lugar del menú gigante del celular) ---- */
+  .pk{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;
+    font-family:var(--body);font-size:15px;color:var(--ink);background:#fff;border:1px solid var(--line);
+    border-radius:8px;padding:10px 11px;cursor:pointer;-webkit-appearance:none;appearance:none}
+  .pk .v{flex:1;min-width:0}
+  .pk .ch{color:var(--gold);font-size:16px;line-height:1}
+  .pk:focus-visible{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(52,88,107,.14)}
+  .pk-ov{position:fixed;inset:0;z-index:100;background:rgba(10,31,61,.55);display:none;align-items:flex-end;justify-content:center}
+  .pk-ov.on{display:flex}
+  .pk-sheet{width:100%;max-width:520px;max-height:80vh;display:flex;flex-direction:column;background:#fff;
+    border-radius:16px 16px 0 0;box-shadow:0 -10px 30px rgba(10,31,61,.3)}
+  .pk-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px 12px 18px;
+    border-bottom:1px solid var(--line)}
+  .pk-h h3{margin:0;font-family:var(--disp);text-transform:uppercase;letter-spacing:.05em;font-size:15px;color:var(--teal-deep)}
+  .pk-x{flex:0 0 auto;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:#fff;
+    color:var(--teal-deep);font-size:17px;line-height:1;cursor:pointer}
+  .pk-l{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:4px 8px 16px}
+  .pk-g{font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--gold);padding:12px 10px 4px}
+  .pk-o{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:44px;
+    padding:9px 10px;border:0;background:none;border-radius:8px;text-align:left;cursor:pointer;
+    font-family:var(--body);font-size:15px;color:var(--ink)}
+  .pk-o.on{background:var(--gold-soft);font-weight:700}
+  .pk-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 4px}
+  .pk-o.chip{min-height:42px;border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:14.5px}
+  .pk-o.chip.on{border-color:var(--gold)}
+  .pk-g:first-child{padding-top:8px}
+  .pk-o .ck{color:var(--teal-deep);font-size:16px}
   .inp-u{position:relative}
   .inp-u .u{position:absolute;right:11px;top:50%;transform:translateY(-50%);font-family:var(--mono);
     font-size:12px;color:var(--ink-soft);pointer-events:none}
@@ -689,6 +717,7 @@ $("btnReset").onclick=()=>{
   state.modo="dim"; [...$("modoSeg").children].forEach((c,i)=>c.classList.toggle("on",i===0));
   $("modoDim").style.display="block"; $("modoArea").style.display="none";
   state.mortero="mezcla";
+  pkSync();
   compute();
 };
 
@@ -727,8 +756,82 @@ function buildReport(){
     "Cifras estimadas para presupuesto, sujetas a verificación en obra.";
 }
 
+/* ============ SELECTORES COMPACTOS ============
+   El menú nativo del celular sale enorme y sin botón para cerrar. Se deja el <select>
+   escondido (la calculadora sigue leyendo su valor igual) y se muestra una hoja propia,
+   con título, botón ✕ y el gesto/botón "atrás" del celular para cerrarla. */
+const PK=[]; let pkOv=null, pkOpen=null, pkPushed=false;
+function pkSplit(t){ const m=t.match(/^(.*?)\s+(\d+×\d+×\d+)$/); return m?{g:m[1],t:m[2]}:{g:"Otra",t:t}; }
+function pkLabel(o){ const op=o.s.options[o.s.selectedIndex]; o.b.firstChild.textContent=op?op.textContent:""; }
+function pkSync(){ PK.forEach(pkLabel); }
+function pickerize(id,title,grouped){
+  const s=$(id); if(!s) return;
+  s.style.display="none"; s.setAttribute("aria-hidden","true"); s.tabIndex=-1;
+  const b=document.createElement("button"); b.type="button"; b.className="pk"; b.id="pk-"+id;
+  b.setAttribute("aria-haspopup","dialog");
+  b.innerHTML='<span class="v"></span><span class="ch" aria-hidden="true">&#9662;</span>';
+  s.parentNode.insertBefore(b,s.nextSibling);
+  const lab=document.querySelector('label[for="'+id+'"]'); if(lab) lab.setAttribute("for",b.id);
+  const o={s:s,b:b,title:title,grouped:!!grouped};
+  PK.push(o); b.addEventListener("click",()=>pkShow(o)); pkLabel(o);
+}
+function pkHide(){
+  if(!pkOv) return;
+  pkOv.classList.remove("on"); document.body.style.overflow="";
+  const o=pkOpen; pkOpen=null; if(o) o.b.focus();
+}
+function pkClose(){
+  if(pkPushed){ pkPushed=false; try{ history.back(); }catch(_){} }
+  pkHide();
+}
+function pkShow(o){
+  if(!pkOv){
+    pkOv=document.createElement("div"); pkOv.className="pk-ov";
+    pkOv.innerHTML='<div class="pk-sheet" role="dialog" aria-modal="true" aria-labelledby="pk-t">'+
+      '<div class="pk-h"><h3 id="pk-t"></h3><button type="button" class="pk-x" aria-label="Cerrar">&#10005;</button></div>'+
+      '<div class="pk-l"></div></div>';
+    document.body.appendChild(pkOv);
+    pkOv.addEventListener("click",e=>{ if(e.target===pkOv) pkClose(); });
+    pkOv.querySelector(".pk-x").addEventListener("click",()=>pkClose());
+    document.addEventListener("keydown",e=>{ if(e.key==="Escape" && pkOpen) pkClose(); });
+    /* botón/gesto "atrás" del celular: cierra la hoja en vez de salirse de la calculadora */
+    window.addEventListener("popstate",()=>{ if(pkOpen){ pkPushed=false; pkHide(); } });
+  }
+  pkOpen=o;
+  pkOv.querySelector("#pk-t").textContent=o.title;
+  const list=pkOv.querySelector(".pk-l"); list.innerHTML="";
+  let lastG=null, box=list;
+  [...o.s.options].forEach(op=>{
+    let t=op.textContent;
+    if(o.grouped){
+      const p=pkSplit(t);
+      if(p.g!==lastG){
+        const h=document.createElement("div"); h.className="pk-g"; h.textContent=p.g; list.appendChild(h);
+        box=document.createElement("div"); box.className="pk-grid"; list.appendChild(box); lastG=p.g;
+      }
+      t=p.t;
+    }
+    const on=(op.value===o.s.value);
+    const bt=document.createElement("button"); bt.type="button"; bt.className="pk-o"+(on?" on":"")+(o.grouped?" chip":"");
+    bt.innerHTML='<span></span><span class="ck" aria-hidden="true">'+(on?"&#10003;":"")+'</span>';
+    bt.firstChild.textContent=t;
+    bt.addEventListener("click",()=>{
+      o.s.value=op.value; pkLabel(o);
+      o.s.dispatchEvent(new Event("input",{bubbles:true}));
+      o.s.dispatchEvent(new Event("change",{bubbles:true}));
+      pkClose();
+    });
+    box.appendChild(bt);
+  });
+  pkOv.classList.add("on"); document.body.style.overflow="hidden";
+  try{ history.pushState({pk:1},""); pkPushed=true; }catch(_){ pkPushed=false; }
+  const cur=list.querySelector(".pk-o.on"); if(cur && list.scrollHeight>list.clientHeight) cur.scrollIntoView({block:"nearest"});
+}
+
 /* ============================ INIT ============================ */
 setPieza("tabique7");
+pickerize("pieza","Elige la pieza",true);
+pickerize("prop","Proporción cemento : arena",false);
 
 /* "Volver a Proyecta": si venimos de la app, regresa a donde estabas; si abrieron la calculadora directo, va al inicio */
 document.getElementById("volver").addEventListener("click",function(e){
