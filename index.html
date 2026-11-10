@@ -417,6 +417,18 @@
     color:var(--ink);outline:none;background:transparent;
   }
   .composer-tools{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding-top:10px;margin-top:6px;}
+  /* ---- menciones con @ ---- */
+  a.mn{color:var(--navy);font-weight:700;background:#fbf3df;border-radius:5px;padding:0 3px;text-decoration:none;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  a.mn:active{opacity:.7;}
+  .mn-box{display:none;border:1px solid var(--line);border-radius:12px;background:#fff;margin:6px 0 2px;overflow:hidden;box-shadow:0 6px 18px rgba(10,31,61,.10);}
+  .mn-item{display:flex;flex-direction:column;align-items:flex-start;gap:1px;width:100%;min-height:46px;padding:8px 12px;border:0;border-bottom:1px solid var(--line);background:#fff;text-align:left;cursor:pointer;font-family:inherit;color:var(--ink);}
+  .mn-item:last-child{border-bottom:0;}
+  .mn-item b{font-size:14px;font-weight:700;}
+  .mn-item span{font-size:12px;color:var(--muted);}
+  .mn-item.on{background:#fbf3df;}
+  .mn-note{padding:10px 12px;font-size:12.5px;color:var(--muted);}
+  .mn-chips{display:none;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px;font-size:12px;color:var(--muted);}
+  .mn-chip{background:#fbf3df;border:1px solid var(--gold);color:var(--navy);border-radius:999px;padding:2px 9px;font-weight:700;}
   .tool{font-size:16px;color:var(--muted);margin-right:12px;}
   .btn-gold{
     display:block;width:100%;text-align:center;padding:13px;border-radius:100px;border:none;
@@ -1205,7 +1217,8 @@
             </div>
 
             <div class="composer">
-              <textarea id="pub-text" maxlength="1000" oninput="pubCount()" placeholder="Cuéntale a la comunidad qué estás construyendo, qué duda tienes o a quién buscas…"></textarea>
+              <textarea id="pub-text" maxlength="1000" oninput="pubCount();menUpdate()" onkeydown="menKey(event)" onkeyup="menKeyUp(event)" onclick="menUpdate()" onblur="setTimeout(menClose,180)" placeholder="Cuéntale a la comunidad qué estás construyendo, qué duda tienes o a quién buscas…"></textarea>
+              <div class="mn-box" id="mn-box" role="listbox" aria-label="Mencionar a un miembro"></div>
               <div class="composer-tools">
                 <div>
                   <button type="button" class="photo-add" id="pub-photo-btn" onclick="pubFotoPick()" aria-label="Agregar fotos"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l1.6-2.2h6.8L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.6"/></svg>Fotos <span id="pub-photo-n">0/4</span></button>
@@ -1213,12 +1226,13 @@
                 </div>
                 <span id="pub-count" style="font-size:11px;color:var(--muted);font-weight:600;">0/1000</span>
               </div>
+              <div class="mn-chips" id="mn-chips"></div>
               <div class="pub-thumbs" id="pub-thumbs"></div>
             </div>
 
             <div id="pub-msg" class="auth-msg"></div>
             <button id="pub-btn" class="btn-gold" type="button" onclick="pubSend()">Publicar</button>
-            <div class="post-meta" style="margin-top:12px;font-size:11px;line-height:1.5;">Escribe con respeto y sobre temas de construcción. Las publicaciones que no cumplan se ocultan. Máximo 5 publicaciones por hora. Los links y las fotos se activan cuando completas tu perfil (rol y ciudad); los links, además, cuando tu cuenta tiene más de 48 horas. Hasta 4 fotos por publicación.</div>
+            <div class="post-meta" style="margin-top:12px;font-size:11px;line-height:1.5;">Escribe con respeto y sobre temas de construcción. Las publicaciones que no cumplan se ocultan. Máximo 5 publicaciones por hora. Los links y las fotos se activan cuando completas tu perfil (rol y ciudad); los links, además, cuando tu cuenta tiene más de 48 horas. Hasta 4 fotos por publicación. Escribe @ para mencionar a un miembro (hasta 3, también con perfil completo). Si recomiendas a alguien, es tu opinión: quien contrata decide por su cuenta.</div>
           </div>
         </section>
 
@@ -1365,7 +1379,8 @@
               <input class="auth-input" id="pf-oficio-otro" type="text" placeholder="Escribe tu oficio (ej. Estucador)" maxlength="60" style="display:none">
               <input class="auth-input" id="pf-ciudad" type="text" placeholder="Ciudad (ej. Mazatlán)" maxlength="60">
               <input class="auth-input" id="pf-anos" type="number" inputmode="numeric" min="0" max="70" placeholder="Años de experiencia">
-              <textarea class="auth-input" id="pf-bio" rows="3" maxlength="280" placeholder="Sobre mí (máx. 280 caracteres)" style="resize:none"></textarea>
+              <textarea class="auth-input" id="pf-bio" rows="5" maxlength="600" placeholder="Sobre mí: a qué te dedicas, qué ofreces (máx. 600 caracteres)" style="resize:none" oninput="pfBioCount()"></textarea>
+              <div id="pf-bio-n" style="text-align:right;font-size:12px;color:#6b7686;margin:-4px 2px 8px"></div>
               <div class="auth-msg" id="pf-msg"></div>
               <button type="button" class="btn-gold" id="pf-save" onclick="profileSave()">Guardar</button>
               <button type="button" class="btn-ghost" onclick="profileEditClose()">Cancelar</button>
@@ -2540,6 +2555,7 @@
     document.getElementById('pf-ciudad').value = p.ciudad || '';
     document.getElementById('pf-anos').value = (p.anos_experiencia === 0 || p.anos_experiencia) ? p.anos_experiencia : '';
     document.getElementById('pf-bio').value = p.bio || '';
+    pfBioCount();
     document.getElementById('pf-msg').textContent = '';
     document.getElementById('me-summary').style.display = 'none';
     document.getElementById('me-lad').style.display = 'none';
@@ -2562,6 +2578,14 @@
     el.textContent = text || '';
     el.className = 'auth-msg' + (kind ? ' ' + kind : '');
   }
+  // contador del "Sobre mí" (máx. 600): se pone ámbar cerca del límite
+  function pfBioCount(){
+    const t = document.getElementById('pf-bio'), n = document.getElementById('pf-bio-n');
+    if(!t || !n) return;
+    const len = t.value.length;
+    n.textContent = len + ' / 600';
+    n.style.color = len >= 580 ? '#b4741a' : '#6b7686';
+  }
   async function profileSave(){
     if(!authSession) return;
     const nombre = document.getElementById('pf-nombre').value.trim();
@@ -2575,7 +2599,7 @@
       especialidad: pfEspValue() || null,
       ciudad: document.getElementById('pf-ciudad').value.trim() || null,
       anos_experiencia: anos,
-      bio: document.getElementById('pf-bio').value.trim().slice(0, 280) || null
+      bio: document.getElementById('pf-bio').value.trim().slice(0, 600) || null
     };
     const btn = document.getElementById('pf-save');
     btn.disabled = true; btn.textContent = 'Guardando…';
@@ -2640,6 +2664,8 @@
   const SEL_COUNTS = ',n_likes:likes(count),n_com:comentarios(count)';
   const SEL_FOTOS = ',fotos';           // columna nueva (Proyecta_SQL_Fotos_Publicaciones.sql); si falta, el feed cae a lo de antes
   let fotosAvail = null;
+  const SEL_MEN = ',menciones';          // columna nueva (Proyecta_SQL_Menciones.sql); si falta, el feed cae a lo de antes
+  let menAvail = null;
   const SEL_ED = ',editado_en';          // columna nueva (Proyecta_SQL_Editar.sql); si falta, el feed cae a lo de antes
   let edAvail = null;                    // null = aún no sé; false = la columna no existe todavía
   const CATS = {
@@ -2800,7 +2826,7 @@
         '<div class="post-name' + (p.autor_id ? ' who' : '') + '"' + whoAttr(p.autor_id) + '>' + esc(name) + '</div><div class="post-meta">' + esc(meta) + edTag + '</div></div></div>' +
       (editing['p' + id] !== undefined
         ? editBoxHtml('p' + id, 1000, 'postEditSave(' + id + ')', 'postEditCancel(' + id + ')')
-        : '<div class="post-text">' + linkify(p.contenido) + '</div>') +
+        : '<div class="post-text">' + postHtml(p) + '</div>') +
       fotosHtml(p) +
       '<div class="post-foot">' +
         '<button class="post-act pa' + (p.liked ? ' liked' : '') + '" id="lk-' + id + '" type="button" aria-pressed="' + (p.liked ? 'true' : 'false') + '" aria-label="Me gusta" onclick="likeToggle(' + id + ')">' + likeInner(p) + '</button>' +
@@ -2910,13 +2936,15 @@
       // Si faltan las tablas de me gusta/comentarios o la columna "sala", cae a versiones
       // más simples del feed en vez de romperse.
       // Se intenta primero con todo (editado + fotos); si falta una columna, cae a versiones más simples.
-      const useEd = edAvail !== false, useFo = fotosAvail !== false;
-      const mk = (b, ed, cnt, fo) => ({ sel: b + (ed ? SEL_ED : '') + (cnt ? SEL_COUNTS : '') + (fo ? SEL_FOTOS : ''), ed: ed, fo: fo });
+      const useEd = edAvail !== false, useFo = fotosAvail !== false, useMe = menAvail !== false;
+      const mk = (b, ed, cnt, fo, me) => ({ sel: b + (ed ? SEL_ED : '') + (cnt ? SEL_COUNTS : '') + (fo ? SEL_FOTOS : '') + (me ? SEL_MEN : ''), ed: ed, fo: fo, me: me });
       const tries = [];
-      if(useEd && useFo) tries.push(mk(SEL_SALA, 1, 1, 1));
-      if(useEd) tries.push(mk(SEL_SALA, 1, 1, 0));
-      if(useFo) tries.push(mk(SEL_SALA, 0, 1, 1));
-      tries.push(mk(SEL_SALA, 0, 1, 0));
+      // primero con todo; si falta una columna nueva, se va quitando de la más nueva (menciones) a la más vieja
+      if(useEd && useFo && useMe) tries.push(mk(SEL_SALA, 1, 1, 1, 1));
+      if(useEd && useFo) tries.push(mk(SEL_SALA, 1, 1, 1, 0));
+      if(useEd) tries.push(mk(SEL_SALA, 1, 1, 0, 0));
+      if(useFo) tries.push(mk(SEL_SALA, 0, 1, 1, 0));
+      tries.push(mk(SEL_SALA, 0, 1, 0, 0));
       if(myFilter){ tries.push(mk(SEL_SALA, 0, 0, 0)); }
       else { tries.push(mk(SEL_BASIC, 0, 1, 0), mk(SEL_SALA, 0, 0, 0), mk(SEL_BASIC, 0, 0, 0)); }
       let res = null, won = null;
@@ -2927,6 +2955,7 @@
       if(!res || !res.ok) throw new Error('posts ' + (res ? res.status : ''));
       edAvail = won.ed ? true : false;
       fotosAvail = won.fo ? true : false;
+      menAvail = won.me ? true : false;
       const rows = await res.json();
       if(!Array.isArray(rows)) throw new Error('posts formato');
       if(myFilter !== feedFilter) return; // cambiaron de sala mientras cargaba
@@ -3711,6 +3740,134 @@
     el.textContent = text || '';
     el.className = 'auth-msg' + (kind ? ' ' + kind : '');
   }
+  // ===== MENCIONES CON @ =====
+  // Escribes @ y el nombre; eliges de la lista a un miembro registrado (máx. 3). En la publicación su nombre
+  // sale como link a su perfil dentro de Proyecta y a esa persona le llega un aviso en la campana.
+  // Las reglas las vuelve a revisar el servidor (Proyecta_SQL_Menciones.sql).
+  const MEN_MAX = 3;
+  let pubMen = [];                 // [{ id, n }] elegidas en la lista
+  let menMatches = [], menSel = 0;
+  const MEN_ERRS = [
+    ['mencion_demasiadas', 'Máximo 3 menciones por publicación.'],
+    ['mencion_requiere_perfil', 'Para mencionar a alguien primero completa tu perfil (rol y ciudad): Perfil → Completar mi perfil.'],
+    ['mencion_invalida', 'No se pudo validar una mención. Bórrala y vuelve a elegirla de la lista.']
+  ];
+  function menErr(detail){
+    const d = String(detail || '');
+    for(const e of MEN_ERRS){ if(d.indexOf(e[0]) !== -1) return e[1]; }
+    return '';
+  }
+  function menReset(){ pubMen = []; menMatches = []; menSel = 0; menClose(); menChips(); }
+  function menClose(){ const b = document.getElementById('mn-box'); if(b){ b.style.display = 'none'; b.innerHTML = ''; } menMatches = []; }
+  function menSync(){
+    const ta = document.getElementById('pub-text'); if(!ta) return;
+    const t = ta.value;
+    const keep = pubMen.filter(m => t.indexOf('@' + m.n) !== -1);   // si borraste el texto, se quita la mención
+    if(keep.length !== pubMen.length){ pubMen = keep; }
+    menChips();
+  }
+  function menChips(){
+    const el = document.getElementById('mn-chips'); if(!el) return;
+    if(!pubMen.length){ el.style.display = 'none'; el.innerHTML = ''; return; }
+    el.style.display = 'flex';
+    el.innerHTML = '<span>Mencionas a:</span>' + pubMen.map(m => '<span class="mn-chip">@' + esc(m.n) + '</span>').join('') +
+      '<span>' + pubMen.length + '/' + MEN_MAX + '</span>';
+  }
+  // ¿el cursor está escribiendo una mención? (un @ al inicio o después de un espacio)
+  function menToken(){
+    const ta = document.getElementById('pub-text'); if(!ta) return null;
+    const pos = ta.selectionStart; if(pos == null) return null;
+    const before = ta.value.slice(0, pos);
+    const at = before.lastIndexOf('@');
+    if(at < 0) return null;
+    if(at > 0 && !/\s/.test(before.charAt(at - 1))) return null;       // correos o texto pegado
+    const q = before.slice(at + 1);
+    if(q.length > 40 || /\n|\s\s/.test(q)) return null;
+    const done = q.trim();
+    if(done && /\s$/.test(q) && pubMen.some(m => m.n === done)) return null;   // ya la elegiste
+    return { start: at, q: q };
+  }
+  function menUpdate(){
+    const box = document.getElementById('mn-box'); if(!box) return;
+    menSync();
+    const t = menToken();
+    if(!t || !myId()){ menClose(); return; }
+    if(pubMen.length >= MEN_MAX){
+      box.innerHTML = '<div class="mn-note">Máximo ' + MEN_MAX + ' menciones por publicación.</div>'; box.style.display = 'block'; menMatches = []; return;
+    }
+    if(!peMembers){
+      box.innerHTML = '<div class="mn-note">Buscando miembros…</div>'; box.style.display = 'block'; menMatches = [];
+      if(!peLoading) peLoad().then(() => menUpdate()); else setTimeout(menUpdate, 500);
+      return;
+    }
+    const toks = peTokens(t.q);
+    if(!toks.length){
+      box.innerHTML = '<div class="mn-note">Escribe el nombre de la persona o la empresa.</div>'; box.style.display = 'block'; menMatches = []; return;
+    }
+    const taken = new Set(pubMen.map(m => m.id));
+    const nq = norm(t.q).trim();
+    menMatches = peMembers.filter(m => !taken.has(m.id) && toks.every(tk => peHas(m.nom, tk)))
+      .sort((a, b) => (b.nom.indexOf(nq) === 0) - (a.nom.indexOf(nq) === 0) || a.nom.localeCompare(b.nom)).slice(0, 6);
+    if(menSel >= menMatches.length) menSel = 0;
+    if(!menMatches.length){
+      box.innerHTML = '<div class="mn-note">No encontré a nadie con ese nombre. Solo se puede mencionar a quien ya está en Proyecta.</div>'; box.style.display = 'block'; return;
+    }
+    box.innerHTML = menMatches.map((m, i) =>
+      '<button type="button" class="mn-item' + (i === menSel ? ' on' : '') + '" role="option" onmousedown="event.preventDefault()" onclick="menPick(' + i + ')">' +
+      '<b>' + esc(m.nombre) + '</b><span>' + esc([rolShow(m.rol, m.esp), m.ciudad].filter(Boolean).join(' · ') || 'Miembro de Proyecta') + '</span></button>').join('');
+    box.style.display = 'block';
+  }
+  function menPick(i){
+    const m = menMatches[i], ta = document.getElementById('pub-text'), t = menToken();
+    if(!m || !ta || !t) return;
+    const pos = ta.selectionStart;
+    const ins = '@' + m.nombre + ' ';
+    ta.value = ta.value.slice(0, t.start) + ins + ta.value.slice(pos);
+    const np = t.start + ins.length;
+    pubMen.push({ id: m.id, n: m.nombre });
+    menSel = 0; pubCount(); menClose(); menChips();
+    try{ ta.focus(); ta.setSelectionRange(np, np); }catch(_){}
+  }
+  function menKey(ev){
+    const box = document.getElementById('mn-box');
+    if(!box || box.style.display !== 'block' || !menMatches.length) return;
+    if(ev.key === 'ArrowDown'){ ev.preventDefault(); menSel = (menSel + 1) % menMatches.length; menUpdate(); }
+    else if(ev.key === 'ArrowUp'){ ev.preventDefault(); menSel = (menSel - 1 + menMatches.length) % menMatches.length; menUpdate(); }
+    else if(ev.key === 'Enter' || ev.key === 'Tab'){ ev.preventDefault(); menPick(menSel); }
+    else if(ev.key === 'Escape'){ ev.preventDefault(); menClose(); }
+  }
+  function menKeyUp(ev){
+    if(['ArrowDown', 'ArrowUp', 'Enter', 'Tab', 'Escape'].indexOf(ev.key) === -1) menUpdate();
+  }
+  // el texto de la publicación, con cada mención como link al perfil (si la mención no se ve en el texto, se ignora)
+  function postHtml(p){
+    const t = String(p.contenido == null ? '' : p.contenido);
+    const ms = Array.isArray(p.menciones) ? p.menciones : [];
+    if(!ms.length || t.indexOf('@') === -1) return linkify(t);
+    const hits = [];
+    ms.forEach(m => {
+      if(!m || !m.n || !/^[0-9a-f-]{36}$/i.test(String(m.id || ''))) return;
+      const key = '@' + m.n;
+      let from = 0, i;
+      while((i = t.indexOf(key, from)) !== -1){
+        const nx = t.charAt(i + key.length), pv = i === 0 ? ' ' : t.charAt(i - 1);
+        if(!/[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9]/.test(nx) && /[\s(¿¡"']/.test(pv)){ hits.push({ s: i, e: i + key.length, id: String(m.id) }); break; }
+        from = i + 1;
+      }
+    });
+    if(!hits.length) return linkify(t);
+    hits.sort((a, b) => a.s - b.s);
+    let out = '', last = 0;
+    hits.forEach(h => {
+      if(h.s < last) return;
+      out += linkify(t.slice(last, h.s));
+      out += '<a class="mn" role="link" tabindex="0" onclick="event.stopPropagation();perfilOpen(\'' + esc(h.id) + '\')" onkeydown="if(event.key===\'Enter\')perfilOpen(\'' + esc(h.id) + '\')">' + esc(t.slice(h.s, h.e)) + '</a>';
+      last = h.e;
+    });
+    return out + linkify(t.slice(last));
+  }
+  window.menUpdate = menUpdate; window.menKey = menKey; window.menKeyUp = menKeyUp; window.menPick = menPick; window.menClose = menClose;
+
   function pubCount(){
     document.getElementById('pub-count').textContent = document.getElementById('pub-text').value.length + '/1000';
   }
@@ -3744,7 +3901,7 @@
     if(!gate || !form) return;
     gate.style.display = logged ? 'none' : '';
     form.style.display = logged ? '' : 'none';
-    if(!logged) pubFotoReset();
+    if(!logged){ pubFotoReset(); menReset(); }
     teamLoad();
   }
   window.pubRender = pubRender;
@@ -3779,15 +3936,25 @@
       const body = { autor_id: myId(), categoria: cat, contenido: txt };
       if(sala) body.sala = sala;
       if(subidas.length) body.fotos = subidas;
-      const res = await fetch(SUPABASE_URL + '/rest/v1/posts', {
+      menSync();
+      if(pubMen.length) body.menciones = pubMen.map(m => ({ id: m.id, n: m.n }));
+      const sendPost = b => fetch(SUPABASE_URL + '/rest/v1/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', apikey: SUPABASE_KEY, Authorization: 'Bearer ' + tok, Prefer: 'return=minimal' },
-        body: JSON.stringify(body)
+        body: JSON.stringify(b)
       });
+      let res = await sendPost(body);
+      if(!res.ok && body.menciones){
+        // si el SQL de menciones aún no corre, se publica igual (el nombre queda como texto)
+        let d0 = '';
+        try{ d0 = await res.clone().text(); }catch(e){}
+        if(/menciones/.test(d0) && /PGRST204|schema cache|column/i.test(d0)){ delete body.menciones; res = await sendPost(body); }
+      }
       if(!res.ok){
         let detail = '';
         try{ detail = await res.text(); }catch(e){}
         { const fe = fotoErr(detail); if(fe) throw new Error(fe); }
+        { const me = menErr(detail); if(me) throw new Error(me); }
         if(/limite_posts/.test(detail)) throw new Error('Llegaste al límite: máximo 5 publicaciones por hora. Intenta más tarde.');
         if(/categoria_reservada/.test(detail)) throw new Error('La categoría Novedades es solo para el equipo de Proyecta.');
         { const le = linkErr(detail); if(le) throw new Error(le); }
@@ -3795,7 +3962,7 @@
         if(res.status === 401 || res.status === 403) throw new Error('Tu sesión venció. Vuelve a entrar desde Perfil.');
         throw new Error('No se pudo publicar (' + res.status + '). Intenta de nuevo.');
       }
-      ta.value = ''; pubCount(); pubFotoReset(); subidas = [];
+      ta.value = ''; pubCount(); pubFotoReset(); menReset(); subidas = [];
       if(salaSel){ salaSel.value = ''; salaApply(); }
       comStamp = 0;
       if(sala){
@@ -4192,7 +4359,8 @@
     like: 'le dio me gusta a tu publicación',
     comentario: 'comentó tu publicación',
     hilo: 'también comentó en una publicación donde tú comentaste',
-    ladrillo: 'reconoció tu aporte 🧱'
+    ladrillo: 'reconoció tu aporte 🧱',
+    mencion: 'te mencionó en una publicación'
   };
   let notifUnread = 0;
   let dmUnread = 0;
@@ -4247,7 +4415,7 @@
     const mio = r.tipo === 'ladrillo';
     if(mio && csnip && csnip[r.comentario_id]) ext = String(csnip[r.comentario_id]).replace(/\s+/g, ' ').trim();
     if(ext.length > 80) ext = ext.slice(0, 77).trimEnd() + '…';
-    const icon = r.tipo === 'like' ? '❤' : (r.tipo === 'ladrillo' ? '🧱' : '💬');
+    const icon = r.tipo === 'like' ? '❤' : (r.tipo === 'ladrillo' ? '🧱' : (r.tipo === 'mencion' ? '@' : '💬'));
     const click = ok ? ' onclick="notifGo(' + Number(r.post_id) + ',\'' + esc(r.tipo) + '\')" onkeydown="if(event.key===\'Enter\')notifGo(' + Number(r.post_id) + ',\'' + esc(r.tipo) + '\')" tabindex="0"' : '';
     return '<div class="notif-item' + (r.leida ? '' : ' unread') + (ok ? '' : ' off') + '" role="button"' + click + '>' +
       '<div class="avatar">' + esc(initialsOf(name)) + '</div>' +
@@ -4324,7 +4492,7 @@
     await waitFeed();
     if(!findPost(pid)){ await feedLoad(true); await waitFeed(); }
     if(!findPost(pid)){ showToast('Esa publicación ya no está en el feed reciente.'); return; }
-    if(tipo !== 'like'){
+    if(tipo !== 'like' && tipo !== 'mencion'){
       if(openThreads.has(pid)) threadLoad(pid); else threadToggle(pid);
     }
     setTimeout(() => {
