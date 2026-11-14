@@ -631,6 +631,19 @@
   .feed-empty{text-align:center;padding:24px 16px;color:var(--muted);font-size:13px;line-height:1.5;
     background:var(--paper);border:1px dashed var(--line);border-radius:16px;margin-bottom:12px;}
   .feed-empty b{color:var(--navy);display:block;font-size:15px;margin-bottom:4px;}
+  .promo{background:linear-gradient(155deg,var(--navy) 0%,var(--navy-2) 70%);color:#fff;border-radius:var(--radius);padding:18px 16px 16px;margin-bottom:12px;border-bottom:3px solid var(--gold);}
+  .promo-eyebrow{font-size:10.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-2);}
+  .promo-title{font-family:'Archivo Black',sans-serif;font-size:19px;line-height:1.2;margin:6px 0 4px;}
+  .promo-sub{font-size:13px;color:rgba(255,255,255,.78);margin-bottom:12px;line-height:1.4;}
+  .promo-row{display:flex;gap:11px;align-items:flex-start;padding:9px 0;border-top:1px solid rgba(255,255,255,.12);}
+  .promo-ic{width:34px;height:34px;flex-shrink:0;border-radius:10px;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:17px;}
+  .promo-row b{display:block;font-size:14px;line-height:1.25;}
+  .promo-row span{display:block;font-size:12.5px;line-height:1.4;color:rgba(255,255,255,.76);margin-top:2px;}
+  .promo .btn-gold{margin-top:12px;}
+  .promo-note{text-align:center;font-size:11.5px;color:rgba(255,255,255,.65);margin-top:8px;}
+  .guest-cta{text-align:center;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:18px 16px;margin-bottom:12px;}
+  .guest-cta b{display:block;color:var(--navy);font-size:15px;margin-bottom:4px;}
+  .guest-cta p{font-size:13px;line-height:1.45;color:var(--muted);margin:0 0 12px;}
   .feed-more{padding:6px 4px 22px;}
   .feed-more .btn-ghost:disabled{opacity:.6;}
   .feed-end{text-align:center;color:var(--muted);font-size:12.5px;padding:14px 8px 26px;}
@@ -1761,6 +1774,7 @@
     gE.innerHTML = '<div class="sectionlabel">Especialistas · ' + esp.length + '</div>' + esp.map(espCard).join('');
     gP.innerHTML = '<div class="sectionlabel">Proveedores · ' + prov.length + '</div>' + prov.map(provCard).join('');
     padCount();
+    if(window.promoSync) window.promoSync();
     gE.style.display = ''; gP.style.display = '';
     dirChips(esp);
     const qi = document.getElementById('dir-q');
@@ -2099,6 +2113,7 @@
     if(window.ladSync) window.ladSync();
     if(window.passHide) window.passHide();
     if(window.peReset) window.peReset();
+    if(window.feedModeSync) window.feedModeSync();
     if(window.feedRender) window.feedRender();
     if(!logged && window.pwClose) window.pwClose();
     document.getElementById('auth-out').style.display = logged ? 'none' : '';
@@ -2879,10 +2894,22 @@
         '<div style="margin-top:14px;"><button class="btn-gold" type="button" onclick="go(\'publicar\', document.querySelector(\'.navbtn.publish\'))">Publicar ahora</button></div></div>';
       return;
     }
-    const cards = feedRows.map(feedCard);
-    if(FEED_AD.enabled && !feedFilter) cards.splice(1, 0, adCard());
-    if(feedHasMore) cards.push('<div class="feed-more"><button class="btn-ghost" id="feedMoreBtn" type="button" onclick="feedMoreLoad()">Cargar más publicaciones</button></div>');
-    else if(feedEnd) cards.push('<div class="feed-more feed-end">' + (feedFilter ? 'Llegaste al principio de esta sala.' : 'Llegaste al principio. Aquí empezó todo.') + '</div>');
+    const guestView = feedIsGuest() && !feedFilter;
+    let cards;
+    if(guestView){
+      // visitante: post fijo + qué vas a encontrar + 3 recientes + invitación
+      const latest = feedRows.filter(p => !feedPin || Number(p.id) !== Number(feedPin.id)).slice(0, FEED_GUEST_N);
+      cards = [];
+      if(feedPin) cards.push(feedCard(feedPin));
+      cards.push(promoCard());
+      latest.forEach(p => cards.push(feedCard(p)));
+      cards.push(guestCta(latest.length + (feedPin ? 1 : 0)));
+    } else {
+      cards = feedRows.map(feedCard);
+      if(FEED_AD.enabled && !feedFilter) cards.splice(1, 0, adCard());
+    }
+    if(!guestView && feedHasMore) cards.push('<div class="feed-more"><button class="btn-ghost" id="feedMoreBtn" type="button" onclick="feedMoreLoad()">Cargar más publicaciones</button></div>');
+    else if(!guestView && feedEnd) cards.push('<div class="feed-more feed-end">' + (feedFilter ? 'Llegaste al principio de esta sala.' : 'Llegaste al principio. Aquí empezó todo.') + '</div>');
     box.innerHTML = cards.join('');
     Object.keys(keep).forEach(k => { const el = document.getElementById(k); if(el){ el.value = keep[k]; if(/^thi-/.test(k)) thGrow(el, k.slice(4)); } });
     openThreads.forEach(id => threadPaint(id));
@@ -2890,7 +2917,7 @@
   window.feedRender = feedRender;
 
   function feedSaveCache(){
-    if(feedFilter) return; // el caché es solo del feed completo, no de una sala
+    if(feedFilter || feedIsGuest()) return; // el caché es solo del feed completo con cuenta, no de una sala
     try{ localStorage.setItem(FEED_CACHE_KEY, JSON.stringify((feedRows || []).slice(0, FEED_PAGE).map(p => Object.assign({}, p, { liked: false, _busy: undefined })))); }catch(e){}
   }
   function validToken(){
@@ -2933,6 +2960,66 @@
   let feedMoreBusy = false;
   let feedSel = null;          // el select que sí funcionó en la última carga (se reusa para "más")
   function feedResetPaging(){ feedHasMore = false; feedEnd = false; feedExtended = false; }
+  // Escaparate para quien NO tiene cuenta: tu primer post fijo, la tarjeta de "qué vas a encontrar",
+  // las 3 publicaciones más recientes y la invitación a registrarse. Con cuenta se ve todo el feed.
+  const FEED_PIN_ID = 2;          // el primer post de Javier (bienvenida, 26-oct-2026)
+  const FEED_GUEST_N = 3;         // publicaciones recientes que ve un visitante
+  const FEED_PIN_KEY = 'proyecta_feed_pin_v1';
+  let feedPin = null;             // el post fijo (solo se pide a visitantes)
+  let feedTotal = null;           // total de publicaciones (para "Hay N más adentro")
+  let feedGuestMode = null;       // con qué modo (visitante o con cuenta) se cargó el feed
+  function feedIsGuest(){ return !myId(); }
+  async function feedFetchPin(sel, headers){
+    try{
+      const r = await fetchTimeout(SUPABASE_URL + '/rest/v1/posts?select=' + sel + '&id=eq.' + FEED_PIN_ID + '&limit=1', { headers: headers }, 12000);
+      if(!r.ok) return null;
+      const rows = await r.json();
+      if(!Array.isArray(rows) || !rows.length) return null;
+      await feedDecorate(rows, headers, null);
+      return rows[0];
+    }catch(e){ return null; }
+  }
+  async function feedFetchTotal(headers){
+    try{
+      const r = await fetchTimeout(SUPABASE_URL + '/rest/v1/posts?select=id&limit=1', { headers: Object.assign({}, headers, { Prefer: 'count=exact' }) }, 12000);
+      if(!r.ok) return null;
+      const m = String(r.headers.get('content-range') || '').match(/\/(\d+)$/);
+      return m ? Number(m[1]) : null;
+    }catch(e){ return null; }
+  }
+  function promoPadTxt(){
+    const d = window.dirRows;
+    if(!d || !d.esp || !d.prov) return 'Especialistas y proveedores seleccionados.';
+    const e = d.esp.length, p = d.prov.length;
+    return e + (e === 1 ? ' especialista' : ' especialistas') + ' y ' + p + (p === 1 ? ' proveedor' : ' proveedores') + ' seleccionados.';
+  }
+  window.promoSync = function(){ const el = document.getElementById('pr-pad'); if(el) el.textContent = promoPadTxt(); };
+  function promoCard(){
+    const row = (ic, t, d) => '<div class="promo-row"><div class="promo-ic">' + ic + '</div><div><b>' + t + '</b><span>' + d + '</span></div></div>';
+    return '<div class="promo">' +
+      '<div class="promo-eyebrow">Qué vas a encontrar en Proyecta Latam</div>' +
+      '<div class="promo-title">La comunidad de los que construyen</div>' +
+      '<div class="promo-sub">Para ingenieros, arquitectos, proveedores y gente de obra.</div>' +
+      row('🧱', 'Calculadoras gratis', 'Ladrillos y blocks, concreto por m³ y simulador hidráulico. Validadas con ingenieros en campo.') +
+      row('👷', 'Padrón de especialistas y proveedores', '<span id="pr-pad">' + esc(promoPadTxt()) + '</span> Contacto directo por WhatsApp.') +
+      row('💬', 'Salas por especialidad', SALAS.length + ' salas: obra civil, estructuras, geotecnia, instalaciones, presupuestos, oficios y más.') +
+      row('📚', 'Biblioteca', 'El Reglamento de Construcción de Mazatlán explicado en fichas: ¿qué tipo de obra es la mía y necesito DRO?') +
+      row('✉️', 'Mensajes directos', 'Escríbele a quien necesites dentro de la app.') +
+      '<button class="btn-gold" type="button" onclick="needLogin(\'Crea tu cuenta gratis para entrar a Proyecta Latam\')">Crear mi cuenta gratis</button>' +
+      '<div class="promo-note">Es gratis y toma un minuto.</div></div>';
+  }
+  function guestCta(shown){
+    const more = feedTotal != null ? Math.max(0, feedTotal - shown) : 0;
+    const t = more ? 'Hay ' + more + (more === 1 ? ' publicación más' : ' publicaciones más') + ' adentro' : 'Hay más conversaciones adentro';
+    return '<div class="guest-cta"><b>' + t + '</b><p>Crea tu cuenta gratis para ver todo el feed, comentar y escribirle a la gente de la construcción.</p>' +
+      '<button class="btn-gold" type="button" onclick="needLogin(\'Crea tu cuenta gratis para ver todo\')">Crear mi cuenta gratis</button></div>';
+  }
+  // al iniciar o cerrar sesión, el feed se vuelve a pedir en el modo que toca
+  window.feedModeSync = function(){
+    if(feedGuestMode === null || feedGuestMode === feedIsGuest()) return;
+    feedRows = null; feedStamp = 0; feedResetPaging();
+    if(feedBusy) feedPending = true; else feedLoad(true);
+  };
   let feedFilter = null;       // sala activa (slug) o null = todo el gremio
   let feedLoadFilter = null;   // filtro con el que arrancó la carga en curso
   let feedPending = false;     // pidieron otra sala mientras cargaba la anterior
@@ -2958,7 +3045,7 @@
   }
   // "Cargar más publicaciones": pide las siguientes más viejas que la última que ya se ve
   async function feedMoreLoad(){
-    if(feedMoreBusy || feedBusy || !feedRows || !feedRows.length || !feedSel) return;
+    if(feedMoreBusy || feedBusy || !feedRows || !feedRows.length || !feedSel || feedIsGuest()) return;
     feedMoreBusy = true;
     const myFilter = feedFilter;
     const btn = document.getElementById('feedMoreBtn');
@@ -2997,6 +3084,7 @@
     feedBusy = true;
     const myFilter = feedFilter;
     feedLoadFilter = myFilter;
+    const guest = feedIsGuest();
     const box = document.getElementById('feed-list');
     if(manual && !feedRows) box.innerHTML = '<div class="feed-empty">Cargando publicaciones…</div>';
     try{
@@ -3004,7 +3092,7 @@
       const tok = validToken();
       if(tok) headers.Authorization = 'Bearer ' + tok;
       const base = SUPABASE_URL + '/rest/v1/posts?select=';
-      const tail = '&order=creado_en.desc&limit=' + FEED_PAGE + (myFilter ? '&sala=eq.' + encodeURIComponent(myFilter) : '');
+      const tail = '&order=creado_en.desc&limit=' + (guest ? FEED_GUEST_N + 1 : FEED_PAGE) + (myFilter ? '&sala=eq.' + encodeURIComponent(myFilter) : '');
       // Si faltan las tablas de me gusta/comentarios o la columna "sala", cae a versiones
       // más simples del feed en vez de romperse.
       // Se intenta primero con todo (editado + fotos); si falta una columna, cae a versiones más simples.
@@ -3033,16 +3121,22 @@
       if(myFilter !== feedFilter) return; // cambiaron de sala mientras cargaba
       feedSel = won.sel;
       await feedDecorate(rows, headers, tok);
+      if(guest){
+        const ex = await Promise.all([feedFetchPin(won.sel, headers), feedFetchTotal(headers)]);
+        feedPin = ex[0]; feedTotal = ex[1];
+        if(ex[0]){ try{ localStorage.setItem(FEED_PIN_KEY, JSON.stringify(Object.assign({}, ex[0], { liked: false }))); }catch(e){} }
+      }
       if(myFilter !== feedFilter) return;
       let merged = rows;
-      if(feedExtended && feedRows && feedRows.length && rows.length){
+      if(!guest && feedExtended && feedRows && feedRows.length && rows.length){
         // refresco con páginas viejas ya cargadas: se conservan las que siguen más atrás que lo recién pedido
         const cut = Date.parse(rows[rows.length - 1].creado_en);
         const ids = new Set(rows.map(r => Number(r.id)));
         merged = rows.concat(feedRows.filter(p => !ids.has(Number(p.id)) && Date.parse(p.creado_en) < cut));
       } else {
-        feedHasMore = rows.length >= FEED_PAGE; feedEnd = false; feedExtended = false;
+        feedHasMore = !guest && rows.length >= FEED_PAGE; feedEnd = false; feedExtended = false;
       }
+      feedGuestMode = guest;
       feedRows = merged;
       feedStamp = Date.now();
       feedSaveCache();
@@ -3068,6 +3162,7 @@
   }
   // pinta el último feed guardado en el teléfono (si lo hay) mientras llega el nuevo
   function feedPaintCache(){
+    if(!feedPin){ try{ const pc = JSON.parse(localStorage.getItem(FEED_PIN_KEY) || 'null'); if(pc && pc.id) feedPin = Object.assign({}, pc, { liked: false }); }catch(e){} }
     if(feedRows || feedFilter) return;
     try{
       const c = JSON.parse(localStorage.getItem(FEED_CACHE_KEY) || 'null');
