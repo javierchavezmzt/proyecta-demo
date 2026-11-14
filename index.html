@@ -2963,6 +2963,7 @@
   // Escaparate para quien NO tiene cuenta: tu primer post fijo, la tarjeta de "qué vas a encontrar",
   // las 3 publicaciones más recientes y la invitación a registrarse. Con cuenta se ve todo el feed.
   const FEED_PIN_ID = 2;          // el primer post de Javier (bienvenida, 26-oct-2026)
+  const FEED_GUEST_SHOW_N = 100;  // desde cuántas "más" se muestra el número
   const FEED_GUEST_N = 3;         // publicaciones recientes que ve un visitante
   const FEED_PIN_KEY = 'proyecta_feed_pin_v1';
   let feedPin = null;             // el post fijo (solo se pide a visitantes)
@@ -3010,9 +3011,10 @@
   }
   function guestCta(shown){
     const more = feedTotal != null ? Math.max(0, feedTotal - shown) : 0;
-    const t = more ? 'Hay ' + more + (more === 1 ? ' publicación más' : ' publicaciones más') + ' adentro' : 'Hay más conversaciones adentro';
-    return '<div class="guest-cta"><b>' + t + '</b><p>Crea tu cuenta gratis para ver todo el feed, comentar y escribirle a la gente de la construcción.</p>' +
-      '<button class="btn-gold" type="button" onclick="needLogin(\'Crea tu cuenta gratis para ver todo\')">Crear mi cuenta gratis</button></div>';
+    // con menos de 100 más, el número se ve chico: se dice "muchas". Desde 100 sale el número real.
+    const n = more >= FEED_GUEST_SHOW_N ? 'Hay ' + more + ' publicaciones más adentro. ' : 'Hay muchas publicaciones más adentro. ';
+    return '<div class="guest-cta"><b>¿Quieres ver todo el contenido?</b><p>' + n + 'Suscríbete gratis para verlas todas, comentar y escribirle a la gente de la construcción.</p>' +
+      '<button class="btn-gold" type="button" onclick="needLogin(\'Suscríbete gratis para ver todo el contenido\')">Suscríbete gratis</button></div>';
   }
   // al iniciar o cerrar sesión, el feed se vuelve a pedir en el modo que toca
   window.feedModeSync = function(){
