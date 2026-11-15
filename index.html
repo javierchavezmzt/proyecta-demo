@@ -1367,11 +1367,11 @@
               <select class="auth-input" id="pf-espsel" onchange="pfRolChange()">
                 <option value="">¿Cuál es tu especialidad?</option>
                 <optgroup label="Las mismas de las salas">
-                  <option>Obra civil</option><option>Arquitectura</option><option>Geotecnia</option><option>Estructuras</option>
+                  <option>Obra civil</option><option>Arquitectura</option><option>Geotecnia</option><option>Estructuras</option><option>Hidráulica</option>
                   <option>Instalaciones</option><option>Presupuestos y costos</option><option>Urbanización</option><option>Valuación</option>
                 </optgroup>
                 <optgroup label="Otras del Padrón">
-                  <option>Topografía</option><option>Hidráulica</option><option>BIM y modelado</option><option>Gestión y supervisión</option>
+                  <option>Topografía</option><option>BIM y modelado</option><option>Gestión y supervisión</option>
                 </optgroup>
                 <option value="__otro">Otra (escríbela)</option>
               </select>
@@ -3004,7 +3004,7 @@
       '<div class="promo-sub">Para ingenieros, arquitectos, proveedores y gente de obra.</div>' +
       row('🧱', 'Calculadoras gratis', 'Ladrillos y blocks, concreto por m³ y simulador hidráulico. Validadas con ingenieros en campo.') +
       row('👷', 'Padrón de especialistas y proveedores', '<span id="pr-pad">' + esc(promoPadTxt()) + '</span> Contacto directo por WhatsApp.') +
-      row('💬', 'Salas por especialidad', SALAS.length + ' salas: obra civil, estructuras, geotecnia, instalaciones, presupuestos, oficios y más.') +
+      row('💬', 'Salas por especialidad', SALAS.length + ' salas: obra civil, estructuras, hidráulica, geotecnia, instalaciones, presupuestos, oficios y más.') +
       row('📚', 'Biblioteca', 'El Reglamento de Construcción de Mazatlán explicado en fichas: ¿qué tipo de obra es la mía y necesito DRO?') +
       row('✉️', 'Mensajes directos', 'Escríbele a quien necesites dentro de la app.') +
       '<button class="btn-gold" type="button" onclick="needLogin(\'Crea tu cuenta gratis para entrar a Proyecta Latam\')">Crear mi cuenta gratis</button>' +
@@ -3529,7 +3529,8 @@
     { k: 'arquitectura',  n: 'Arquitectura',         ic: '🏛️', bg: 'var(--navy)',   fg: '#fff',        d: 'Diseño, proyecto y detalles constructivos' },
     { k: 'geotecnia',     n: 'Geotecnia',            ic: '⛏️', bg: 'var(--brick)',  fg: '#fff',        d: 'Mecánica de suelos, estudios, cimentaciones y excavaciones' },
     { k: 'estructuras',   n: 'Estructuras',          ic: '🧱', bg: 'var(--gold)',   fg: 'var(--navy)', d: 'Cimentación, concreto, acero y cálculo estructural' },
-    { k: 'instalaciones', n: 'Instalaciones',        ic: '🔧', bg: 'var(--pine)',   fg: '#fff',        d: 'Hidráulica, eléctrica, sanitaria y especiales' },
+    { k: 'hidraulica',    n: 'Hidráulica',           ic: '🚰', bg: 'var(--steel)',  fg: '#fff',        d: 'Hidráulica e hidrología: agua potable, drenaje, bombeo, redes, canales, cuencas y obras hidráulicas' },
+    { k: 'instalaciones', n: 'Instalaciones',        ic: '🔧', bg: 'var(--pine)',   fg: '#fff',        d: 'Eléctrica, sanitaria, gas, climatización y especiales' },
     { k: 'presupuestos',  n: 'Presupuestos y costos', ic: '📊', bg: 'var(--navy-3)', fg: '#fff',        d: 'Precios unitarios, volumetrías y licitaciones' },
     { k: 'urbanizacion',  n: 'Urbanización',         ic: '🌆', bg: 'var(--steel)',  fg: '#fff',        d: 'Calles, redes, terracerías y desarrollos' },
     { k: 'valuacion',     n: 'Valuación',            ic: '🏷️', bg: 'var(--navy-3)', fg: '#fff',        d: 'Avalúos de inmuebles y terrenos, y valor de lo construido' },
